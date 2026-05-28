@@ -221,6 +221,7 @@ claude --plugin-dir ./plugins/sdd
 
 - [plugins/sdd/README.md](plugins/sdd/README.md) — Plugin 详细文档（11 命令深度说明 / hook / agent / flag / 设计哲学）
 - [plugins/sdd/skills/sdd/SKILL.md](plugins/sdd/skills/sdd/SKILL.md) — 共享精神（HARD GATE / 拷问规则 / 卡死保护 / 反作弊）
+- [plugins/xingwen-data-center-sdd/README.md](plugins/xingwen-data-center-sdd/README.md) — Codex/macOS 版 Xingwen 数据中心 SDD 工作流插件
 - [Claude Code Plugin 官方文档](https://code.claude.com/docs/en/plugins) — 上游 plugin 机制参考
 
 ---
