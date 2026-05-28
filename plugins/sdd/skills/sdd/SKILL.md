@@ -65,9 +65,21 @@ spec/
 <HARD-GATE>
 === 提案就绪 ===
 路径：spec/changes/<name>/proposal.md
-回复"开始|go|实施"继续，或指出要改处。
+（若同步生成 tasks.md → 加一行：+ tasks.md（<N> 阶段任务分解 + deps + owner））
+
+变化点：<首版含什么 / 关键决策点摘要>
+
+下一步：
+  ✅ 满意 → 回复 "开始 | go | 实施"
+     主对话立刻在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
+     之后调 /sdd:apply 进入实施
+  🔧 局部改某段 → /sdd:revise [why | what | how | risk]
+  💭 方向想再聊 → /sdd:chat
+  🔄 调研要重做 → /sdd:research "<新方向>"
 </HARD-GATE>
 ```
+
+`/sdd:revise` 的 HARD GATE 同结构，标题改为 `=== 提案修订（<section>）===` + 写明"旧 APPROVED 标记已移除"。
 
 收到批准 → 在 proposal 末尾追加：
 ```markdown
