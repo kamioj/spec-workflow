@@ -11,6 +11,8 @@ desktop.ini
 *.bak.*
 .vscode/
 .idea/
+__pycache__/
+*.pyc
 
 # Claude Code internal
 .gcs-sha

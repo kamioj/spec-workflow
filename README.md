@@ -7,7 +7,7 @@
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-sdd)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/kamioj-sdd)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/kamioj-sdd)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -42,9 +42,9 @@ AI 辅助的 spec-driven development 已有两种范式：
 
 ### Install
 
-```pwsh
+```bash
 # 配 GitHub token（private repo 必需）
-$env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
 
 # 注册 marketplace + 装 plugin
 claude plugin marketplace add kamioj/kamioj-sdd
@@ -88,8 +88,8 @@ claude plugin install sdd@kamioj-sdd
 
 | Hook | 何时拦 | 拦什么 |
 |---|---|---|
-| `check-tbd.ps1` | `/sdd:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.ps1` | `/sdd:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
+| `check-tbd.sh` | `/sdd:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
+| `check-gate.sh` | `/sdd:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
 
@@ -156,8 +156,13 @@ graph LR
 └── plugins/sdd/
     ├── .claude-plugin/plugin.json     # plugin 清单
     ├── commands/                       # 11 个 slash 命令
-    ├── hooks/                          # 硬约束（pwsh 实现）
+    ├── hooks/                          # 硬约束（sh + python3 实现）
     │   ├── hooks.json
+    │   ├── check-tbd.sh
+    │   ├── check-tbd.py
+    │   ├── check-gate.sh
+    │   ├── check-gate.py
+    │   ├── install-python3.sh
     │   ├── check-tbd.ps1
     │   └── check-gate.ps1
     ├── agents/                         # 开发 agent
@@ -199,7 +204,7 @@ graph LR
 
 修改 plugin 内容后：
 
-```pwsh
+```bash
 git add . && git commit -m "..."
 git push
 
@@ -209,7 +214,7 @@ claude plugin marketplace update kamioj-sdd    # 同步 cache
 
 或开发期跳过 push 循环，直接加载本地源码：
 
-```pwsh
+```bash
 claude --plugin-dir ./plugins/sdd
 ```
 
@@ -227,7 +232,7 @@ claude --plugin-dir ./plugins/sdd
 
 ## Limitations
 
-- **Windows-only**：hook 用 pwsh 写，目前只跑 Windows。跨平台需要 bash / sh 等价
+- **macOS/Linux 优先**：hook 通过 `sh` 入口执行，依赖 `python3` 解析 Claude Code 的 JSON stdin；未找到 `python3` 时会阻断并提示安装方式，也可主动运行 `sh plugins/sdd/hooks/install-python3.sh`。Windows 仍保留 `.ps1` 脚本，可按需切回
 - **未做的扩展**：sdd-researcher / sdd-reviewer 专属 agent / MCP server / Stop hook（任务遗忘提醒）
 
 ---
