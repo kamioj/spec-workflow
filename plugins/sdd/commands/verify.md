@@ -23,7 +23,7 @@ allowed-tools: Read, Bash, Grep, Glob
 
 - 改动跟 proposal `## How` 的决策一致？
 - **没做 proposal 没要求的事**（scope creep）？
-- 符合 `references/<栈>.md` 的代码规范？
+- 符合 `skills/sdd/references/<栈>.md` 的代码规范？
 
 ## 输出格式
 

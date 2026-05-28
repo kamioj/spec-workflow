@@ -33,8 +33,8 @@ capabilities:
 
 | 派遣 prompt 含 | 来自 flag | 启用并 Read |
 |---|---|---|
-| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/references/agent-principles.md` § 一 |
-| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/references/agent-principles.md` § 二 |
+| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/sdd/references/agent-principles.md` § 一 |
+| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/sdd/references/agent-principles.md` § 二 |
 
 **默认不读**——保持轻量，避免在常规后端实施里过度保守。
 
@@ -49,12 +49,12 @@ capabilities:
 
 | 项目栈 | 必读 references |
 |---|---|
-| Java + Spring | `references/alibaba-java.md` + `java-conventions.md` |
-| Python | `references/python-conventions.md` |
-| PHP 现代（Laravel / Symfony） | `references/php-conventions.md` |
-| PHP 老代码审计（无 namespace / 文件名定路由） | `references/php-conventions.md` 老代码节 + `~/.claude/skills/ctf-game/references/server-audit.md`（若存在） |
-| Node BFF（JS） | `references/js-style.md` |
-| Node BFF（TS） | `references/google-ts-style.md` + `ts-conventions.md` + `js-style.md` |
+| Java + Spring | `skills/sdd/references/alibaba-java.md` + `java-conventions.md` |
+| Python | `skills/sdd/references/python-conventions.md` |
+| PHP 现代（Laravel / Symfony） | `skills/sdd/references/php-conventions.md` |
+| PHP 老代码审计（无 namespace / 文件名定路由） | `skills/sdd/references/php-conventions.md` 老代码节 + `~/.claude/skills/ctf-game/references/server-audit.md`（若存在） |
+| Node BFF（JS） | `skills/sdd/references/js-style.md` |
+| Node BFF（TS） | `skills/sdd/references/google-ts-style.md` + `ts-conventions.md` + `js-style.md` |
 
 栈检测方法：Read `pom.xml` / `build.gradle*` / `requirements.txt` / `pyproject.toml` / `composer.json` / `package.json` 等根标志文件。
 

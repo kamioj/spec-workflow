@@ -33,9 +33,9 @@ capabilities:
 
 | 派遣 prompt 含 | 来自 flag | 启用并 Read |
 |---|---|---|
-| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/references/agent-principles.md` § 一 |
-| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/references/agent-principles.md` § 二 |
-| "启用 anti-ai-slop" | `design` | `${CLAUDE_PLUGIN_ROOT}/references/frontend-aesthetics.md` |
+| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/sdd/references/agent-principles.md` § 一 |
+| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/sdd/references/agent-principles.md` § 二 |
+| "启用 anti-ai-slop" | `design` | `${CLAUDE_PLUGIN_ROOT}/skills/sdd/references/frontend-aesthetics.md` |
 
 **默认不读**这三份 reference——保持轻量，避免在工具型 UI / 内部页 / 调试页里误判过度保守。
 
@@ -52,12 +52,12 @@ capabilities:
 
 | 项目栈 | 必读 references |
 |---|---|
-| Vue | `references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` |
-| uni-app / 小程序 | 上述 Vue 基础上 + `references/uniapp-miniprogram.md` |
-| React | `references/bulletproof-react.md` + `react-patterns.md` + `js-style.md` + `css-style.md` |
-| 任何 TS 项目 | 在所属框架基础上叠加 `references/google-ts-style.md` + `ts-conventions.md` |
-| 纯 HTML / 原生 CSS | `references/css-style.md` + `js-style.md` |
-| Flutter / Dart | `references/flutter-conventions.md`（虽是移动端，归属前端） |
+| Vue | `skills/sdd/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` |
+| uni-app / 小程序 | 上述 Vue 基础上 + `skills/sdd/references/uniapp-miniprogram.md` |
+| React | `skills/sdd/references/bulletproof-react.md` + `react-patterns.md` + `js-style.md` + `css-style.md` |
+| 任何 TS 项目 | 在所属框架基础上叠加 `skills/sdd/references/google-ts-style.md` + `ts-conventions.md` |
+| 纯 HTML / 原生 CSS | `skills/sdd/references/css-style.md` + `js-style.md` |
+| Flutter / Dart | `skills/sdd/references/flutter-conventions.md`（虽是移动端，归属前端） |
 
 栈检测方法：Read `package.json` / `pubspec.yaml` / `manifest.json` 等根标志文件。
 
