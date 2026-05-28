@@ -70,9 +70,8 @@ spec/
 变化点：<首版含什么 / 关键决策点摘要>
 
 下一步：
-  ✅ 满意 → 回复 "开始 | go | 实施"
-     主对话立刻在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
-     之后调 /sdd:apply 进入实施
+  ✅ 满意 → 调 /sdd:apply 进入实施
+     apply 会自动在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
   🔧 局部改某段 → /sdd:revise [why | what | how | risk]
   💭 方向想再聊 → /sdd:chat
   🔄 调研要重做 → /sdd:research "<新方向>"

@@ -5,10 +5,23 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 # /sdd:apply
 
-## 前置检查
+## 前置检查 + 自动批准
 
-hook 已在命令前检查 `spec/changes/<name>/proposal.md` 含 `<!-- APPROVED: ... -->`。
-若 hook 阻断 → 走 `/sdd:propose` 或 `/sdd:revise` 重新过 HARD GATE。
+1. **检查 proposal.md 存在性**：
+   - 不存在 → 报错，提示用户先调 `/sdd:propose`
+   - 存在但缺四段（Why / What / How / Risk 任一缺失）→ 报错，提示先调 `/sdd:revise` 补全
+
+2. **自动追加 APPROVED 标记**（视用户主动调用 `/sdd:apply` 为批准动作）：
+   - proposal.md 末尾**无** `<!-- APPROVED: ... -->` 标记 → 立即追加：
+     ```markdown
+     <!-- APPROVED: YYYY-MM-DD HH:mm -->
+     ```
+     时间戳用当前 ISO 本地时间
+   - 已有 APPROVED 标记（来自 `/sdd:auto` 流程或上次 apply）→ 不重复追加
+
+3. **hook 校验**：`check-gate.ps1` 仍在 `UserPromptSubmit` 时机检查 —— apply 自动追加后 hook 顺利放行（作为审计层和兜底防御）。
+
+   罕见情况下 hook 阻断（如 proposal.md 缺失 / 名字不对）→ 按 hook 错误信息处理，不强行绕过。
 
 ## 范围确定
 

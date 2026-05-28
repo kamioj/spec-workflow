@@ -37,9 +37,8 @@ allowed-tools: Read, Edit
 （旧 APPROVED 标记已移除）
 
 下一步：
-  ✅ 满意 → 回复 "开始 | go | 实施"
-     我立刻追加新的 <!-- APPROVED: ... --> 标记
-     之后你调 /sdd:apply 进入实施
+  ✅ 满意 → 调 /sdd:apply 进入实施
+     apply 会自动追加新的 <!-- APPROVED: ... --> 标记
   🔧 还要再改某段 → /sdd:revise [why | what | how | risk]
   💭 想再讨论 → /sdd:chat
   🔄 方向变了，重做调研 → /sdd:research "<新方向>"

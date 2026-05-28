@@ -33,25 +33,25 @@
 
 ## HARD GATE 批准标记
 
-用户回 "开始 / go / 实施" 后，**主对话立刻**在 proposal.md 末尾追加：
-
-```markdown
-<!-- APPROVED: YYYY-MM-DD HH:mm -->
-```
+`<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/sdd:apply` 命令在执行前自动追加**（视用户主动调用为批准动作）。
 
 时间戳用当前 ISO 本地时间。
 
-此标记是 `check-gate.ps1` hook 放行 `/sdd:apply` 的契约——**没有这一行所有后续 apply 都会被 hook 拒绝**。
+此标记同时是：
+- `check-gate.ps1` hook 放行 `/sdd:apply` 的契约
+- **审计记录**：git log 能看到何时批准过
+
+**propose 不直接追加 APPROVED**——HARD GATE 是用户决策节点，APPROVED 是 apply 的契约动作。两者分离让 UX 流程少一步"回复 go"的冗余。
 
 ## /sdd:revise 修订
 
 任何修订必须：
 
-1. 主动**移除旧的 `<!-- APPROVED: ... -->` 标记**
-2. 改完重新输出 HARD GATE 等批准
-3. 收到新批准词后追加新 APPROVED 标记
+1. 主动**移除旧的 `<!-- APPROVED: ... -->` 标记**（任何修订作废旧批准）
+2. 改完重新输出 HARD GATE 等用户决策
+3. 用户调 `/sdd:apply` 时由 apply 自动追加新 APPROVED 标记（不需要回 "go"）
 
-revise 后不移除旧 APPROVED → hook 误判为已批准 → apply 会跑改前的旧 proposal 逻辑。
+revise 后不移除旧 APPROVED → hook 误判为已批准 → apply 跳过新决策直接跑改前逻辑。
 
 ## /sdd:revise 的可修订段
 
