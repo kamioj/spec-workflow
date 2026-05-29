@@ -1,0 +1,32 @@
+{
+  "name": "kamioj-codex-sdd",
+  "interface": {
+    "displayName": "Kamioj Codex SDD"
+  },
+  "plugins": [
+    {
+      "name": "sdd",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sdd"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "xingwen-data-center-sdd",
+      "source": {
+        "source": "local",
+        "path": "./plugins/xingwen-data-center-sdd"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

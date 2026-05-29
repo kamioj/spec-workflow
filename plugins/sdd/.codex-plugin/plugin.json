@@ -1,0 +1,37 @@
+{
+  "name": "sdd",
+  "version": "0.1.0+codex.b6aaea6",
+  "description": "Codex-friendly Spec-driven development workflow adapted from kamioj-sdd.",
+  "author": {
+    "name": "kamioj",
+    "url": "https://github.com/kamioj"
+  },
+  "homepage": "https://github.com/kamioj/kamioj-sdd",
+  "repository": "https://github.com/kamioj/kamioj-sdd",
+  "license": "MIT",
+  "keywords": [
+    "sdd",
+    "spec",
+    "proposal",
+    "workflow",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SDD",
+    "shortDescription": "Spec-driven development workflow for larger changes.",
+    "longDescription": "A Codex-friendly copy of kamioj-sdd's spec-driven workflow. It keeps research, ask, design, propose, apply, verify, and archive guidance available as skill context. Claude-specific slash commands and PowerShell hooks are retained as reference files only.",
+    "developerName": "kamioj",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write",
+      "Review"
+    ],
+    "defaultPrompt": [
+      "/sdd:research 调研一个改动边界",
+      "/sdd:design 梳理技术方案",
+      "/sdd:verify 检查方案和实现"
+    ]
+  }
+}

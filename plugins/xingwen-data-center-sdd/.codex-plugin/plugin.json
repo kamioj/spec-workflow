@@ -1,0 +1,36 @@
+{
+  "name": "xingwen-data-center-sdd",
+  "version": "0.1.0",
+  "description": "Codex/mac SDD workflow for Xingwen data-center phases, HIS lineage, ODS/DWD/ADS review, and execution checklists.",
+  "author": {
+    "name": "kamioj"
+  },
+  "repository": "https://github.com/kamioj/kamioj-sdd",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "sdd",
+    "xingwen",
+    "data-center",
+    "ods",
+    "dwd",
+    "ads"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Xingwen Data Center SDD",
+    "shortDescription": "SDD workflow for Xingwen data-center work in Codex.",
+    "longDescription": "A Codex and macOS friendly SDD workflow for Xingwen x-data-center phases. It keeps HIS lineage, RabbitMQ, ODS, ETL, DWD, ADS, Query API, review routes, and execution result documents aligned.",
+    "developerName": "kamioj",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Review"
+    ],
+    "defaultPrompt": [
+      "检查当前阶段 SDD 是否能开工",
+      "执行数据中心阶段并生成 review 路线",
+      "grill me 这个 DWD/ADS 设计边界"
+    ]
+  }
+}
