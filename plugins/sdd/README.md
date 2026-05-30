@@ -72,9 +72,9 @@ spec/
     ↓ 产出 proposal.md
     ↓ hook 拦：research.md 还有 [TBD] 则拒绝
 [HARD GATE 等"开始/go/实施"]
-    ↓ 用户批准后追加 <!-- APPROVED: ... -->
+    ↓ /sdd:apply 自动追加 <!-- APPROVED: ... -->
 /sdd:apply
-    ↓ hook 拦：proposal.md 缺 APPROVED 则拒绝
+    ↓ hook 拦：缺活跃 change / proposal.md 则拒绝
     ↓ 派遣 sdd-frontend-dev / sdd-backend-dev
 /sdd:verify
     ↓ 三维验证 OK
@@ -88,7 +88,7 @@ spec/
 | Hook 脚本 | 触发命令 | 作用 |
 |---|---|---|
 | `hooks/check-tbd.sh` | `/sdd:propose` 前 | research.md 含 `[TBD-N]` 则 `exit 2` 拒绝执行 |
-| `hooks/check-gate.sh` | `/sdd:apply` 前 | proposal.md 缺 `<!-- APPROVED: ... -->` 则 `exit 2` 拒绝执行 |
+| `hooks/check-gate.sh` | `/sdd:apply` 前 | 缺活跃 change / proposal.md 则 `exit 2` 拒绝执行 |
 
 事件：`UserPromptSubmit`（hookify 同款，plugin wrapper 格式）。
 脚本：macOS/Linux 默认走 `sh` Exec form，内部调用 `python3` 做 JSON 解析；未找到 `python3` 时会阻断并提示安装方式，也可主动运行 `sh hooks/install-python3.sh`。`.ps1` 版本仍保留给 Windows。

@@ -85,7 +85,7 @@ spec/
 <!-- APPROVED: YYYY-MM-DD HH:mm -->
 ```
 
-hook `check-gate.sh` 在 `/sdd:apply` 执行前检查此标记。**无标记 → 拒绝执行**。
+`/sdd:apply` 会在进入实施时追加此标记；hook `check-gate.sh` 在 `/sdd:apply` 执行前检查 change / proposal 是否存在。
 
 ### 拷问规则（继承 grill-me 精神）
 
@@ -134,7 +134,7 @@ hook `check-gate.sh` 在 `/sdd:apply` 执行前检查此标记。**无标记 →
 | Hook 脚本 | 触发命令 | 作用 |
 |---|---|---|
 | `hooks/check-tbd.sh` | `/sdd:propose` 前 | research.md 含 `[TBD]` 则拒绝执行，提示走 `/sdd:ask` |
-| `hooks/check-gate.sh` | `/sdd:apply` 前 | proposal.md 缺 `APPROVED` 标记则拒绝执行 |
+| `hooks/check-gate.sh` | `/sdd:apply` 前 | 缺活跃 change / proposal.md 则拒绝执行 |
 
 **软约束 vs 硬约束**：
 - 软约束（prompt）：模型可能违反，违反率取决于模型水平

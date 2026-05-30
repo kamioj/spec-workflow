@@ -1,5 +1,5 @@
 ---
-description: 实施代码，按 proposal/tasks 推进。命令前 hook 检查 proposal.md 含 APPROVED 标记。增量验证：每节点做完就近调 /sdd:verify，不攒到最后
+description: 实施代码，按 proposal/tasks 推进。命令前 hook 检查活跃 change / proposal.md 存在；apply 进入后自动追加 APPROVED 标记。增量验证：每节点做完就近调 /sdd:verify，不攒到最后
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -19,7 +19,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
      时间戳用当前 ISO 本地时间
    - 已有 APPROVED 标记（来自 `/sdd:auto` 流程或上次 apply）→ 不重复追加
 
-3. **hook 校验**：`check-gate.ps1` 仍在 `UserPromptSubmit` 时机检查 —— apply 自动追加后 hook 顺利放行（作为审计层和兜底防御）。
+3. **hook 校验**：`check-gate.sh` 仍在 `UserPromptSubmit` 时机检查 change / proposal 是否存在。`/sdd:apply` 进入执行后自动追加 APPROVED，作为审计标记和后续流程状态。
 
    罕见情况下 hook 阻断（如 proposal.md 缺失 / 名字不对）→ 按 hook 错误信息处理，不强行绕过。
 

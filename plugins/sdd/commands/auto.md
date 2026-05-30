@@ -27,7 +27,7 @@ description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷
    - 收到"开始"前**绝不写代码**
    - 驳回 → 走 `/sdd:revise [section]`（微调）或 `/sdd:chat`（重聊方向）
 6. **`/sdd:apply`** — 实施代码，按 proposal/tasks 推进
-   - 命令前 hook 会检查 proposal 含 APPROVED 标记
+   - 命令前 hook 会检查活跃 change / proposal.md 存在；apply 进入后自动追加 APPROVED 标记
 7. **`/sdd:verify`** — 三维验证（completeness / correctness / coherence）
 8. **等用户说"归档"** → `/sdd:archive`
 

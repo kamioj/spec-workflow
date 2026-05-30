@@ -65,6 +65,6 @@ allowed-tools: Read, Edit
 ## 反模式
 
 - ❌ 改了某段没重过 HARD GATE 就继续推进
-- ❌ 没移除旧 APPROVED 标记（让 `/sdd:apply` hook 误以为已批准）
+- ❌ 没移除旧 APPROVED 标记（让状态判断误以为已批准）
 - ❌ 改了一段顺手"清理"其他段（用户没说就别动）
 - ❌ 用 `/sdd:revise all` 当 `/sdd:propose` 用（重写整个用 propose 语义更清晰）

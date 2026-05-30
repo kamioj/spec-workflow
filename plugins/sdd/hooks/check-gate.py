@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""检查 /sdd:apply 前 proposal.md 是否已通过 HARD GATE。"""
+"""检查 /sdd:apply 前 proposal.md 是否存在。"""
 
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -41,25 +40,10 @@ def main() -> int:
     if not changes:
         fail("SDD: 没有活跃 change。先走 /sdd:research → /sdd:propose")
 
-    approved_re = re.compile(
-        r"(<!--\s*APPROVED\s*[:>])"
-        r"|(##\s+HARD\s+GATE.*APPROVED)"
-        r"|(APPROVED\s*:\s*\d{4}-\d{2}-\d{2})",
-        re.IGNORECASE,
-    )
-
     for change in changes:
         proposal_path = change / "proposal.md"
         if not proposal_path.is_file():
             fail(f"SDD: {change.name} 缺 proposal.md。先调 /sdd:propose")
-
-        content = proposal_path.read_text(encoding="utf-8")
-        if not approved_re.search(content):
-            fail(
-                f"SDD: proposal.md ({change.name}) 未含 APPROVED 标记。"
-                "先过 HARD GATE，用户批准后在 proposal 末尾追加："
-                "<!-- APPROVED: YYYY-MM-DD HH:mm -->"
-            )
 
     return 0
 

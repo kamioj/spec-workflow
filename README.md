@@ -89,7 +89,7 @@ claude plugin install sdd@kamioj-sdd
 | Hook | 何时拦 | 拦什么 |
 |---|---|---|
 | `check-tbd.sh` | `/sdd:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.sh` | `/sdd:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
+| `check-gate.sh` | `/sdd:apply` 之前 | 缺活跃 change / proposal.md 就拒绝 |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
 
