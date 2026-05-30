@@ -31,10 +31,17 @@ allowed-tools: Read, Edit
 
 ```
 <HARD-GATE>
-=== 提案修订（<section>） ===
+=== 提案修订（<section>）===
 路径：spec/changes/<name>/proposal.md
 变化点：<改了什么>
-回复"开始|go|实施"继续，或继续指出要改处。
+（旧 APPROVED 标记已移除）
+
+下一步：
+  ✅ 满意 → 调 /sdd:apply 进入实施
+     apply 会自动追加新的 <!-- APPROVED: ... --> 标记
+  🔧 还要再改某段 → /sdd:revise [why | what | how | risk]
+  💭 想再讨论 → /sdd:chat
+  🔄 方向变了，重做调研 → /sdd:research "<新方向>"
 </HARD-GATE>
 ```
 

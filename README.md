@@ -168,19 +168,24 @@ graph LR
     ├── agents/                         # 开发 agent
     │   ├── sdd-frontend-dev.md
     │   └── sdd-backend-dev.md
-    ├── skills/sdd/SKILL.md             # plugin 总览（共享精神）
-    └── references/                     # 14 个语言/框架规范
-        ├── alibaba-java.md
-        ├── bulletproof-react.md
-        ├── vue-style.md vue-patterns.md
-        ├── react-patterns.md
-        ├── ts-conventions.md google-ts-style.md
-        ├── python-conventions.md php-conventions.md
-        ├── flutter-conventions.md
-        ├── js-style.md css-style.md
-        ├── uniapp-miniprogram.md
-        ├── agent-principles.md         # opt-in: 反偷懒 + 反幻觉
-        └── frontend-aesthetics.md      # opt-in: 反 AI slop
+    └── skills/sdd/
+        ├── SKILL.md                    # plugin 总览（共享精神）
+        └── references/                 # 知识库
+            ├── proposal-spec.md        # 产物 spec：完整格式 + HARD GATE 规则
+            ├── research-spec.md
+            ├── design-spec.md
+            ├── tasks-spec.md
+            ├── agent-principles.md     # opt-in: 反偷懒 + 反幻觉
+            ├── frontend-aesthetics.md  # opt-in: 反 AI slop
+            ├── alibaba-java.md         # 14 个语言/框架规范
+            ├── bulletproof-react.md
+            ├── vue-style.md vue-patterns.md
+            ├── react-patterns.md
+            ├── ts-conventions.md google-ts-style.md
+            ├── python-conventions.md php-conventions.md
+            ├── flutter-conventions.md
+            ├── js-style.md css-style.md
+            └── uniapp-miniprogram.md
 ```
 
 ### Runtime artifacts
@@ -243,7 +248,7 @@ claude --plugin-dir ./plugins/sdd
 
 **第三方内容声明**：
 
-- `plugins/sdd/references/` 下含 14 个语言 / 框架规范文件（alibaba-java、bulletproof-react、airbnb-javascript-style 等），版权归各自原作者，本项目仅作个人引用学习
+- `plugins/sdd/skills/sdd/references/` 下含 14 个语言 / 框架规范文件（alibaba-java、bulletproof-react、airbnb-javascript-style 等），版权归各自原作者，本项目仅作个人引用学习
 - `agent-principles.md` 与 `frontend-aesthetics.md` 含 [Anthropic 官方提示词原文](https://code.claude.com/docs/)，版权归 Anthropic，本项目仅供个人在私有环境引用
 
 如未来公开发布到社区，需要：

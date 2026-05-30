@@ -14,8 +14,9 @@
 ├── commands/        11 个 slash 命令
 ├── hooks/           硬约束（sh + python3 实现，保留 pwsh 版本）
 ├── agents/          前后端开发 agent
-├── skills/sdd/      plugin 总览 skill
-└── references/      14 个语言/框架规范 + 2 个 agent 精神
+└── skills/sdd/      plugin 总览 skill + 知识库
+    ├── SKILL.md
+    └── references/  14 个语言栈 + 2 个 agent 精神 + 4 个产物 spec
 ```
 
 ## 何时使用

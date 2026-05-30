@@ -23,7 +23,7 @@ allowed-tools: Read, Bash, Grep, Glob
 
 - 改动跟 proposal `## How` 的决策一致？
 - **没做 proposal 没要求的事**（scope creep）？
-- 符合 `references/<栈>.md` 的代码规范？
+- 符合 `skills/sdd/references/<栈>.md` 的代码规范？
 
 ## 输出格式
 
@@ -34,13 +34,21 @@ Correctness:  <pass / fail / partial> - <说明>
 Coherence:    <pass / fail / partial> - <说明>
 
 整体：<pass / fail>
-下一步：<继续 apply / 修 X / 走 /sdd:revise / 问用户>
 ```
 
-## 失败处理
+**verify 不主动推荐"下一步用哪个命令"**——这是 `/sdd:status` 的职责。verify 只报告验证结果。用户拿到结果自己决定（继续修 / 归档 / 进新阶段），或调 `/sdd:status` 看推荐路径。
 
-- 三维任一 fail → 按 `/sdd:apply` 的失败定层归类处理
-- 全 pass → 提示"可走 /sdd:archive 归档"
+## 失败处理（定位，不修复）
+
+verify 失败时**报告具体失败点**，不主动建议修复路径：
+
+| 维度 fail | 报告内容 |
+|---|---|
+| **Completeness** | 列出 proposal `## What` 里**未实现**的项；列出 design.md `## Interfaces`（若有）里**未对齐**的接口 |
+| **Correctness** | 贴**报错原文** + 文件 / 行号；列出测试 fail 的 case 名 + 期望 vs 实际 |
+| **Coherence** | 指出与 proposal `## How` 决策**不一致**的地方；列出 scope creep（做了 proposal 没要求的事）；列出违反 `references/<栈>` 规范的点 |
+
+**判定原则**：verify 描述**问题**，不规定**解决方案**——修复路径由用户 / 主对话决定（可能调 apply 续修 / revise 改 proposal / 主对话自理）。
 
 ## 反作弊
 

@@ -65,9 +65,20 @@ spec/
 <HARD-GATE>
 === 提案就绪 ===
 路径：spec/changes/<name>/proposal.md
-回复"开始|go|实施"继续，或指出要改处。
+（若同步生成 tasks.md → 加一行：+ tasks.md（<N> 阶段任务分解 + deps + owner））
+
+变化点：<首版含什么 / 关键决策点摘要>
+
+下一步：
+  ✅ 满意 → 调 /sdd:apply 进入实施
+     apply 会自动在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
+  🔧 局部改某段 → /sdd:revise [why | what | how | risk]
+  💭 方向想再聊 → /sdd:chat
+  🔄 调研要重做 → /sdd:research "<新方向>"
 </HARD-GATE>
 ```
+
+`/sdd:revise` 的 HARD GATE 同结构，标题改为 `=== 提案修订（<section>）===` + 写明"旧 APPROVED 标记已移除"。
 
 收到批准 → 在 proposal 末尾追加：
 ```markdown
@@ -134,13 +145,13 @@ hook `check-gate.sh` 在 `/sdd:apply` 执行前检查此标记。**无标记 →
 ## references 加载策略
 
 按需读，**不强制**：
-- `references/alibaba-java.md` + `java-conventions.md` — Java + Spring
-- `references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` — Vue（uni-app 加 `uniapp-miniprogram.md`）
-- `references/bulletproof-react.md` + `react-patterns.md` — React
-- `references/google-ts-style.md` + `ts-conventions.md` — TS（叠加于 Vue/React/Node 之上）
-- `references/python-conventions.md` — Python
-- `references/php-conventions.md` — PHP
-- `references/flutter-conventions.md` — Flutter / Dart
+- `skills/sdd/references/alibaba-java.md` + `java-conventions.md` — Java + Spring
+- `skills/sdd/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` — Vue（uni-app 加 `uniapp-miniprogram.md`）
+- `skills/sdd/references/bulletproof-react.md` + `react-patterns.md` — React
+- `skills/sdd/references/google-ts-style.md` + `ts-conventions.md` — TS（叠加于 Vue/React/Node 之上）
+- `skills/sdd/references/python-conventions.md` — Python
+- `skills/sdd/references/php-conventions.md` — PHP
+- `skills/sdd/references/flutter-conventions.md` — Flutter / Dart
 
 只在写到具体技术决策时按需 Read，避免污染 token。
 
