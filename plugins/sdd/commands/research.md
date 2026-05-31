@@ -17,7 +17,11 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
    - WebSearch 关键技术决策点的 A/B/C 方案对比、踩坑、benchmark
    - 收集硬约束（兼容性 / 性能目标 / 安全要求 / 依赖版本）
    - 引用必须给 URL
-3. 主对话 Grep / Glob 项目内相关模块，理清调用链
+3. **派 `@code-explorer` / explorer 子代理**定位项目内相关模块（若运行环境支持且用户已授权子代理）：
+   - 输入：具体问题 + 目录范围 + 只读要求
+   - 输出：入口文件、调用链、关键配置、相似实现，控制在 30 行内
+   - 主对话只整合结论，不把完整搜索输出塞进 research.md
+   - 不支持子代理时，主对话用 Grep / Glob 点读关键文件
 4. **写 research.md**——详细格式 + 段职责 + [TBD] 编号规则 → [`skills/sdd/references/research-spec.md`](../skills/sdd/references/research-spec.md)
 5. 标 `[TBD-N]` 偏好型决策点：
    - **事实型**（读代码 / 查文档能定死）→ Claude 自己定，标"按现状定：X"

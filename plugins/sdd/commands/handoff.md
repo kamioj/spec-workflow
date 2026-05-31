@@ -33,8 +33,9 @@ spec/changes/<name>/handoff.md
    - `proposal.md`：只提炼 Why / What / How / Risk 和 APPROVED 状态
    - `tasks.md`：只提炼未完成任务、阻塞任务、owner / deps
 3. 读取 `git status --short --branch`，记录分支和未提交改动摘要。
-4. 写入 `handoff.md`，控制在 **120 行以内**。
-5. 输出一句新会话引导语，方便用户直接复制。
+4. 汇总最近子代理 / worker 的短结论：只记录结论、证据路径、未覆盖风险，不贴完整输出。
+5. 写入 `handoff.md`，控制在 **120 行以内**。
+6. 输出一句新会话引导语，方便用户直接复制。
 
 ## handoff.md 格式
 
@@ -63,6 +64,9 @@ spec/changes/<name>/handoff.md
 - `spec/changes/<name>/proposal.md`
 - `spec/changes/<name>/tasks.md`
 - `<关键源码路径，最多 8 个>`
+
+## Delegated Work
+- <子代理任务一句话>：<结论 + 证据路径；最多 6 条>
 
 ## Do Not Re-read Unless Needed
 - <大 reference / 大日志 / 大 diff 路径>

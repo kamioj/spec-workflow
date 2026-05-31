@@ -105,6 +105,24 @@ spec/changes/<change-name>/handoff.md
 
 建议在这些时机使用：准备切项目、结束长会话、完成 propose / apply / verify、开始重复解释背景、或遇到 `context_too_large`。
 
+### Micro Delegation
+
+为了避免主会话吃下大搜索、大日志和大 diff，可以明确授权子代理协助：
+
+```
+用 sdd 做这个需求，允许子代理协助探索和验证。
+```
+
+授权后，主对话保留决策和整合，子代理优先处理：
+
+- 跨文件搜索入口 / 调用链
+- 大日志、大 diff 归纳
+- reference 摘要
+- 独立测试 / lint / typecheck 结果归纳
+- 互不重叠的小实现任务
+
+子代理只带回短结论：结论、证据路径、风险 / 未覆盖、下一步。不要把完整日志或完整 diff 带回主会话。
+
 ### 2 个硬约束 Hook
 
 通过 `UserPromptSubmit` 事件，**shell 脚本拦截**违反流程的命令：
