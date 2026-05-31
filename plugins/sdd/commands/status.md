@@ -13,7 +13,7 @@ allowed-tools: Read, Glob, Bash(ls:*)
 
 1. **Glob `spec/changes/*/`** 列出所有未归档 change
 2. 对每个 change 检查产物存在性：
-   - `research.md`、`design.md`、`proposal.md`、`tasks.md`
+   - `research.md`、`design.md`、`proposal.md`、`tasks.md`、`handoff.md`
 3. 读 `research.md` 统计 `[TBD-N]` 数量和 `## Decided` 段条目数
 4. 读 `proposal.md` 检查是否含 HARD GATE 批准标记（`<!-- APPROVED -->` 或 `## HARD GATE: APPROVED`）
 
@@ -37,9 +37,11 @@ allowed-tools: Read, Glob, Bash(ls:*)
   design.md   <✓/✗>（未产出时备注是否需要）
   proposal.md ✓（HARD GATE: <待批准 / 已批准 / 驳回>）
   tasks.md    <✓/✗>
+  handoff.md  <✓/✗>（长会话 / 切项目时建议生成）
 
 当前阶段：<按下方状态机判定>
 下一步推荐：<按下方状态机映射选具体内容，不要凭记忆生成>
+新会话接续：<handoff 存在则输出读取命令；不存在则建议 /sdd:handoff>
 ```
 
 多个未归档 change → 全部列出，让用户选用 `/sdd:switch <name>`（如未实现则提示用户手动指定）。
@@ -59,6 +61,17 @@ allowed-tools: Read, Glob, Bash(ls:*)
 | `/sdd:verify` 报告含 fail | 验证失败 | 看 verify 报告决定：`/sdd:apply` 续修 / `/sdd:revise` 改 proposal（若 proposal 错） |
 | `/sdd:verify` 三维全 pass | 验证通过 | **不主动推 archive**——等用户决定。要归档时调 `/sdd:archive` |
 | 用户说"归档" | 待归档 | `/sdd:archive` |
+
+## 新会话接续引导
+
+- `handoff.md` 存在时输出：
+  ```
+  新会话接续：读取 spec/changes/<name>/handoff.md，按 Next Step 继续。
+  ```
+- `handoff.md` 不存在且 change 已有 `proposal.md` / `tasks.md` / 代码改动时输出：
+  ```
+  建议先调 /sdd:handoff 生成短交接，避免新会话重读大上下文。
+  ```
 
 **关键反模式**：
 

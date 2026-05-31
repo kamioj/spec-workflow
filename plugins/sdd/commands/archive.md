@@ -13,6 +13,9 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 2. **验证状态**：
    - 推荐 `/sdd:verify` 全 pass 后再归档
    - 未通过 → 提示但不强制（用户可能就是想归档失败的提案）
+3. **交接摘要**：
+   - 若存在 `handoff.md` → 一并归档
+   - 若不存在但 change 经历过 apply / verify → 建议先调 `/sdd:handoff`，让 archive 保留短摘要
 
 ## 流程
 
@@ -22,7 +25,7 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 4. 输出摘要：
    ```
    归档完成：spec/archive/YYYY-MM-DD-<name>/
-   含产物：research.md, design.md, proposal.md, tasks.md
+   含产物：research.md, design.md, proposal.md, tasks.md, handoff.md
    ```
 
 ## 多执行体场景

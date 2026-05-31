@@ -37,6 +37,7 @@ description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷
 - `/sdd:ask` — 重新拷问一轮（新增 [TBD]）
 - `/sdd:research <新方向>` — 重新调研，旧产物归档不删
 - `/sdd:status` — 查当前在哪阶段
+- `/sdd:handoff` — 生成短交接，切项目 / 新会话 / context 过大时用
 
 ## 反作弊原则
 

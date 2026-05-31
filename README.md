@@ -4,7 +4,7 @@
 
 **Spec-driven development plugin for Claude Code**
 
-让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
+让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、交接、归档，每步可重入、可硬约束、可派单。
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-sdd)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/kamioj-sdd)
@@ -22,7 +22,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**kamioj-sdd 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
+**kamioj-sdd 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 12 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
 
 ### Comparison
 
@@ -30,7 +30,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
-| 命令粒度 | 11 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
+| 命令粒度 | 12 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
 | 中途重入 | 每阶段独立调用 | `/opsx:continue` 推进 | 重头来 |
 | 反作弊精神 | 命令 + agent 双层 + opt-in flag | 无 | 隐含 |
 
@@ -66,7 +66,7 @@ claude plugin install sdd@kamioj-sdd
 
 ## Features
 
-### 11 个独立 slash 命令
+### 12 个独立 slash 命令
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
@@ -80,7 +80,30 @@ claude plugin install sdd@kamioj-sdd
 |  | `/sdd:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/sdd:apply [flags]` | 派 agent 实施 |
 |  | `/sdd:verify` | 三维验证（completeness / correctness / coherence） |
+| **交接** | `/sdd:handoff` | 生成短 handoff.md，方便新会话接续 |
 | **收尾** | `/sdd:archive` | 归档当前 change |
+
+### Context Handoff
+
+多项目切换或长会话里，优先把状态收敛到文件，而不是依赖聊天历史：
+
+```
+/sdd:handoff
+```
+
+它会生成：
+
+```
+spec/changes/<change-name>/handoff.md
+```
+
+新会话接续时直接说：
+
+```
+读取 spec/changes/<change-name>/handoff.md，按 Next Step 继续。不要重读大 reference，除非 handoff 指明需要。
+```
+
+建议在这些时机使用：准备切项目、结束长会话、完成 propose / apply / verify、开始重复解释背景、或遇到 `context_too_large`。
 
 ### 2 个硬约束 Hook
 
@@ -135,6 +158,7 @@ graph LR
     G -->|否| I[revise<br/>修订]:::cmd
     I --> G
     H --> J[verify<br/>验证]:::cmd
+    J -->|交接| L[handoff<br/>短摘要]:::cmd
     J -->|通过| K[archive<br/>归档]:::cmd
     J -->|失败| H
 
@@ -155,7 +179,7 @@ graph LR
 ├── .claude-plugin/marketplace.json    # marketplace 清单
 └── plugins/sdd/
     ├── .claude-plugin/plugin.json     # plugin 清单
-    ├── commands/                       # 11 个 slash 命令
+    ├── commands/                       # 12 个 slash 命令
     ├── hooks/                          # 硬约束（sh + python3 实现）
     │   ├── hooks.json
     │   ├── check-tbd.sh
@@ -199,6 +223,7 @@ graph LR
 │   ├── design.md     可选          # 技术设计（架构 / 接口 / 数据模型）
 │   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
 │   ├── tasks.md      可选          # 多执行体协作清单
+│   ├── handoff.md    可选          # 新会话接续短摘要
 │   └── archive/                    # 重做时的旧产物备份
 └── archive/<YYYY-MM-DD-name>/      # 已归档 change
 ```
