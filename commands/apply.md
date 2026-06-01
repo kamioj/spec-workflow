@@ -5,23 +5,22 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 # /spec:apply
 
-## 前置检查 + 自动批准
+## 前置检查 + 批准（铸契约指纹）
 
-1. **检查 proposal.md 存在性**：
-   - 不存在 → 报错，提示用户先调 `/spec:propose`
-   - 存在但缺四段（Why / What / How / Risk 任一缺失）→ 报错，提示先调 `/spec:revise` 补全
+1. **检查 proposal.md 存在性 + 四段完整**：
+   - 不存在 → 报错，提示先调 `/spec:propose`
+   - 缺四段（Why / What / How / Risk 任一缺失）→ 报错，提示先调 `/spec:revise` 补全
 
-2. **自动追加 APPROVED 标记**（视用户主动调用 `/spec:apply` 为批准动作）：
-   - proposal.md 末尾**无** `<!-- APPROVED: ... -->` 标记 → 立即追加：
-     ```markdown
-     <!-- APPROVED: YYYY-MM-DD HH:mm -->
-     ```
-     时间戳用当前 ISO 本地时间
-   - 已有 APPROVED 标记（来自 `/spec:workflow` 流程或上次 apply）→ 不重复追加
+2. **铸契约指纹 + 批准**（视用户主动调 `/spec:apply` 为批准动作）。调封装脚本：
+   ```powershell
+   pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/mint-fingerprint.ps1 -ChangeDir spec/changes/<name>
+   ```
+   它会：① 算契约包（proposal / design / tasks / test-checklist 中存在者）各文件 sha256 → 写 `<change>/.fingerprint.json`；② 在 proposal.md 末尾写/刷新 `<!-- APPROVED: <时间> fp:sha256:<combined> -->` 标记。重跑幂等（契约没变则指纹一致）。
 
-3. **hook 校验**：`check-gate.ps1` 仍在 `UserPromptSubmit` 时机检查 —— apply 自动追加后 hook 顺利放行（作为审计层和兜底防御）。
-
-   罕见情况下 hook 阻断（如 proposal.md 缺失 / 名字不对）→ 按 hook 错误信息处理，不强行绕过。
+3. **动作级门**（`PreToolUse` 的 `check-source-gate.ps1`，决策→实施 边界）：实施时一旦要写 `spec/` 外的源码，门会校验"当前活跃 change 已 APPROVED 且契约指纹未漂移"。
+   - **没铸指纹 / 没批准 → 写源码被拦**：回第 2 步铸指纹。
+   - **批准后又改了契约（proposal / design / tasks / 清单）→ 写源码被拦**（指纹漂移）：这是需求变更，改完**重跑第 2 步重铸指纹**（= 重新批准）；若只是手滑，把契约改回去。
+   - 这一层取代了旧的 `check-gate.ps1`（UserPromptSubmit 命令名匹配，会被一把梭绕过）。
 
 ## 范围确定
 
