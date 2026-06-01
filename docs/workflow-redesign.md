@@ -95,7 +95,7 @@ predicate:
   resolvedDependencies: [ <上游输入,可选> ]
 ```
 - **不引 Sigstore/DSSE 签名**——单机个人插件不需要 PKI,抄结构、丢加密。
-- **待定**:整包一个 hash,还是按文件各自 digest(后者能定位"是哪份漂了",倾向后者)。
+- **已定:按文件各自 digest**(每份契约文件一个 sha256,SLSA subject 本就是 list;漂移时能定位是哪份变了、支持精确失效)。
 
 ### 双职 + 防漂移
 - 职一:**身份**(这一版冻结契约)。
@@ -174,6 +174,7 @@ predicate:
 
 - **好处**:规则可版本化、可测试;**移植 Codex 只需换一个薄 bash 解释器,规则文件不变**(直接服务可移植性目标)。
 - check-gate.ps1 本质是条 Rego policy → 外化成声明文件后,pwsh hook 和未来 bash hook 都只是它的执行器。
+- **格式已定:JSON**(pwsh `ConvertFrom-Json` 原生解析、现有 hook 已用;jq / python / node 通用 → 利于 Codex 移植)。
 
 ---
 
@@ -181,8 +182,11 @@ predicate:
 
 ### 契约包(决策域产出,approval 冻结)
 `proposal.md` + `design.md` + `tasks.md`(计划表)+ `test-checklist.md`(测试清单 = 验收标准,在决策域作者化)。
+- **测试清单格式已定**:带稳定 ID 的可勾 markdown 清单——每点 `[ ] T-N: <验收条件>`,校验逐点引用 `T-N` 回填 pass/fail。
 
 ### 裁决 / 质量报告(校验域产出)
+**落点已定**:逐点明细写独立 `verdict.md`;proposal 末尾留一行 `<!-- VERIFIED: <时间> fp:<hash> verdict:pass -->` 当 archive 的 gate 锚点。
+
 | 字段 | 例 | 作用 |
 |---|---|---|
 | `isolation` | `subagent` / `shared` | 这次是独立还是自审 |
@@ -225,13 +229,17 @@ predicate:
 
 ---
 
-## 12. 待定决策
+## 12. 已定决策(ask 敲定)
 
-1. **指纹粒度**:整包一个 hash vs 按文件各自 digest(倾向后者,能定位漂移源)。
-2. **裁决落点**:独立 `verdict.md` vs 盖进 proposal 末尾标记。
-3. **测试清单产物名/格式**:`test-checklist.md`?结构化到什么程度(逐点可勾)。
-4. **PreToolUse"源码 vs spec 产物"判别**:按路径前缀(`spec/` 内放行)够不够。
-5. **计划层声明文件格式**:JSON / YAML / 带 frontmatter 的 md。
+| # | 决策点 | 定论 | 谁定 |
+|---|---|---|---|
+| 1 | 指纹粒度 | **按文件各自 digest**(每份契约一个 sha256,能定位漂移源,SLSA subject 本就是 list) | 用户 |
+| 2 | 裁决落点 | **独立 `verdict.md` 存明细 + proposal 末尾 `VERIFIED` 标记当 gate 锚** | 用户 |
+| 3 | 测试清单格式 | **带稳定 ID 的可勾 markdown 清单**(`[ ] T-N: <验收条件>`,逐点回填) | 用户 |
+| 4 | PreToolUse 源码判别 | **路径前缀**:`spec/` 内算契约产物放行,`spec/` 外算源码受门管;边角后续细化 | Claude(技术现状) |
+| 5 | 声明文件格式 | **JSON**(pwsh ConvertFrom-Json 原生 + jq/python/node 通用,利于 Codex 移植) | 用户 |
+
+实现期再展开的细节(非阻塞):`verdict.md` / 声明文件 / 测试清单的**具体字段 schema**,留到各自实现时定。
 
 ---
 
