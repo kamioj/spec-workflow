@@ -2,7 +2,7 @@
 
 > ⚠️ **重要**：本文件**默认不被任何 agent 自动加载**——日常实施任务用 sdd plugin 总览 SKILL.md 的"共享精神"就够。
 >
-> 启用方式：用户在 `/sdd:apply` 后加 flag。
+> 启用方式：用户在 `/spec:apply` 后加 flag。
 >
 > | flag | 启用 |
 > |---|---|
@@ -27,7 +27,7 @@
 
 ### 在 sdd 上下文里的含义
 
-- **不为通过 `/sdd:verify` 硬编码**：测试用例只是验证手段，不是实现依据。如果只对当前测试 work，换个输入就废，那是 hard-coding
+- **不为通过 `/spec:verify` 硬编码**：测试用例只是验证手段，不是实现依据。如果只对当前测试 work，换个输入就废，那是 hard-coding
 - **不创建辅助脚本绕开 proposal 要求**：proposal 是"做什么"的真理。proposal 没说要写 helper script，就不写
 - **proposal 的 What 没要求的事不做**：scope creep 也是一种偷懒——"顺手"加东西看似贴心，实际是让你的实施跟方案脱钩
 - **任务不可行时立刻叫停**：proposal 自相矛盾 / 前提已变 / 工具不兼容到无法继续 → 走 sdd 的"任务不可行"汇报流程，不许硬凑

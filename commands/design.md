@@ -3,7 +3,7 @@ description: 技术设计梳理。按需触发——架构复杂、接口 >3 个
 allowed-tools: Read, Write, Edit, Glob
 ---
 
-# /sdd:design
+# /spec:design
 
 聚焦：$ARGUMENTS
 
@@ -21,7 +21,7 @@ allowed-tools: Read, Write, Edit, Glob
 **跨前后端任务必须开 design** 的理由：
 - 接口契约是前后端**并行实施的唯一协调介质**
 - 没有契约 → 前后端只能串行（后端先做出来前端再对接），浪费 50% 时间
-- 契约写在 design.md `## Interfaces`，固化后 `/sdd:apply` 才能派两个 agent 并发
+- 契约写在 design.md `## Interfaces`，固化后 `/spec:apply` 才能派两个 agent 并发
 
 ## 流程
 

@@ -3,7 +3,7 @@ description: 派 researcher 子代理调研业界做法 + 关键约束，产出 
 allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
 ---
 
-# /sdd:research
+# /spec:research
 
 调研方向：$ARGUMENTS
 
@@ -21,7 +21,7 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
 4. **写 research.md**——详细格式 + 段职责 + [TBD] 编号规则 → [`skills/core/references/research-spec.md`](../skills/core/references/research-spec.md)
 5. 标 `[TBD-N]` 偏好型决策点：
    - **事实型**（读代码 / 查文档能定死）→ Claude 自己定，标"按现状定：X"
-   - **偏好型**（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/sdd:ask`
+   - **偏好型**（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
    - 拿不准当偏好型，**严禁把偏好型当事实型跳过**
 
 ## 重做调研（用户传入新方向）
@@ -41,7 +41,7 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
 - PHP → `skills/core/references/php-conventions.md`
 - Flutter → `skills/core/references/flutter-conventions.md`
 
-`/sdd:research` 阶段**不强制读 reference**（节省 token），只在写到具体决策时按需 Read。
+`/spec:research` 阶段**不强制读 reference**（节省 token），只在写到具体决策时按需 Read。
 
 ## 反作弊
 

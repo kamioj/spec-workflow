@@ -1,13 +1,13 @@
 <div align="center">
 
-# kamioj-sdd
+# kamioj-spec
 
 **Spec-driven development plugin for Claude Code**
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-sdd)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/kamioj-sdd)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-spec)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/kamioj-spec)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -24,11 +24,11 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**kamioj-sdd 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
+**kamioj-spec 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
 
 ### Comparison
 
-| 维度 | kamioj-sdd | OpenSpec | superpowers |
+| 维度 | kamioj-spec | OpenSpec | superpowers |
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
@@ -49,8 +49,8 @@ AI 辅助的 spec-driven development 已有两种范式：
 $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
 
 # 注册 marketplace + 装 plugin
-claude plugin marketplace add kamioj/kamioj-sdd
-claude plugin install sdd@kamioj-sdd
+claude plugin marketplace add kamioj/kamioj-spec
+claude plugin install sdd@kamioj-spec
 ```
 
 ### Try it
@@ -58,8 +58,8 @@ claude plugin install sdd@kamioj-sdd
 启动 claude 后：
 
 ```
-/sdd:status                          # 应输出"无活跃 SDD change"
-/sdd:research "Caffeine vs Redis"    # 开一个调研
+/spec:status                          # 应输出"无活跃 SDD change"
+/spec:research "Caffeine vs Redis"    # 开一个调研
 ```
 
 3 分钟内 `research.md` 会落在 `spec/changes/caffeine-vs-redis/` 目录里。
@@ -72,17 +72,17 @@ claude plugin install sdd@kamioj-sdd
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
-| **入口** | `/sdd:workflow <task>` | 全流程一把梭 |
-|  | `/sdd:status` | 报告当前 change 在哪一步 |
-| **信息收集** | `/sdd:research <方向>` | 调研业界做法，标 `[TBD]` |
-|  | `/sdd:ask` | 拷问消化 `[TBD]` |
-|  | `/sdd:chat` | 讨论模式，不动文档 |
-| **设计 & 方案** | `/sdd:design` | 技术设计梳理（按需） |
-|  | `/sdd:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
-|  | `/sdd:revise [why\|what\|how\|risk]` | 局部改 proposal |
-| **执行 & 验证** | `/sdd:apply [flags]` | 派 agent 实施 |
-|  | `/sdd:verify [--codex] [--fix]` | 三维自审；`--codex` codex 异构他审，`--fix` codex 直接改 |
-| **收尾** | `/sdd:archive` | 归档当前 change |
+| **入口** | `/spec:workflow <task>` | 全流程一把梭 |
+|  | `/spec:status` | 报告当前 change 在哪一步 |
+| **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
+|  | `/spec:ask` | 拷问消化 `[TBD]` |
+|  | `/spec:chat` | 讨论模式，不动文档 |
+| **设计 & 方案** | `/spec:design` | 技术设计梳理（按需） |
+|  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
+|  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
+| **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
+|  | `/spec:verify [--codex] [--fix]` | 三维自审；`--codex` codex 异构他审，`--fix` codex 直接改 |
+| **收尾** | `/spec:archive` | 归档当前 change |
 
 ### 2 个硬约束 Hook
 
@@ -90,8 +90,8 @@ claude plugin install sdd@kamioj-sdd
 
 | Hook | 何时拦 | 拦什么 |
 |---|---|---|
-| `check-tbd.ps1` | `/sdd:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.ps1` | `/sdd:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
+| `check-tbd.ps1` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
+| `check-gate.ps1` | `/spec:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
 
@@ -99,14 +99,14 @@ claude plugin install sdd@kamioj-sdd
 
 | Agent | 触发场景 |
 |---|---|
-| `sdd-frontend-dev` | UI / 路由 / 组件 / 样式 / 客户端交互 |
-| `sdd-backend-dev` | 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 |
+| `spec-frontend-dev` | UI / 路由 / 组件 / 样式 / 客户端交互 |
+| `spec-backend-dev` | 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 |
 
 跨前后端项目，接口契约先固化在 `design.md ## Interfaces`，两个 agent **并行实施**（不串行）。
 
 ### opt-in 增强 flag
 
-`/sdd:apply` 默认轻量。三个 flag 按需启用：
+`/spec:apply` 默认轻量。三个 flag 按需启用：
 
 | flag | 启用规则 | 适用场景 |
 |---|---|---|
@@ -117,7 +117,7 @@ claude plugin install sdd@kamioj-sdd
 可组合：
 
 ```
-/sdd:apply design solid verify    # 三件套全启
+/spec:apply design solid verify    # 三件套全启
 ```
 
 ---
@@ -144,7 +144,7 @@ graph LR
     classDef gate fill:#fff9c4,stroke:#f57f17,color:#000
 ```
 
-每个阶段独立。不顺手随时跳——`/sdd:chat` 讨论、`/sdd:revise why` 改某段、`/sdd:research <新方向>` 重做调研。
+每个阶段独立。不顺手随时跳——`/spec:chat` 讨论、`/spec:revise why` 改某段、`/spec:research <新方向>` 重做调研。
 
 ---
 
@@ -163,8 +163,8 @@ graph LR
 │   ├── check-tbd.ps1
 │   └── check-gate.ps1
 ├── agents/                         # 开发 agent
-│   ├── sdd-frontend-dev.md
-│   └── sdd-backend-dev.md
+│   ├── spec-frontend-dev.md
+│   └── spec-backend-dev.md
 └── skills/core/
     ├── SKILL.md                    # plugin 总览（共享精神）
     └── references/                 # 知识库
@@ -210,7 +210,7 @@ graph LR
 git add . && git commit -m "..."
 git push
 
-claude plugin marketplace update kamioj-sdd    # 同步 cache
+claude plugin marketplace update kamioj-spec    # 同步 cache
 # 重启 claude（hook 必须重启加载）
 ```
 
@@ -243,7 +243,7 @@ claude --plugin-dir .
 与全局 CLAUDE.md 协议的协作约定：
 
 - **中文**：proposal / research 内容中文；段标题英文（## Why / ## What / ## How / ## Risk）便于工具识别和 revise 参数化
-- **子代理委派**：research 阶段派全局 `@researcher`、apply 阶段派 plugin 内 `sdd-frontend-dev` / `sdd-backend-dev`
+- **子代理委派**：research 阶段派全局 `@researcher`、apply 阶段派 plugin 内 `spec-frontend-dev` / `spec-backend-dev`
 - **并发**：互不依赖的任务一次性并发派单
 
 ---
@@ -255,7 +255,7 @@ claude --plugin-dir .
 | 项 | 结论 | 证据 |
 |---|---|---|
 | `user_prompt` 字段名 | ✅ 正确 | hookify/core/rule_engine.py 第 226-228 行实际访问 `input_data.get('user_prompt', '')` |
-| plugin agent 调用方式 | ✅ 直接用 agent name（`sdd-frontend-dev`），无需 plugin 前缀 | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
+| plugin agent 调用方式 | ✅ 直接用 agent name（`spec-frontend-dev`），无需 plugin 前缀 | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
 | agent frontmatter 必填字段 | ✅ name / description / model / color 全部就位 | plugin-dev/skills/agent-development/SKILL.md § Frontmatter Fields |
 | agent model 策略 | ✅ `inherit`（继承父对话模型，官方推荐） | plugin-dev/skills/agent-development/SKILL.md § model |
 

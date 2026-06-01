@@ -1,10 +1,10 @@
 ---
-name: sdd-backend-dev
+name: spec-backend-dev
 description: >
-  Use PROACTIVELY when /sdd:apply needs to implement backend code
+  Use PROACTIVELY when /spec:apply needs to implement backend code
   (Java/Spring / Python / PHP / Node). Builds APIs, data models, and
   DB migrations per the approved proposal.md ## What; runs in parallel
-  with sdd-frontend-dev once the contract is fixed in design.md ## Interfaces.
+  with spec-frontend-dev once the contract is fixed in design.md ## Interfaces.
 model: inherit
 color: blue
 tools: Read, Write, Edit, Bash, Glob, Grep
@@ -12,8 +12,8 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 ## When to invoke
 
-- **派遣实施后端代码。** 主对话在 /sdd:apply 阶段判断 proposal `## What` 含服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件，直接派遣本 agent 实施
-- **跨前后端的并行后端分支。** design.md `## Interfaces` 已固化接口契约后，主对话并发派 sdd-frontend-dev 和本 agent，本 agent 先实现"符合契约 schema 的最小服务端"（mock 数据 / 固定 fixture）让前端能立刻接通，再迭代真实业务逻辑
+- **派遣实施后端代码。** 主对话在 /spec:apply 阶段判断 proposal `## What` 含服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件，直接派遣本 agent 实施
+- **跨前后端的并行后端分支。** design.md `## Interfaces` 已固化接口契约后，主对话并发派 spec-frontend-dev 和本 agent，本 agent 先实现"符合契约 schema 的最小服务端"（mock 数据 / 固定 fixture）让前端能立刻接通，再迭代真实业务逻辑
 - **DB schema 迁移先行。** proposal 含数据模型变更（迁移脚本），本 agent 在测试库执行迁移并提供回滚 SQL，作为后续服务实现的前置基础
 
 # SDD Backend Dev Agent
@@ -29,7 +29,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 ## 可选加载（opt-in，仅当主对话派遣 prompt 显式指示时读）
 
-主对话基于 `/sdd:apply` 的 flag 在派遣 prompt 里追加指令：
+主对话基于 `/spec:apply` 的 flag 在派遣 prompt 里追加指令：
 
 | 派遣 prompt 含 | 来自 flag | 启用并 Read |
 |---|---|---|
@@ -83,7 +83,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 未完成项 / 偏差：
   - <若有遗留 / 跟 proposal 不一致点，明确列出>
 建议下一步：
-  - /sdd:verify 验证（建议跑：mvn test / pytest / phpunit ...）
+  - /spec:verify 验证（建议跑：mvn test / pytest / phpunit ...）
 ```
 
 ## 反作弊（继承 sdd 协同精神）
@@ -99,11 +99,11 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 |---|---|
 | 实施后端代码（Write/Edit `.java` `.py` `.php` `.ts` 等） | **本 agent** |
 | 在大代码库里找符号定义 / 引用 | `@code-explorer`（主对话派） |
-| 查"业界 X 选型对比"、读技术博客 | `@researcher`（主对话在 /sdd:research 阶段派） |
+| 查"业界 X 选型对比"、读技术博客 | `@researcher`（主对话在 /spec:research 阶段派） |
 
 本 agent 不做调研，不做大范围搜索——**专注实施**。
 
-## 与 sdd-frontend-dev 协作时（跨前后端项目）
+## 与 spec-frontend-dev 协作时（跨前后端项目）
 
 **并行实施，不串行**——前提是接口契约在 `design.md ## Interfaces` 已固化。
 
@@ -114,7 +114,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
   3. 接 DAO / Repository 实现真实数据
   4. 处理错误码和边界 case
 - **DB 迁移并行做**：migration 脚本不阻塞前端，可在阶段 3 前完成
-- **不许私自改接口契约**——发现契约有问题 → 停下汇报，主对话走 `/sdd:revise how` 改 proposal 或 `/sdd:design` 改 Interfaces，**禁止后端单方面"灵活调整"**
+- **不许私自改接口契约**——发现契约有问题 → 停下汇报，主对话走 `/spec:revise how` 改 proposal 或 `/spec:design` 改 Interfaces，**禁止后端单方面"灵活调整"**
 
 ### 实施摘要里必须报告契约一致性
 

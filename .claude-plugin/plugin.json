@@ -1,9 +1,9 @@
 {
-  "name": "sdd",
+  "name": "spec",
   "version": "0.1.0",
   "description": "Spec-driven development plugin: research → ask → propose → apply → verify → archive, with placeholder-scan and HARD GATE hooks",
   "author": {
     "name": "kamioj"
   },
-  "keywords": ["sdd", "spec", "proposal", "workflow"]
+  "keywords": ["spec", "proposal", "workflow", "hook", "sdd"]
 }

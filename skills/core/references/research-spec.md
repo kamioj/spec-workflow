@@ -1,6 +1,6 @@
 # research.md spec
 
-`spec/changes/<change-name>/research.md` 是 sdd 工作流的**调研工作台 + 待决点登记**。由 `/sdd:research` 产出，`/sdd:ask` 持续更新。
+`spec/changes/<change-name>/research.md` 是 sdd 工作流的**调研工作台 + 待决点登记**。由 `/spec:research` 产出，`/spec:ask` 持续更新。
 
 ## 格式
 
@@ -33,8 +33,8 @@
 |---|---|---|
 | `## Practices` | `@researcher` 子代理 | 调研业界做法 / 方案对比 |
 | `## Constraints` | `@researcher` + 主对话 Grep 项目内 | 硬约束清单（兼容性 / 性能 / 依赖 / 安全） |
-| `## Open [TBD]` | `/sdd:research` 标，`/sdd:ask` 消化 | 待决偏好型决策 |
-| `## Decided` | `/sdd:ask` 移入 | 拷问后的最终决策 |
+| `## Open [TBD]` | `/spec:research` 标，`/spec:ask` 消化 | 待决偏好型决策 |
+| `## Decided` | `/spec:ask` 移入 | 拷问后的最终决策 |
 
 ## [TBD] 编号规则
 
@@ -44,7 +44,7 @@
 
 ## 重做调研处理
 
-`/sdd:research <新方向>` 重做时：
+`/spec:research <新方向>` 重做时：
 
 1. 旧 `research.md` 移到 `spec/changes/<name>/archive/research-YYYYMMDD-HHMM.md`
 2. 旧 `[TBD]` / `Decided` **不沿用**（除非用户明说"沿用"）
@@ -52,10 +52,10 @@
 
 ## hook 强制约束
 
-`hooks/check-tbd.ps1` 在 `/sdd:propose` 执行**前**扫描 `## Open [TBD]` 段：
+`hooks/check-tbd.ps1` 在 `/spec:propose` 执行**前**扫描 `## Open [TBD]` 段：
 
 - 含 `[TBD-N]` → 拒绝 propose 命令（exit 2）
-- 必须先走 `/sdd:ask` 消化所有 [TBD]
+- 必须先走 `/spec:ask` 消化所有 [TBD]
 
 这是 sdd 防止"含未决问题就写方案"的硬约束。
 
@@ -71,5 +71,5 @@ proposal.md `## How` 段必须**从 research.md `## Decided` 提炼**：
 
 - ❌ 把偏好型决策当事实型跳过（必须标 [TBD] 让用户确认）
 - ❌ 重复使用已删除的 [TBD] 编号
-- ❌ [TBD] 没消化就让用户走 /sdd:propose（hook 会拦但不应该让它发生）
+- ❌ [TBD] 没消化就让用户走 /spec:propose（hook 会拦但不应该让它发生）
 - ❌ Practices 没真查到的链接 / benchmark 数字伪造
