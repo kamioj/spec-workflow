@@ -33,8 +33,8 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 | 派遣 prompt 含 | 来自 flag | 启用并 Read |
 |---|---|---|
-| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/workflow/references/agent-principles.md` § 一 |
-| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/workflow/references/agent-principles.md` § 二 |
+| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/agent-principles.md` § 一 |
+| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/agent-principles.md` § 二 |
 
 **默认不读**——保持轻量，避免在常规后端实施里过度保守。
 
@@ -49,12 +49,12 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 | 项目栈 | 必读 references |
 |---|---|
-| Java + Spring | `skills/workflow/references/alibaba-java.md` + `java-conventions.md` |
-| Python | `skills/workflow/references/python-conventions.md` |
-| PHP 现代（Laravel / Symfony） | `skills/workflow/references/php-conventions.md` |
-| PHP 老代码审计（无 namespace / 文件名定路由） | `skills/workflow/references/php-conventions.md` 老代码节 + `~/.claude/skills/ctf-game/references/server-audit.md`（若存在） |
-| Node BFF（JS） | `skills/workflow/references/js-style.md` |
-| Node BFF（TS） | `skills/workflow/references/google-ts-style.md` + `ts-conventions.md` + `js-style.md` |
+| Java + Spring | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/alibaba-java.md` + `java-conventions.md` |
+| Python | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/python-conventions.md` |
+| PHP 现代（Laravel / Symfony） | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/php-conventions.md` |
+| PHP 老代码审计（无 namespace / 文件名定路由） | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/php-conventions.md` 老代码节 + `~/.claude/skills/ctf-game/references/server-audit.md`（若存在） |
+| Node BFF（JS） | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/js-style.md` |
+| Node BFF（TS） | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/google-ts-style.md` + `ts-conventions.md` + `js-style.md` |
 
 栈检测方法：Read `pom.xml` / `build.gradle*` / `requirements.txt` / `pyproject.toml` / `composer.json` / `package.json` 等根标志文件。
 

@@ -46,7 +46,7 @@ try {
         $approvedPattern = '(?i)(<!--\s*APPROVED\s*[:>])|(##\s+HARD\s+GATE.*APPROVED)|(APPROVED\s*:\s*\d{4}-\d{2}-\d{2})'
 
         if ($content -notmatch $approvedPattern) {
-            [Console]::Error.WriteLine("SDD: proposal.md ($($change.Name)) 未含 APPROVED 标记。先过 HARD GATE，用户批准后在 proposal 末尾追加：<!-- APPROVED: YYYY-MM-DD HH:mm -->")
+            [Console]::Error.WriteLine("SDD: proposal.md ($($change.Name)) 未含 APPROVED 标记。先调 /sdd:propose 过 HARD GATE，满意后直接调 /sdd:apply（apply 会自动追加 APPROVED 标记）")
             exit 2
         }
     }

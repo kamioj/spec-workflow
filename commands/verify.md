@@ -30,7 +30,7 @@ allowed-tools: Read, Bash, Edit, Grep, Glob
 ### 3. Coherence（一致性）
 - 改动跟 proposal `## How` 的决策一致？
 - **没做 proposal 没要求的事**（scope creep）？
-- 符合 `skills/workflow/references/<栈>.md` 的代码规范？
+- 符合 `skills/core/references/<栈>.md` 的代码规范？
 
 ## --codex：codex 异构他审
 

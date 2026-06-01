@@ -72,7 +72,7 @@ Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
 
 | Category | Command | What it does |
 |---|---|---|
-| **Entry** | `/sdd:auto <task>` | run the whole flow end-to-end |
+| **Entry** | `/sdd:workflow <task>` | run the whole flow end-to-end |
 |  | `/sdd:status` | report where the current change stands |
 | **Gather** | `/sdd:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
 |  | `/sdd:ask` | work through the `[TBD]` questions with you |
@@ -165,7 +165,7 @@ Every stage stands alone. Jump wherever you need — `/sdd:chat` to talk it over
 ├── agents/                         # development agents
 │   ├── sdd-frontend-dev.md
 │   └── sdd-backend-dev.md
-└── skills/workflow/
+└── skills/core/
     ├── SKILL.md                    # plugin overview (shared principles)
     └── references/                 # knowledge base
         ├── proposal-spec.md        # artifact spec: full format + HARD GATE rules
@@ -226,7 +226,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 
 ## Documentation
 
-- [skills/workflow/SKILL.md](skills/workflow/SKILL.md) — shared principles (HARD GATE / interrogation rules / stuck-detection / anti-cheating)
+- [skills/core/SKILL.md](skills/core/SKILL.md) — shared principles (HARD GATE / interrogation rules / stuck-detection / anti-cheating)
 - [Official Claude Code plugin docs](https://code.claude.com/docs/en/plugins) — the upstream plugin mechanism
 
 ---
