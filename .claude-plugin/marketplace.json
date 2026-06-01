@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "kamioj-spec",
+  "name": "spec-workflow",
   "description": "kamioj 个人 SDD 工作流 plugin marketplace",
   "owner": {
     "name": "kamioj"

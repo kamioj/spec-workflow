@@ -16,7 +16,7 @@ claude --plugin-dir .
 
 # 发布循环：push 后同步 cache
 git add . ; git commit -m "..." ; git push
-claude plugin marketplace update kamioj-spec
+claude plugin marketplace update spec-workflow
 ```
 
 **关键：改了 `hooks/` 下任何东西（hooks.json 或 .ps1）必须重启 Claude 才生效**——commands / skills / agents 是热加载，hook 不是。这是最容易踩的坑：改完 hook 不重启，测出来的是旧行为。
