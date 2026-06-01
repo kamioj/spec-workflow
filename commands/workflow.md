@@ -3,7 +3,7 @@ description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
-# /sdd:workflow
+# /spec:workflow
 
 任务：$ARGUMENTS
 
@@ -15,30 +15,30 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 
 按下面顺序依次调用各阶段命令。**任一阶段遇到用户驳回或 placeholder scan / HARD GATE 失败 → 停下来汇报，不要硬推**。
 
-1. **`/sdd:research <方向>`** — 调研业界做法 + 关键约束 + 标记 `[TBD]` 待决点
-2. **`/sdd:ask`** — 用 AskUserQuestion 逐个消化 `[TBD]` → 移到 `## Decided`
+1. **`/spec:research <方向>`** — 调研业界做法 + 关键约束 + 标记 `[TBD]` 待决点
+2. **`/spec:ask`** — 用 AskUserQuestion 逐个消化 `[TBD]` → 移到 `## Decided`
    - 期间可能浮现新 [TBD]，加入清单继续问
-3. **判断是否需要 `/sdd:design`** — 满足任一则调：
+3. **判断是否需要 `/spec:design`** — 满足任一则调：
    - **跨前后端**（同时改 UI 和服务端，含接口契约）← 此场景下 design 是**必须**，非可选
    - 接口数 >3 个
    - 需要架构图 / 数据流图 / 序列图
    - 决策深度论证 >300 字
-4. **`/sdd:propose`** — 写 proposal.md 四段（重大方案可加 `--codex` 让 codex 异构挑刺）
+4. **`/spec:propose`** — 写 proposal.md 四段（重大方案可加 `--codex` 让 codex 异构挑刺）
    - 写前 hook 会扫 research.md `[TBD]` 是否清空（placeholder scan）
 5. **HARD GATE** — 输出固定收尾"=== 提案就绪 ==="，等用户确认
-   - **确认前绝不写代码**；满意 → 直接进 `/sdd:apply`（apply 自动追加 APPROVED，无需回 go）
-   - 驳回 → 走 `/sdd:revise [section]`（微调）或 `/sdd:chat`（重聊方向）
-6. **`/sdd:apply`** — 实施代码，按 proposal/tasks 推进
+   - **确认前绝不写代码**；满意 → 直接进 `/spec:apply`（apply 自动追加 APPROVED，无需回 go）
+   - 驳回 → 走 `/spec:revise [section]`（微调）或 `/spec:chat`（重聊方向）
+6. **`/spec:apply`** — 实施代码，按 proposal/tasks 推进
    - 命令前 hook 会检查 proposal 含 APPROVED 标记
-7. **`/sdd:verify`** — 三维验证；关键改动可加 `--codex` 引入 codex 异构他审（`--fix` 让 codex 改）
-8. **等用户说"归档"** → `/sdd:archive`
+7. **`/spec:verify`** — 三维验证；关键改动可加 `--codex` 引入 codex 异构他审（`--fix` 让 codex 改）
+8. **等用户说"归档"** → `/spec:archive`
 
 ## 中途允许的"插队"命令
 
-- `/sdd:chat` — 进入讨论模式，不动文档
-- `/sdd:ask` — 重新拷问一轮（新增 [TBD]）
-- `/sdd:research <新方向>` — 重新调研，旧产物归档不删
-- `/sdd:status` — 查当前在哪阶段
+- `/spec:chat` — 进入讨论模式，不动文档
+- `/spec:ask` — 重新拷问一轮（新增 [TBD]）
+- `/spec:research <新方向>` — 重新调研，旧产物归档不删
+- `/spec:status` — 查当前在哪阶段
 
 ## 反作弊原则
 

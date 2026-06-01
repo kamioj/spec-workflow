@@ -1,6 +1,6 @@
 # design.md spec
 
-`spec/changes/<change-name>/design.md` 是 sdd 工作流的**可选技术设计产物**。由 `/sdd:design` 按需触发，仅在复杂任务 / 跨前后端协作时生成。
+`spec/changes/<change-name>/design.md` 是 sdd 工作流的**可选技术设计产物**。由 `/spec:design` 按需触发，仅在复杂任务 / 跨前后端协作时生成。
 
 ## 何时生成
 
@@ -60,7 +60,7 @@ design.md 专注**技术构造**：架构 / 接口 / 数据 / 深度论证。
 
 design.md 的 `## Interfaces` 段是**前后端并行实施的契约源头**：
 
-- **必须先于 `/sdd:apply` 落地**
+- **必须先于 `/spec:apply` 落地**
 - frontend agent 用 mock 数据先跑骨架（基于 `## Interfaces` 定义的 schema）
 - backend agent 实现服务端（同样基于 `## Interfaces`）
 - 联调时双方对齐到真实接口

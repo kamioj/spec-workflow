@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  统一封装 codex CLI 调用 —— 供 /sdd:propose --codex 和 /sdd:verify --codex 复用。
+  统一封装 codex CLI 调用 —— 供 /spec:propose --codex 和 /spec:verify --codex 复用。
 
 .DESCRIPTION
   把 codex 异构审查的全部调用机制收在一处（单一真相源），命令文件只调本脚本，不再各自内联。

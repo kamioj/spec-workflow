@@ -3,7 +3,7 @@ description: 拷问偏好型决策点。用 AskUserQuestion 逐个消化 researc
 allowed-tools: Read, Edit, AskUserQuestion
 ---
 
-# /sdd:ask
+# /spec:ask
 
 ## 流程
 
@@ -34,8 +34,8 @@ allowed-tools: Read, Edit, AskUserQuestion
 
 | 情况 | 处理 |
 |---|---|
-| Open [TBD] 清空 | 停，提示"可以 /sdd:propose 了" |
-| 用户说"别问了" / "够了" | 停，剩余条目留 Open（/sdd:propose 前 hook 会拒绝执行） |
+| Open [TBD] 清空 | 停，提示"可以 /spec:propose 了" |
+| 用户说"别问了" / "够了" | 停，剩余条目留 Open（/spec:propose 前 hook 会拒绝执行） |
 | 拷问发散收不拢 | 停，汇报"已收集 N 条，剩余 M 条建议下次再谈" |
 
 ## 反模式
@@ -47,5 +47,5 @@ allowed-tools: Read, Edit, AskUserQuestion
 
 ## 不做的事
 
-- 不写 proposal.md（那是 /sdd:propose 的事）
-- 不修改 `## Practices` / `## Constraints`（那是 /sdd:research 的事）
+- 不写 proposal.md（那是 /spec:propose 的事）
+- 不修改 `## Practices` / `## Constraints`（那是 /spec:research 的事）

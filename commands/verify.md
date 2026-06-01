@@ -3,15 +3,15 @@ description: 验证当前改动。默认 Claude 自审三维（completeness / co
 allowed-tools: Read, Bash, Edit, Grep, Glob
 ---
 
-# /sdd:verify
+# /spec:verify
 
 ## 三种模式（flag）
 
 | 命令 | 行为 | 改代码 |
 |---|---|---|
-| `/sdd:verify` | Claude 自审三维 | ❌ |
-| `/sdd:verify --codex` | + codex 异构他审，出 findings | ❌ 只报告 |
-| `/sdd:verify --codex --fix` | codex 审 + 直接改 + Claude 二次验收 | ✅ |
+| `/spec:verify` | Claude 自审三维 | ❌ |
+| `/spec:verify --codex` | + codex 异构他审，出 findings | ❌ 只报告 |
+| `/spec:verify --codex --fix` | codex 审 + 直接改 + Claude 二次验收 | ✅ |
 
 `--fix` 必须配 `--codex`（单独 `--fix` 报错提示）。默认（无 flag）只做 Claude 自审，保持只读 reporter 定位。
 
@@ -38,7 +38,7 @@ allowed-tools: Read, Bash, Edit, Grep, Glob
 
 **调用机制全部封装在 `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1`**——Windows 绕坑（#336 bypass sandbox / #337 不走 node spawn）、`effort=low` 控成本、超时防卡死、残留进程清理、session 解析；"为什么必须这么调"的实测约束见脚本头注释（单一真相源）。
 
-**会话复用**：若 `spec/changes/<name>/.codex-session` 存在（`/sdd:propose --codex` 留下的），传 `-ResumeSession <id>` 续会话——codex 记得它审过的方案，能判断「**代码忠实实现方案了吗**」。无则省略该参数开新会话。
+**会话复用**：若 `spec/changes/<name>/.codex-session` 存在（`/spec:propose --codex` 留下的），传 `-ResumeSession <id>` 续会话——codex 记得它审过的方案，能判断「**代码忠实实现方案了吗**」。无则省略该参数开新会话。
 
 ```powershell
 $prompt = @"
@@ -48,7 +48,7 @@ $prompt = @"
 pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -TimeoutSec 300 -ProjectDir "<项目目录>" -ResumeSession "<id；无则省略此参数>"
 ```
 
-**默认（无 `--fix`）codex 只出 findings、不改代码**——报问题，由你看了走 `/sdd:apply` 改，或加 `--fix`。
+**默认（无 `--fix`）codex 只出 findings、不改代码**——报问题，由你看了走 `/spec:apply` 改，或加 `--fix`。
 
 ## --fix：codex 直接改 + Claude 二次验收
 
@@ -108,7 +108,7 @@ pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -Timeout
 
 ## 不做的事
 
-- 不主动推荐「下一步用哪个命令」——这是 `/sdd:status` 的职责，verify 只报告
-- 无 `--fix` 时不改代码（改是 `/sdd:apply` 的事）
-- 不改 proposal（`/sdd:revise` 的事）
-- 不归档（`/sdd:archive` 的事）
+- 不主动推荐「下一步用哪个命令」——这是 `/spec:status` 的职责，verify 只报告
+- 无 `--fix` 时不改代码（改是 `/spec:apply` 的事）
+- 不改 proposal（`/spec:revise` 的事）
+- 不归档（`/spec:archive` 的事）

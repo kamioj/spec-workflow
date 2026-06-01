@@ -3,7 +3,7 @@ description: 归档当前 change 到 spec/archive/YYYY-MM-DD-<name>/。仅用户
 allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 ---
 
-# /sdd:archive
+# /spec:archive
 
 ## 前置检查
 
@@ -11,7 +11,7 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
    - 有未提交改动 → 警告用户并问"先提交还是先归档"
    - 用户选"先归档"→ 继续；选"先提交"→ 退出，提示用户调 `git commit`
 2. **验证状态**：
-   - 推荐 `/sdd:verify` 全 pass 后再归档
+   - 推荐 `/spec:verify` 全 pass 后再归档
    - 未通过 → 提示但不强制（用户可能就是想归档失败的提案）
 
 ## 流程

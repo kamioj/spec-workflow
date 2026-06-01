@@ -4,9 +4,9 @@
 
 ## 何时存在
 
-由 `/sdd:propose` 生成（触发条件 + 生成步骤详见 [`commands/propose.md`](../../../commands/propose.md) "何时同时生成 tasks.md" 段）。
+由 `/spec:propose` 生成（触发条件 + 生成步骤详见 [`commands/propose.md`](../../../commands/propose.md) "何时同时生成 tasks.md" 段）。
 
-后续 `/sdd:apply` 按它推进、`/sdd:status` 读它报告进度、`/sdd:archive` 归档时打包。
+后续 `/spec:apply` 按它推进、`/spec:status` 读它报告进度、`/spec:archive` 归档时打包。
 
 ## 格式
 
@@ -86,10 +86,10 @@ deps 列全部前置的整合任务。典型：
 
 | 阶段 | 命令 | 操作 |
 |---|---|---|
-| 生成 | `/sdd:propose` | 跟 proposal.md 同步产出 |
-| 推进 | `/sdd:apply` | 按 deps 推进 → 完成时标 [x] |
-| 报告 | `/sdd:status` | 统计 X/Y 完成进度 |
-| 归档 | `/sdd:archive` | 打包到 spec/archive/ |
+| 生成 | `/spec:propose` | 跟 proposal.md 同步产出 |
+| 推进 | `/spec:apply` | 按 deps 推进 → 完成时标 [x] |
+| 报告 | `/spec:status` | 统计 X/Y 完成进度 |
+| 归档 | `/spec:archive` | 打包到 spec/archive/ |
 
 ## 反模式
 
