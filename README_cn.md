@@ -194,8 +194,11 @@ graph LR
 │   ├── research.md   必有          # 当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
 │   ├── research/     可选          # 调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
 │   ├── design.md     可选          # 技术设计（架构 / 接口 / 数据模型）
-│   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
-│   └── tasks.md      可选          # 多执行体协作清单
+│   ├── proposal.md   必有          # 方案终态（含 APPROVED+fp / VERIFIED 标记）
+│   ├── tasks.md      可选          # 多执行体协作清单
+│   ├── test-checklist.md 可选      # 验收契约（T-N 可勾，进指纹）
+│   ├── .fingerprint.json 自动      # 契约指纹（approval 铸，per-file sha256）
+│   └── verdict.md    自动          # 校验裁决（逐点 + 三维 + 分诊）
 └── archive/<YYYY-MM-DD-name>/      # 已归档 change
 ```
 

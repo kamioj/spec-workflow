@@ -194,8 +194,11 @@ What the plugin writes into your project when you run it:
 │   ├── research.md   required      # current research (practices + constraints + open decisions), single file
 │   ├── research/     optional      # discarded-direction drafts for this change (research.md snapshots, no markers/links, revivable)
 │   ├── design.md     optional      # technical design (architecture / interfaces / data model)
-│   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
-│   └── tasks.md      optional      # multi-executor task list
+│   ├── proposal.md   required      # the final solution (carries APPROVED+fp / VERIFIED markers)
+│   ├── tasks.md      optional      # multi-executor task list
+│   ├── test-checklist.md optional  # acceptance contract (T-N checklist, part of the fingerprint)
+│   ├── .fingerprint.json auto      # contract fingerprint (minted at approval, per-file sha256)
+│   └── verdict.md    auto          # verification verdict (per-point + 3 axes + triage)
 └── archive/<YYYY-MM-DD-name>/      # archived changes
 ```
 

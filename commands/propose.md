@@ -60,6 +60,21 @@ hook 已在命令前扫描 research.md。如果 hook 阻断 → 转 `/spec:ask` 
 
 **详细格式 + 字段规则 + 完成标注 + 生命周期** → [`skills/core/references/tasks-spec.md`](../skills/core/references/tasks-spec.md)
 
+## 同时产出 test-checklist.md（验收契约）
+
+proposal 写完，从 `## What` + `## Risk` 提炼**可验收的测试点**，写 `spec/changes/<name>/test-checklist.md`：
+
+```markdown
+# Test Checklist: <change-name>
+
+- [ ] T-1: <可观测、可判定的验收条件>
+- [ ] T-2: ...
+```
+
+- 每点一个稳定 ID `T-N`，描述**可观测、可判定**的验收条件（不是实现步骤）。
+- 它是**契约的一部分**（进指纹，approval 时一并冻结），也是 `/spec:verify` 逐点核验的依据。
+- 纯文档 / 配置类、无行为可验收的改动可省略；有代码行为的改动应有。
+
 ## --codex：方案异构挑刺（可选）
 
 带 `--codex` 时，proposal.md 写完后**显式**调 codex 对方案做 adversarial 挑刺——在 HARD GATE 决策前，用异构模型暴露方案的逻辑漏洞 / 被忽略的失败模式 / 过度乐观的假设。

@@ -10,9 +10,10 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 1. **git status 检查**：
    - 有未提交改动 → 警告用户并问"先提交还是先归档"
    - 用户选"先归档"→ 继续；选"先提交"→ 退出，提示用户调 `git commit`
-2. **验证状态**：
-   - 推荐 `/spec:verify` 全 pass 后再归档
-   - 未通过 → 提示但不强制（用户可能就是想归档失败的提案）
+2. **验证门**（`check-archive-gate.ps1` 在 `/spec:archive` 前硬拦）：
+   - 活跃 change 必须有 `VERIFIED ... verdict:pass` 标记，且**裁决时的契约指纹 == 当前指纹**
+   - 没验证通过 / 验证后又改了契约 → **hook 拒绝归档**，提示先 `/spec:verify` 跑到 pass
+   - **废弃归档例外**：用户明说"这方向废了"→ 用 `/spec:archive --abandon`，归档门放行（失败提案不要求 VERIFIED），走下方「失败 / 废弃归档」
 
 ## 流程
 
@@ -32,7 +33,7 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 
 ## 失败 / 废弃归档
 
-change 是放弃的（用户说"这方向不对，废了"）：
+change 是放弃的（用户说"这方向不对，废了"）→ 用 **`/spec:archive --abandon`**（归档门放行、跳过 VERIFIED 要求）：
 - 归档路径：`spec/archive/YYYY-MM-DD-<name>-abandoned/`
 - 目录里加 `ABANDONED.md` 写明放弃原因
 
