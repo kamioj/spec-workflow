@@ -22,22 +22,18 @@ SOFTWARE.
 
 ---
 
-NOTICE — Third-party content
+NOTICE — Third-party attribution
 
-This repository's `skills/workflow/references/` directory contains 14 language and
-framework style guides (alibaba-java, bulletproof-react, airbnb-javascript-style,
-google-typescript-style, etc.) which are copyrighted by their respective authors.
-They are included for personal reference and learning purposes only and are NOT
-covered by the MIT License above.
+The guides under `skills/workflow/references/` are the author's own distillations of
+key points from publicly available language and framework style specifications
+(e.g. Alibaba Java, Google TypeScript Style, Airbnb JavaScript). They summarize rather
+than reproduce the originals; each file's frontmatter `source` field links to the
+upstream specification — follow those links for the full text.
 
-`skills/workflow/references/agent-principles.md` and `skills/workflow/references/frontend-aesthetics.md`
-contain prompts from Anthropic's official Claude Code documentation
-(https://code.claude.com/docs/). These are copyrighted by Anthropic and included
-for personal study only.
+`bulletproof-react.md` is a key-points summary of bulletproof-react
+(https://github.com/alan2207/bulletproof-react), MIT-licensed.
 
-If this repository is ever published to a public marketplace or open-source
-community, the maintainer must:
+`agent-principles.md` and `frontend-aesthetics.md` are original write-ups synthesized
+from common industry engineering and design consensus.
 
-1. Clean up or replace the `references/` directory with original content
-2. Remove or significantly rewrite the Anthropic prompt references
-3. Update this NOTICE and the License section in README.md accordingly
+All of the above is released under the MIT License above.
