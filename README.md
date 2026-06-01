@@ -86,14 +86,14 @@ Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
 
 ### 2 hard-constraint hooks
 
-On the `UserPromptSubmit` event, **shell scripts block** any command that breaks the flow:
+**Shell scripts block** anything that breaks the flow — one on `UserPromptSubmit`, one on `PreToolUse`:
 
-| Hook | Fires before | What it blocks |
+| Hook | Event / trigger | What it blocks |
 |---|---|---|
-| `check-tbd.ps1` | `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
-| `check-gate.ps1` | `/spec:apply` | blocks if proposal.md has no `<!-- APPROVED -->` |
+| `check-tbd.ps1` | UserPromptSubmit · `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
+| `check-source-gate.ps1` | PreToolUse · `Write\|Edit\|MultiEdit` | blocks writing source outside `spec/` when the active change isn't APPROVED or its contract fingerprint has drifted |
 
-**Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
+**Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**. The source gate fires on the *action*, not the command name, so even the one-shot `/spec:workflow` can't slip past it.
 
 ### 2 development agents
 
@@ -160,8 +160,8 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── commands/                       # 11 slash commands
 ├── hooks/                          # hard constraints (pwsh)
 │   ├── hooks.json
-│   ├── check-tbd.ps1
-│   └── check-gate.ps1
+│   ├── check-tbd.ps1                # UserPromptSubmit: [TBD] gate before propose
+│   └── check-source-gate.ps1        # PreToolUse: contract-fingerprint gate before writing source
 ├── agents/                         # development agents
 │   ├── spec-frontend-dev.md
 │   └── spec-backend-dev.md

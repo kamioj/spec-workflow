@@ -86,14 +86,14 @@ claude plugin install spec@spec-workflow
 
 ### 2 个硬约束 Hook
 
-通过 `UserPromptSubmit` 事件，**shell 脚本拦截**违反流程的命令：
+**shell 脚本拦截**违反流程的动作——一个挂 `UserPromptSubmit`，一个挂 `PreToolUse`：
 
-| Hook | 何时拦 | 拦什么 |
+| Hook | 事件 / 触发 | 拦什么 |
 |---|---|---|
-| `check-tbd.ps1` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.ps1` | `/spec:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
+| `check-tbd.ps1` | UserPromptSubmit · `/spec:propose` | research.md 还有 `[TBD-N]` 就拒绝 |
+| `check-source-gate.ps1` | PreToolUse · `Write\|Edit\|MultiEdit` | 写 `spec/` 外源码、但活跃 change 未 APPROVED 或契约指纹漂移 → 拒绝 |
 
-**软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
+**软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。源码门拦的是**动作**而非命令名，连一把梭 `/spec:workflow` 都绕不过。
 
 ### 2 个开发 Agent
 
@@ -160,8 +160,8 @@ graph LR
 ├── commands/                       # 11 个 slash 命令
 ├── hooks/                          # 硬约束（pwsh 实现）
 │   ├── hooks.json
-│   ├── check-tbd.ps1
-│   └── check-gate.ps1
+│   ├── check-tbd.ps1                # UserPromptSubmit：propose 前的 [TBD] 门
+│   └── check-source-gate.ps1        # PreToolUse：写源码前的契约指纹门
 ├── agents/                         # 开发 agent
 │   ├── spec-frontend-dev.md
 │   └── spec-backend-dev.md
