@@ -1,13 +1,13 @@
 <div align="center">
 
-# kamioj-spec
+# spec-workflow
 
 **Spec-driven development plugin for Claude Code**
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-spec)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/kamioj-spec)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -24,11 +24,11 @@ Two paradigms already dominate AI-assisted spec-driven development:
 - **Fast lane** — start coding right away and let hooks catch the mistakes (hookify, or a stripped-down superpowers brainstorm).
 - **Heavy lane** — spec everything up front, but down a rigid track (OpenSpec's 4 commands, superpowers brainstorm's 9 steps).
 
-**kamioj-spec takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 11 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Two hard-constraint hooks make sure the workflow stops where it has to.
+**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 11 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Two hard-constraint hooks make sure the workflow stops where it has to.
 
 ### Comparison
 
-| Dimension | kamioj-spec | OpenSpec | superpowers |
+| Dimension | spec-workflow | OpenSpec | superpowers |
 |---|---|---|---|
 | Stage gating | explicit HARD GATE + hook enforcement | loose, advisory warnings | rigid 9-step track |
 | Open questions `[TBD]` | allowed, but a hook forces them closed | Open Questions can linger | banned — resolve on the spot |
@@ -49,8 +49,8 @@ Built for one person making large changes, with guardrails — stricter than Ope
 $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
 
 # Register the marketplace and install the plugin
-claude plugin marketplace add kamioj/kamioj-spec
-claude plugin install sdd@kamioj-spec
+claude plugin marketplace add kamioj/spec-workflow
+claude plugin install spec@spec-workflow
 ```
 
 ### Try it
@@ -210,7 +210,7 @@ After changing plugin content:
 git add . && git commit -m "..."
 git push
 
-claude plugin marketplace update kamioj-spec    # sync the cache
+claude plugin marketplace update spec-workflow    # sync the cache
 # restart claude — hooks only load on startup
 ```
 

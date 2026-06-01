@@ -1,13 +1,13 @@
 <div align="center">
 
-# kamioj-spec
+# spec-workflow
 
 **Spec-driven development plugin for Claude Code**
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/kamioj-spec)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/kamioj-spec)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -24,11 +24,11 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**kamioj-spec 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
+**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 2 个硬约束 hook，让"该停的地方真停下来"。
 
 ### Comparison
 
-| 维度 | kamioj-spec | OpenSpec | superpowers |
+| 维度 | spec-workflow | OpenSpec | superpowers |
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
@@ -49,8 +49,8 @@ AI 辅助的 spec-driven development 已有两种范式：
 $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
 
 # 注册 marketplace + 装 plugin
-claude plugin marketplace add kamioj/kamioj-spec
-claude plugin install sdd@kamioj-spec
+claude plugin marketplace add kamioj/spec-workflow
+claude plugin install spec@spec-workflow
 ```
 
 ### Try it
@@ -210,7 +210,7 @@ graph LR
 git add . && git commit -m "..."
 git push
 
-claude plugin marketplace update kamioj-spec    # 同步 cache
+claude plugin marketplace update spec-workflow    # 同步 cache
 # 重启 claude（hook 必须重启加载）
 ```
 
