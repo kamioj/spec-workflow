@@ -1,50 +1,59 @@
 ---
-description: 派 researcher 子代理调研业界做法 + 关键约束，产出 research.md。首次进入或重指定方向都走这个；重做时旧产物归档不删
-allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
+description: 派 researcher 子代理调研业界做法 + 关键约束。每个方向产出 research/<title>-research.md，research.md 当索引。换方向 = 累积新方向，不覆盖不归档
+allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, date:*)
 ---
 
 # /spec:research
 
 调研方向：$ARGUMENTS
 
+## 产物结构（详见 [`research-spec.md`](../skills/core/references/research-spec.md)）
+
+```
+spec/changes/<name>/
+├── research.md                       ← 索引：Directions + Open[TBD] + Decided
+└── research/
+    └── <title>-research.md           ← 每个方向一份：Practices + Constraints
+```
+
 ## 流程
 
 1. **确认 change 目录**：
-   - 有未归档 change 且方向相符 → 续做（在原 research.md 追加 / 修订）
-   - 有未归档 change 但方向变了 → 走下方「重做调研」（旧产物链整体归档作废，不只 research.md）
-   - 无 → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼
-2. **派 `@researcher` 子代理**调研业界做法：
-   - WebSearch 关键技术决策点的 A/B/C 方案对比、踩坑、benchmark
-   - 收集硬约束（兼容性 / 性能目标 / 安全要求 / 依赖版本）
+   - 无活跃 change → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼，建 `research/` 子目录
+   - 有活跃 change 且**方向相符** → 续做：在该方向的 `research/<title>-research.md` 追加 / 修订
+   - 有活跃 change 但**方向变了** → 走下方「换方向」（累积新方向，**不覆盖、不归档**）
+2. **概括方向 → 定标题**：把 $ARGUMENTS 概括成一个英文 kebab 标题（如 `caffeine-vs-redis`），落 `research/<title>-research.md`
+3. **派 `@researcher` 子代理**调研，写该方向正文：
+   - WebSearch 关键技术决策点的 A/B/C 方案对比、踩坑、benchmark → `## Practices`
+   - 收集硬约束（兼容性 / 性能 / 安全 / 依赖版本）→ `## Constraints`
    - 引用必须给 URL
-3. 主对话 Grep / Glob 项目内相关模块，理清调用链
-4. **写 research.md**——详细格式 + 段职责 + [TBD] 编号规则 → [`skills/core/references/research-spec.md`](../skills/core/references/research-spec.md)
-5. 标 `[TBD-N]` 偏好型决策点：
-   - **事实型**（读代码 / 查文档能定死）→ Claude 自己定，标"按现状定：X"
-   - **偏好型**（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
-   - 拿不准当偏好型，**严禁把偏好型当事实型跳过**
+4. 主对话 Grep / Glob 项目内相关模块，理清调用链
+5. **更新索引 `research.md`**：
+   - `## Directions` 追加一行指向新方向正文，标 `[active]`
+   - 标 `[TBD-N]` 偏好型决策点到 `## Open`（编号全局续上）：
+     - **事实型**（读代码 / 查文档能定死）→ Claude 自己定，标"按现状定：X"
+     - **偏好型**（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
+     - 拿不准当偏好型，**严禁把偏好型当事实型跳过**
 
-## 重做调研（用户传入新方向）
+## 换方向（用户传入新方向）
 
-方向变了 = **整条产物链作废**（旧 design/proposal 都是从旧方向推出来的）：
+调研产物独立自洽、互不污染——换方向是**累积**，不是作废：
 
-1. 旧 `research.md` → `spec/changes/<name>/archive/research-YYYYMMDD-HHMM.md`
-2. **旧 `design.md` / `proposal.md` / `tasks.md`（若存在）一并移入 `archive/`** —— 不归档会让新一轮 `/spec:propose` 读到过时的 `## Interfaces`、`/spec:apply` 按过时契约派单
-3. 旧 `[TBD]` / `Decided` 不沿用（除非用户明说"沿用"）
-4. 重写 research.md，[TBD] 重新挖
+1. 新建 `research/<新标题>-research.md`，写该方向的 Practices / Constraints
+2. 索引 `## Directions`：新方向那行标 `[active]`，旧方向改标 `[superseded]`（**保留可查，不删不归档**）
+3. 新方向的 [TBD] 追加进索引 `## Open`，编号续上（不重置）
+4. **不动 design.md / proposal.md / tasks.md**——它们是已生成的独立方案，apply/verify 读 proposal+design 从不读 research，不会被新调研污染。要换方案是你主动重跑 `/spec:propose`
 
 ## references 加载（按需）
 
-只在写 Practices 时涉及具体技术栈才加载对应 reference：
-- Java + Spring → `skills/core/references/alibaba-java.md` + `java-conventions.md`
-- Vue / uni-app → `skills/core/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md`（uni-app 加 `uniapp-miniprogram.md`）
-- React → `skills/core/references/bulletproof-react.md` + `react-patterns.md`
-- 任何 TS → 叠加 `skills/core/references/google-ts-style.md` + `ts-conventions.md`
-- Python → `skills/core/references/python-conventions.md`
-- PHP → `skills/core/references/php-conventions.md`
-- Flutter → `skills/core/references/flutter-conventions.md`
+只在写 Practices 涉及具体技术栈才加载对应 reference：
+- Java + Spring → `${CLAUDE_PLUGIN_ROOT}/skills/core/references/alibaba-java.md` + `java-conventions.md`
+- Vue / uni-app → `vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md`（uni-app 加 `uniapp-miniprogram.md`）
+- React → `bulletproof-react.md` + `react-patterns.md`
+- 任何 TS → 叠加 `google-ts-style.md` + `ts-conventions.md`
+- Python → `python-conventions.md`；PHP → `php-conventions.md`；Flutter → `flutter-conventions.md`
 
-`/spec:research` 阶段**不强制读 reference**（节省 token），只在写到具体决策时按需 Read。
+`/spec:research` 阶段**不强制读 reference**（省 token），只在写到具体决策时按需 Read。
 
 ## 反作弊
 

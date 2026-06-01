@@ -192,11 +192,11 @@ graph LR
 ```
 <your-project>/spec/
 ├── changes/<change-name>/          # 活跃 change 工作区
-│   ├── research.md   必有          # 调研笔记 + 待决点
+│   ├── research.md   必有          # 调研索引（Directions + Open[TBD] + Decided）
+│   ├── research/     必有          # 各方向调研正文（<title>-research.md）
 │   ├── design.md     可选          # 技术设计（架构 / 接口 / 数据模型）
 │   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
-│   ├── tasks.md      可选          # 多执行体协作清单
-│   └── archive/                    # 重做时的旧产物备份
+│   └── tasks.md      可选          # 多执行体协作清单
 └── archive/<YYYY-MM-DD-name>/      # 已归档 change
 ```
 
