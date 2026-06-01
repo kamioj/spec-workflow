@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "specRoot": "spec/changes",
+  "sourceClassification": {
+    "rule": "path-prefix",
+    "artifactDir": "spec",
+    "comment": "写 <cwd>/spec/ 内 = 契约/决策产物（放行）；写其它位置 = 源码（受门管）"
+  },
+  "contract": {
+    "bundle": ["proposal.md", "design.md", "tasks.md", "test-checklist.md"],
+    "fingerprint": { "algo": "sha256", "granularity": "per-file", "normalizeEol": true }
+  },
+  "gates": {
+    "decisionToImplementation": {
+      "trigger": "write-source",
+      "require": ["approved-marker", "fingerprint-match"],
+      "hook": "PreToolUse:Write|Edit|MultiEdit"
+    }
+  },
+  "domains": {
+    "decision":       { "role": "产品", "reversible": true,  "isolation": "shared",   "model": "inherit" },
+    "implementation": { "role": "开发", "reversible": false, "isolation": "subagent", "model": "inherit" },
+    "verification":   { "role": "测试", "reversible": false, "isolation": "subagent", "model": "heterogeneous" }
+  }
+}
