@@ -72,7 +72,7 @@ claude plugin install sdd@kamioj-sdd
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
-| **入口** | `/sdd:auto <task>` | 全流程一把梭 |
+| **入口** | `/sdd:workflow <task>` | 全流程一把梭 |
 |  | `/sdd:status` | 报告当前 change 在哪一步 |
 | **信息收集** | `/sdd:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/sdd:ask` | 拷问消化 `[TBD]` |
@@ -165,7 +165,7 @@ graph LR
 ├── agents/                         # 开发 agent
 │   ├── sdd-frontend-dev.md
 │   └── sdd-backend-dev.md
-└── skills/workflow/
+└── skills/core/
     ├── SKILL.md                    # plugin 总览（共享精神）
     └── references/                 # 知识库
         ├── proposal-spec.md        # 产物 spec：完整格式 + HARD GATE 规则
@@ -226,7 +226,7 @@ claude --plugin-dir .
 
 ## Documentation
 
-- [skills/workflow/SKILL.md](skills/workflow/SKILL.md) — 共享精神（HARD GATE / 拷问规则 / 卡死保护 / 反作弊）
+- [skills/core/SKILL.md](skills/core/SKILL.md) — 共享精神（HARD GATE / 拷问规则 / 卡死保护 / 反作弊）
 - [Claude Code Plugin 官方文档](https://code.claude.com/docs/en/plugins) — 上游 plugin 机制参考
 
 ---

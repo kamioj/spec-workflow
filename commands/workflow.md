@@ -1,8 +1,9 @@
 ---
 description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷问必停、遇到 HARD GATE 必停。兼容旧 /sdd 入口。触发词：先 spec / 提案 / 先设计 / 先出方案
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
-# /sdd:auto
+# /sdd:workflow
 
 任务：$ARGUMENTS
 
@@ -18,6 +19,7 @@ description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷
 2. **`/sdd:ask`** — 用 AskUserQuestion 逐个消化 `[TBD]` → 移到 `## Decided`
    - 期间可能浮现新 [TBD]，加入清单继续问
 3. **判断是否需要 `/sdd:design`** — 满足任一则调：
+   - **跨前后端**（同时改 UI 和服务端，含接口契约）← 此场景下 design 是**必须**，非可选
    - 接口数 >3 个
    - 需要架构图 / 数据流图 / 序列图
    - 决策深度论证 >300 字

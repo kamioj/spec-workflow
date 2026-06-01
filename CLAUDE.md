@@ -57,7 +57,7 @@ hook 约定（改 hook 时必须守）：
 ## 架构大图：命令 + agent + 产物
 
 **11 个独立 slash 命令**（`commands/*.md`），每个可单独触发、可重入、可单点重做——这是相对 OpenSpec（4 命令一把梭）/ superpowers（9 步硬流程）的定位差异。典型流：
-`research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`。`/sdd:auto` 是全流程一把梭，`/sdd:status` 报告当前在哪一步。
+`research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`。`/sdd:workflow` 是全流程一把梭，`/sdd:status` 报告当前在哪一步。
 
 **HARD GATE 机制**（贯穿 propose/revise/apply）：
 - propose/revise 写完 proposal **必须输出固定的 `<HARD-GATE>` 收尾块**，然后停手等用户。

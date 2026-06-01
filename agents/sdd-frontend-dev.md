@@ -33,9 +33,9 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 | 派遣 prompt 含 | 来自 flag | 启用并 Read |
 |---|---|---|
-| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/workflow/references/agent-principles.md` § 一 |
-| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/workflow/references/agent-principles.md` § 二 |
-| "启用 anti-ai-slop" | `design` | `${CLAUDE_PLUGIN_ROOT}/skills/workflow/references/frontend-aesthetics.md` |
+| "启用 anti-laziness" | `solid` | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/agent-principles.md` § 一 |
+| "启用 anti-hallucination" | `verify` | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/agent-principles.md` § 二 |
+| "启用 anti-ai-slop" | `design` | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/frontend-aesthetics.md` |
 
 **默认不读**这三份 reference——保持轻量，避免在工具型 UI / 内部页 / 调试页里误判过度保守。
 
@@ -52,12 +52,12 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 | 项目栈 | 必读 references |
 |---|---|
-| Vue | `skills/workflow/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` |
-| uni-app / 小程序 | 上述 Vue 基础上 + `skills/workflow/references/uniapp-miniprogram.md` |
-| React | `skills/workflow/references/bulletproof-react.md` + `react-patterns.md` + `js-style.md` + `css-style.md` |
-| 任何 TS 项目 | 在所属框架基础上叠加 `skills/workflow/references/google-ts-style.md` + `ts-conventions.md` |
-| 纯 HTML / 原生 CSS | `skills/workflow/references/css-style.md` + `js-style.md` |
-| Flutter / Dart | `skills/workflow/references/flutter-conventions.md`（虽是移动端，归属前端） |
+| Vue | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` |
+| uni-app / 小程序 | 上述 Vue 基础上 + `${CLAUDE_PLUGIN_ROOT}/skills/core/references/uniapp-miniprogram.md` |
+| React | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/bulletproof-react.md` + `react-patterns.md` + `js-style.md` + `css-style.md` |
+| 任何 TS 项目 | 在所属框架基础上叠加 `${CLAUDE_PLUGIN_ROOT}/skills/core/references/google-ts-style.md` + `ts-conventions.md` |
+| 纯 HTML / 原生 CSS | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/css-style.md` + `js-style.md` |
+| Flutter / Dart | `${CLAUDE_PLUGIN_ROOT}/skills/core/references/flutter-conventions.md`（虽是移动端，归属前端） |
 
 栈检测方法：Read `package.json` / `pubspec.yaml` / `manifest.json` 等根标志文件。
 

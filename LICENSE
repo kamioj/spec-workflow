@@ -24,7 +24,7 @@ SOFTWARE.
 
 NOTICE — Third-party attribution
 
-The guides under `skills/workflow/references/` are the author's own distillations of
+The guides under `skills/core/references/` are the author's own distillations of
 key points from publicly available language and framework style specifications
 (e.g. Alibaba Java, Google TypeScript Style, Airbnb JavaScript). They summarize rather
 than reproduce the originals; each file's frontmatter `source` field links to the
