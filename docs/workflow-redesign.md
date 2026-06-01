@@ -213,19 +213,19 @@ predicate:
 
 最高杠杆是**决策→实施那一个门**(它吃掉绝大部分价值)。建议:
 
-**v1(最小可用)**
-1. 计划层声明文件(域 + 转移 + 指纹规则)
-2. 契约指纹(SLSA 结构、per-file digest、写进 APPROVED 标记)
-3. **一个 PreToolUse 门**:写源码要 APPROVED + 当前契约 hash == fp
-→ 这一版已干掉:一把梭绕过、批准后偷改、上游漂移不失效。
+**v1(最小可用)** ✅ 已落地（commit aa23ca8）
+1. 计划层声明文件 `config/workflow-model.json`
+2. 契约指纹 `scripts/contract-lib.ps1`（per-file sha256，剔除标记+规一化）+ `mint-fingerprint.ps1`
+3. **PreToolUse 门** `hooks/check-source-gate.ps1`：写源码要 APPROVED + 当前契约 hash == fp
+→ 已干掉:一把梭绕过、批准后偷改、上游漂移不失效。fixture 6/6。
 
-**v2(补完状态机)**
-4. 校验域裁决产物 + archive 被 PASS gate
-5. 两条回流(bug 快道 / 需求重审)+ 质量报告 + 分诊留痕
+**v2(补完状态机)** ✅ 已落地（commit 2e3e4d6）
+4. 裁决产物 `verdict.md` + `scripts/stamp-verdict.ps1`（VERIFIED 标记）+ archive 门 `hooks/check-archive-gate.ps1`（PASS + fp 匹配，`--abandon` 豁免）
+5. 两条回流（bug 快道指纹不变 / 需求重审重铸）+ `test-checklist.md` 验收契约 + 分诊留痕；PreToolUse 门防误分诊。fixture 5/5。
 
-**v3(隔离/模型)**
-6. 每域 `isolation` / `model` 可配 + 安全默认 + 回写裁决
-7. hook 外化成声明文件解释器(Codex 可移植性)
+**v3(隔离/模型)** ⬜ 待做
+6. 每域 `isolation`（shared/subagent）/ `model`（inherit/指定/异构）可配 + 安全默认（校验=subagent+异构）+ 回写 verdict
+7. hook 外化成 `config/workflow-model.json` 的解释器（Codex 可移植性：换薄 bash 解释器，规则不变）
 
 ---
 
