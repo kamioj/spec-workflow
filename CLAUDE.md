@@ -28,7 +28,8 @@ Get-ChildItem -Recurse -Filter *.json | ForEach-Object { Get-Content $_.FullName
 
 单独测一个 hook（hook 从 stdin 读 JSON，exit 2 = 阻断，exit 0 = 放行）：
 ```pwsh
-'{"user_prompt":"/spec:apply","cwd":"D:\\path\\to\\test-project"}' | pwsh -NoProfile -File hooks/check-gate.ps1 ; "exit=$LASTEXITCODE"
+# PreToolUse 源码门（写 spec/ 外源码时校验契约已批准且指纹未漂移）：
+'{"cwd":"D:\\path\\to\\test-project","tool_input":{"file_path":"src/app.js"}}' | pwsh -NoProfile -File hooks/check-source-gate.ps1 ; "exit=$LASTEXITCODE"
 ```
 
 ## 平台约束
@@ -42,17 +43,19 @@ Get-ChildItem -Recurse -Filter *.json | ForEach-Object { Get-Content $_.FullName
 1. **软约束**（命令 / agent 的 markdown prompt 里写"必须做 X"）——模型可能违反。
 2. **硬约束**（`hooks/*.ps1` shell 脚本拦截）——违反率 0。
 
-两个 hook 都挂在 `UserPromptSubmit` 事件（见 `hooks/hooks.json`），靠 **正则匹配用户输入里的命令名** 决定是否介入：
+两个 hook（见 `hooks/hooks.json`）挂在不同事件：
 
-| Hook | 匹配 | 拦什么 | 不满足时 |
-|---|---|---|---|
-| `check-tbd.ps1` | `/spec:propose` | research.md 的 `## Open [TBD]` 段还有 `[TBD-N]` | `exit 2`，提示走 `/spec:ask` |
-| `check-gate.ps1` | `/spec:apply` | proposal.md 缺 `<!-- APPROVED: ... -->` 标记 | `exit 2`，提示先过 HARD GATE |
+| Hook | 事件 | 匹配 | 拦什么 | 不满足时 |
+|---|---|---|---|---|
+| `check-tbd.ps1` | UserPromptSubmit | 输入含 `/spec:propose` | research.md 的 `## Open [TBD]` 段还有 `[TBD-N]` | `exit 2`，提示走 `/spec:ask` |
+| `check-source-gate.ps1` | PreToolUse | `Write\|Edit\|MultiEdit` | 写 `spec/` 外源码，但活跃 change 未 APPROVED 或契约指纹漂移 | `exit 2`，提示先 `/spec:apply` 铸指纹 |
+
+`check-source-gate.ps1` 是**动作级门**（决策→实施 边界）：不看命令名、只看"写源码"这个动作，所以手动逐命令和 `/spec:workflow` 一把梭一视同仁——后者再也绕不过。
 
 hook 约定（改 hook 时必须守）：
-- stdin JSON 的字段名是 **`user_prompt`**（不是 `prompt`）+ `cwd`。这点踩过坑，README 里专门记了证据。
+- stdin JSON 字段名按事件不同：UserPromptSubmit 是 **`user_prompt`**（不是 `prompt`）+ `cwd`；PreToolUse 是 **`tool_input.file_path`** + `cwd`。
 - **fail-open**：hook 自身报错走 catch → `exit 0` 放行。hook 的 bug 绝不能阻断用户正常流程。
-- `check-gate.ps1` 的 APPROVED 正则接受多种格式（`<!-- APPROVED:` / `## HARD GATE...APPROVED` / `APPROVED: YYYY-MM-DD`），改标记格式时正则要一起改。
+- 契约指纹由 `scripts/contract-lib.ps1` 统一算（per-file sha256，**剔除 APPROVED/VERIFIED 标记行 + 规一化行尾**——否则 mint 写完标记会让自己刚算的指纹漂移）；mint（`scripts/mint-fingerprint.ps1`）与 gate 必须用同一套，改算法两处一起改。契约包定义在 `config/workflow-model.json`。
 
 ## 架构大图：命令 + agent + 产物
 
@@ -61,7 +64,7 @@ hook 约定（改 hook 时必须守）：
 
 **HARD GATE 机制**（贯穿 propose/revise/apply）：
 - propose/revise 写完 proposal **必须输出固定的 `<HARD-GATE>` 收尾块**，然后停手等用户。
-- `<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 在执行前自动追加**（视"用户主动调 apply"为批准动作）——**不是** propose 追加，**不需要**用户回"go"。这是近期重构掉的冗余（见 git log `fix: 简化 HARD GATE`），改这块逻辑时注意别把"回复 go"加回来。
+- `<!-- APPROVED: YYYY-MM-DD HH:mm fp:sha256:<combined> -->` 标记由 **`/spec:apply` 调 `scripts/mint-fingerprint.ps1` 铸造**（视"用户主动调 apply"为批准动作，同时算契约指纹写 `.fingerprint.json`）——**不是** propose 追加，**不需要**用户回"go"。改这块别把"回复 go"加回来。
 - HARD GATE 输出后**绝不写项目源码**，等下一条命令。
 
 **2 个开发 agent**（`agents/sdd-{frontend,backend}-dev.md`），在 `/spec:apply` 阶段派遣：

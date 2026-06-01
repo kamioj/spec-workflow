@@ -33,15 +33,15 @@
 
 ## HARD GATE 批准标记
 
-`<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 命令在执行前自动追加**（视用户主动调用为批准动作）。
+`<!-- APPROVED: YYYY-MM-DD HH:mm fp:sha256:<combined> -->` 标记由 **`/spec:apply` 调 `scripts/mint-fingerprint.ps1` 铸造**（视用户主动调用为批准动作）：算契约包各文件 sha256 写 `.fingerprint.json`，并在 proposal 末尾写此标记。
 
-时间戳用当前 ISO 本地时间。
+时间戳用当前本地时间，`fp` 是契约包的 combined 指纹。
 
-此标记同时是：
-- `check-gate.ps1` hook 放行 `/spec:apply` 的契约
-- **审计记录**：git log 能看到何时批准过
+此标记 + `.fingerprint.json` 同时是：
+- `check-source-gate.ps1`（PreToolUse 动作级门）放行"写 `spec/` 外源码"的契约：要 APPROVED 且当前契约指纹未漂移
+- **审计记录**：git log 能看到何时、对哪版契约（fp）批准过
 
-**propose 不直接追加 APPROVED**——HARD GATE 是用户决策节点，APPROVED 是 apply 的契约动作。两者分离让 UX 流程少一步"回复 go"的冗余。
+**propose 不追加 APPROVED**——HARD GATE 是用户决策节点，APPROVED + 指纹由 apply 铸造。两者分离让 UX 少一步"回复 go"的冗余。
 
 ## /spec:revise 修订
 
