@@ -48,4 +48,4 @@ allowed-tools: Read, Edit, AskUserQuestion
 ## 不做的事
 
 - 不写 proposal.md（那是 /spec:propose 的事）
-- 不修改方向正文（`research/` 下的 `## Practices` / `## Constraints`，那是 /spec:research 的事）
+- 不动 `research/` 下的废稿；只在 research.md 上把 Open 消化进 Decided

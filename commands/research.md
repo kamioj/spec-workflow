@@ -1,5 +1,5 @@
 ---
-description: 派 researcher 子代理调研业界做法 + 关键约束。每个方向产出 research/<title>-research.md，research.md 当索引。换方向 = 累积新方向，不覆盖不归档
+description: 派 researcher 子代理调研业界做法 + 关键约束，写进 research.md（单文件，Open[TBD]/Decided 照旧维护）。换方向 = 先把当前 research.md 存成 research/ 废稿，再覆盖写新方向；旧废稿可随时捞回复活
 allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, date:*)
 ---
 
@@ -7,42 +7,66 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, date:*)
 
 调研方向：$ARGUMENTS
 
-## 产物结构（详见 [`research-spec.md`](../skills/core/references/research-spec.md)）
+## 产物结构
 
 ```
 spec/changes/<name>/
-├── research.md                       ← 索引：Directions + Open[TBD] + Decided
-└── research/
-    └── <title>-research.md           ← 每个方向一份：Practices + Constraints
+├── research.md                   ← 当前调研（单文件：Practices + Constraints + Open[TBD] + Decided）
+└── research/                     ← 本次提案的「调研方向废稿堆」（可选，换方向才产生）
+    └── <title>-research.md       ← 被弃方向的 research.md 整篇快照，无标记、无链接、可复活
+```
+
+- **research.md** 是**当前**调研，单文件，所有内容内联。`## Open [TBD]` / `## Decided` 维护方式跟以往一致。
+- **research/** 只放**废稿**——换方向时被弃的旧 research.md 整篇挪进来。**不做关联**：research.md 不链接它们，废稿也不挂任何状态标记。
+- 想回到旧方案 → 把对应废稿**捞回 research.md**（复活）。废稿只属于本次 change，归档时跟着走。
+
+## research.md 格式
+
+```markdown
+# Research: <change-name>
+
+## Practices
+- 方案 A：实现要点 / 性能 / 集成成本 / 踩坑
+- 方案 B：...
+关键参考：<URL>
+
+## Constraints
+- 兼容性 / 性能目标 / 依赖版本 / 安全要求
+
+## Open [TBD]
+- [TBD-1] <偏好型决策点>（候选 A / B / C，倾向 X，需用户确认）
+
+## Decided
+（拷问后从 Open 移来。格式：[DEC-N] <决策> | 来源 [TBD-N] | 理由）
 ```
 
 ## 流程
 
-1. **确认 change 目录**：
-   - 无活跃 change → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼，建 `research/` 子目录
-   - 有活跃 change 且**方向相符** → 续做：在该方向的 `research/<title>-research.md` 追加 / 修订
-   - 有活跃 change 但**方向变了** → 走下方「换方向」（累积新方向，**不覆盖、不归档**）
-2. **概括方向 → 定标题**：把 $ARGUMENTS 概括成一个英文 kebab 标题（如 `caffeine-vs-redis`），落 `research/<title>-research.md`
-3. **派 `@researcher` 子代理**调研，写该方向正文：
-   - WebSearch 关键技术决策点的 A/B/C 方案对比、踩坑、benchmark → `## Practices`
-   - 收集硬约束（兼容性 / 性能 / 安全 / 依赖版本）→ `## Constraints`
+1. **确认 change 目录**：无活跃 change → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼；有活跃 change 且方向相符 → 在 research.md 续写
+2. **派 `@researcher` 子代理**调研，写进 research.md：
+   - WebSearch 方案 A/B/C 对比、踩坑、benchmark → `## Practices`
+   - 硬约束（兼容性 / 性能 / 安全 / 依赖版本）→ `## Constraints`
    - 引用必须给 URL
-4. 主对话 Grep / Glob 项目内相关模块，理清调用链
-5. **更新索引 `research.md`**：
-   - `## Directions` 追加一行指向新方向正文，标 `[active]`
-   - 标 `[TBD-N]` 偏好型决策点到 `## Open`（编号全局续上）：
-     - **事实型**（读代码 / 查文档能定死）→ Claude 自己定，标"按现状定：X"
-     - **偏好型**（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
-     - 拿不准当偏好型，**严禁把偏好型当事实型跳过**
+3. 主对话 Grep / Glob 项目内相关模块，理清调用链
+4. **标 [TBD]**：偏好型决策点写进 `## Open`：
+   - 事实型（读代码 / 查文档能定死）→ 自己定，标"按现状定：X"
+   - 偏好型（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
+   - 拿不准当偏好型，**严禁把偏好型当事实型跳过**
 
 ## 换方向（用户传入新方向）
 
-调研产物独立自洽、互不污染——换方向是**累积**，不是作废：
+**硬步骤，顺序不能反**——research.md 会被覆盖，漏了存废稿旧方向就没了：
 
-1. 新建 `research/<新标题>-research.md`，写该方向的 Practices / Constraints
-2. 索引 `## Directions`：新方向那行标 `[active]`，旧方向改标 `[superseded]`（**保留可查，不删不归档**）
-3. 新方向的 [TBD] 追加进索引 `## Open`，编号续上（不重置）
-4. **不动 design.md / proposal.md / tasks.md**——它们是已生成的独立方案，apply/verify 读 proposal+design 从不读 research，不会被新调研污染。要换方案是你主动重跑 `/spec:propose`
+1. **先存废稿**：把当前 research.md **整篇**另存为 `research/<旧方向标题>-research.md`（`research/` 不存在先 mkdir）
+2. **再覆写**：把 research.md 重写为新方向的调研（Practices / Constraints）
+3. `## Open` / `## Decided` 更新到新方向当前思考
+4. **不动 design.md / proposal.md / tasks.md**——它们是已生成的独立方案，apply/verify 读 proposal+design 不读 research，不会被新调研污染
+
+## 复活旧方向（用户要回到之前方案）
+
+1. （当前方向还想留）→ 先按「换方向」第 1 步把当前 research.md 存成废稿
+2. 把目标废稿 `research/<title>-research.md` 内容**捞回 research.md**
+3. 按需更新 `## Open` / `## Decided`
 
 ## references 加载（按需）
 

@@ -169,7 +169,6 @@ graph LR
     ├── SKILL.md                    # plugin 总览（共享精神）
     └── references/                 # 知识库
         ├── proposal-spec.md        # 产物 spec：完整格式 + HARD GATE 规则
-        ├── research-spec.md
         ├── design-spec.md
         ├── tasks-spec.md
         ├── agent-principles.md     # opt-in: 反偷懒 + 反幻觉
@@ -192,8 +191,8 @@ graph LR
 ```
 <your-project>/spec/
 ├── changes/<change-name>/          # 活跃 change 工作区
-│   ├── research.md   必有          # 调研索引（Directions + Open[TBD] + Decided）
-│   ├── research/     必有          # 各方向调研正文（<title>-research.md）
+│   ├── research.md   必有          # 当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
+│   ├── research/     可选          # 调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
 │   ├── design.md     可选          # 技术设计（架构 / 接口 / 数据模型）
 │   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
 │   └── tasks.md      可选          # 多执行体协作清单

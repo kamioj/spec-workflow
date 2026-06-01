@@ -169,7 +169,6 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
     ├── SKILL.md                    # plugin overview (shared principles)
     └── references/                 # knowledge base
         ├── proposal-spec.md        # artifact spec: full format + HARD GATE rules
-        ├── research-spec.md
         ├── design-spec.md
         ├── tasks-spec.md
         ├── agent-principles.md     # opt-in: anti-laziness + anti-hallucination
@@ -192,8 +191,8 @@ What the plugin writes into your project when you run it:
 ```
 <your-project>/spec/
 ├── changes/<change-name>/          # active change workspace
-│   ├── research.md   required      # research index (directions + open decisions)
-│   ├── research/     required      # per-direction research docs (<title>-research.md)
+│   ├── research.md   required      # current research (practices + constraints + open decisions), single file
+│   ├── research/     optional      # discarded-direction drafts for this change (research.md snapshots, no markers/links, revivable)
 │   ├── design.md     optional      # technical design (architecture / interfaces / data model)
 │   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
 │   └── tasks.md      optional      # multi-executor task list
