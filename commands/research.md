@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
 
 1. **确认 change 目录**：
    - 有未归档 change 且方向相符 → 续做（在原 research.md 追加 / 修订）
-   - 有未归档 change 但方向变了 → 旧 `research.md` 移到 `archive/research-<timestamp>.md` 备份
+   - 有未归档 change 但方向变了 → 走下方「重做调研」（旧产物链整体归档作废，不只 research.md）
    - 无 → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼
 2. **派 `@researcher` 子代理**调研业界做法：
    - WebSearch 关键技术决策点的 A/B/C 方案对比、踩坑、benchmark
@@ -26,9 +26,12 @@ allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, cp:*, mv:*, date:*)
 
 ## 重做调研（用户传入新方向）
 
+方向变了 = **整条产物链作废**（旧 design/proposal 都是从旧方向推出来的）：
+
 1. 旧 `research.md` → `spec/changes/<name>/archive/research-YYYYMMDD-HHMM.md`
-2. 旧 `[TBD]` / `Decided` 不沿用（除非用户明说"沿用"）
-3. 重写 research.md，[TBD] 重新挖
+2. **旧 `design.md` / `proposal.md` / `tasks.md`（若存在）一并移入 `archive/`** —— 不归档会让新一轮 `/spec:propose` 读到过时的 `## Interfaces`、`/spec:apply` 按过时契约派单
+3. 旧 `[TBD]` / `Decided` 不沿用（除非用户明说"沿用"）
+4. 重写 research.md，[TBD] 重新挖
 
 ## references 加载（按需）
 
