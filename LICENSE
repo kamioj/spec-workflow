@@ -24,13 +24,13 @@ SOFTWARE.
 
 NOTICE — Third-party content
 
-This repository's `plugins/sdd/references/` directory contains 14 language and
+This repository's `skills/workflow/references/` directory contains 14 language and
 framework style guides (alibaba-java, bulletproof-react, airbnb-javascript-style,
 google-typescript-style, etc.) which are copyrighted by their respective authors.
 They are included for personal reference and learning purposes only and are NOT
 covered by the MIT License above.
 
-`plugins/sdd/references/agent-principles.md` and `plugins/sdd/references/frontend-aesthetics.md`
+`skills/workflow/references/agent-principles.md` and `skills/workflow/references/frontend-aesthetics.md`
 contain prompts from Anthropic's official Claude Code documentation
 (https://code.claude.com/docs/). These are copyrighted by Anthropic and included
 for personal study only.

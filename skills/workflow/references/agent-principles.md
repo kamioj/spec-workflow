@@ -15,15 +15,15 @@
 
 ---
 
-## 一、反偷懒：High-Quality General Solution
+## 一、反偷懒：写通用解，不为测试 hardcode
 
-官方原文（不修改）：
+核心原则：
 
-> Please write a high-quality, general-purpose solution using the standard tools available. Do not create helper scripts or workarounds to accomplish the task more efficiently. Implement a solution that works correctly for all valid inputs, not just the test cases. Do not hard-code values or create solutions that only work for specific test inputs. Instead, implement the actual logic that solves the problem generally.
->
-> Focus on understanding the problem requirements and implementing the correct algorithm. Tests are there to verify correctness, not to define the solution. Provide a principled implementation that follows best practices and software design principles.
->
-> If the task is unreasonable or infeasible, or if any of the tests are incorrect, please inform me rather than working around them. The solution should be robust, maintainable, and extendable.
+- 用标准工具写**高质量、通用**的解——别为了"更快完成"造 helper script 或 workaround
+- 实现对**所有合法输入**都正确的逻辑，不是只对测试用例正确；别 hardcode、别只为特定测试输入裁一个解
+- **测试是验证正确性的手段，不是定义解的依据**——理解需求、实现正确算法，而非"凑过测试"
+- 任务不合理 / 不可行 / 或测试本身有错 → **叫停汇报**，不许绕过硬凑
+- 解要 robust、可维护、可扩展
 
 ### 在 sdd 上下文里的含义
 
@@ -34,11 +34,13 @@
 
 ---
 
-## 二、反幻觉：Investigate Before Answering
+## 二、反幻觉：先调查，后回答
 
-官方原文（不修改）：
+核心原则：
 
-> Never speculate about code you have not opened. If the user references a specific file, you MUST read the file before answering. Make sure to investigate and read relevant files BEFORE answering questions about the codebase. Never make any claims about code before investigating unless you are certain of the correct answer - give grounded and hallucination-free answers.
+- **绝不臆测没打开过的代码**。用户提到某个具体文件 → 回答前**必须先 Read 它**
+- 回答代码库相关问题前，先调查、读完相关文件再下结论
+- 没调查清楚又不确定时，别下任何 claim——只给**有根据、无幻觉**的回答
 
 ### 在 sdd 上下文里的含义
 
@@ -52,7 +54,7 @@
 
 ## 三、协同精神（继承 sdd plugin 共享精神）
 
-来自 `skills/sdd/SKILL.md` 的反作弊原则，所有 agent 同样遵守：
+来自 `skills/workflow/SKILL.md` 的反作弊原则，所有 agent 同样遵守：
 
 1. **不伪造结果**：未实际跑通的命令 / 测试 / PoC**不许汇报为"成功"**。拿不到结果就明说"未跑通"+ 已试切入点，不许编 stdout / 不许裁失败行
 2. **不把绕过当解决**：mock 假响应、改 assert、patch 检查函数返回 true、跳过失败测试——这些**必须明说**"绕过，真因未解"，**禁止伪装为"已修复"**

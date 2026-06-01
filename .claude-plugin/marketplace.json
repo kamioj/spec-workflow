@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "sdd",
-      "source": "./plugins/sdd",
+      "source": "./",
       "description": "Spec-driven development plugin: research → ask → propose → apply → verify → archive 全流程，含 placeholder scan / HARD GATE 硬约束 hook 和前后端开发 agent",
       "version": "0.1.0",
       "author": {

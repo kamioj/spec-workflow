@@ -15,23 +15,24 @@
 
 ---
 
-## 官方原文（不修改）
+## 反 AI slop 核心原则
 
-> You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.
->
-> Focus on:
-> - **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
-> - **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and cultural aesthetics for inspiration.
-> - **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions.
-> - **Backgrounds**: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
->
-> Avoid generic AI-generated aesthetics:
-> - Overused font families (Inter, Roboto, Arial, system fonts)
-> - Clichéd color schemes (particularly purple gradients on white backgrounds)
-> - Predictable layouts and component patterns
-> - Cookie-cutter design that lacks context-specific character
->
-> Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
+> 综合业界前端设计共识整理。AI 倾向收敛到"泛而平庸"的输出，前端上即所谓 "AI slop"——反其道，做有辨识度、令人眼前一亮的界面。
+
+四个着力点：
+
+- **字体**：选有美感、独特的字体，避开 Arial / Inter 这类泛用字体
+- **配色**：定一套统一美学，用 CSS variables 保持一致；**主色突出 + 利落强调色** 胜过平均分布的怯懦配色，可从 IDE 主题、文化美学取灵感
+- **动效**：用动画做微交互，HTML 优先纯 CSS、React 用 Motion 库；**火力集中在高影响时刻**——一次精心编排的载入动画（错峰 reveal）比满屏零散微交互更出彩
+- **背景**：营造氛围和层次，别默认纯色——叠 CSS 渐变、几何图案、或贴合主题的情境效果
+
+避开 AI 默认审美：
+- 泛滥字体（Inter / Roboto / Arial / system fonts）
+- 陈词滥调配色（尤其白底紫渐变）
+- 可预测的布局和组件套路
+- 缺乏情境特征的千篇一律设计
+
+诀窍：在明暗主题、不同字体、不同美学间主动变化，别又收敛到"安全选择"（如 Space Grotesk）——跳出框框。
 
 ---
 

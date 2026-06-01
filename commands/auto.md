@@ -21,14 +21,14 @@ description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷
    - 接口数 >3 个
    - 需要架构图 / 数据流图 / 序列图
    - 决策深度论证 >300 字
-4. **`/sdd:propose`** — 写 proposal.md 的 `## Why / ## What / ## How / ## Risk` 四段
+4. **`/sdd:propose`** — 写 proposal.md 四段（重大方案可加 `--codex` 让 codex 异构挑刺）
    - 写前 hook 会扫 research.md `[TBD]` 是否清空（placeholder scan）
-5. **HARD GATE** — 输出固定收尾"=== 提案就绪 ===" 等用户回"开始/go/实施"
-   - 收到"开始"前**绝不写代码**
+5. **HARD GATE** — 输出固定收尾"=== 提案就绪 ==="，等用户确认
+   - **确认前绝不写代码**；满意 → 直接进 `/sdd:apply`（apply 自动追加 APPROVED，无需回 go）
    - 驳回 → 走 `/sdd:revise [section]`（微调）或 `/sdd:chat`（重聊方向）
 6. **`/sdd:apply`** — 实施代码，按 proposal/tasks 推进
    - 命令前 hook 会检查 proposal 含 APPROVED 标记
-7. **`/sdd:verify`** — 三维验证（completeness / correctness / coherence）
+7. **`/sdd:verify`** — 三维验证；关键改动可加 `--codex` 引入 codex 异构他审（`--fix` 让 codex 改）
 8. **等用户说"归档"** → `/sdd:archive`
 
 ## 中途允许的"插队"命令
