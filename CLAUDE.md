@@ -76,11 +76,11 @@ hook 约定（改 hook 时必须守）：
 ```
 <target-project>/spec/
 ├── changes/<change-name>/     活跃工作区
-│   ├── research.md  必有       调研 + [TBD] 待决点工作台
+│   ├── research.md  必有       调研索引（Directions + Open[TBD] + Decided）
+│   ├── research/    必有       各方向调研正文 <title>-research.md
 │   ├── design.md    可选       架构 / 接口契约 / 数据模型
 │   ├── proposal.md  必有       方案终态（四段 + APPROVED 标记）
-│   ├── tasks.md     可选       多执行体协作清单（owner + deps）
-│   └── archive/                重做时旧产物备份
+│   └── tasks.md     可选       多执行体协作清单（owner + deps）
 └── archive/<YYYY-MM-DD-name>/  已归档 change
 ```
 hook 据此判断状态：扫 `spec/changes/` 下非 `archive` 的目录当作"活跃 change"。

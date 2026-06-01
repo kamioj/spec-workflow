@@ -16,7 +16,7 @@ hook 已在命令前扫描 research.md。如果 hook 阻断 → 转 `/spec:ask` 
 
 ## 流程
 
-1. Read research.md（含 Practices / Constraints / Decided 三段）
+1. Read research.md 索引：读 `## Decided` + 定位 `[active]` 方向，Read 对应 `research/<title>-research.md`（Practices / Constraints）
 2. Read design.md（若存在）
 3. 写 `spec/changes/<name>/proposal.md`
 4. **输出 HARD GATE 收尾**

@@ -192,11 +192,11 @@ What the plugin writes into your project when you run it:
 ```
 <your-project>/spec/
 ├── changes/<change-name>/          # active change workspace
-│   ├── research.md   required      # research notes + open decisions
+│   ├── research.md   required      # research index (directions + open decisions)
+│   ├── research/     required      # per-direction research docs (<title>-research.md)
 │   ├── design.md     optional      # technical design (architecture / interfaces / data model)
 │   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
-│   ├── tasks.md      optional      # multi-executor task list
-│   └── archive/                    # prior artifacts, kept on redo
+│   └── tasks.md      optional      # multi-executor task list
 └── archive/<YYYY-MM-DD-name>/      # archived changes
 ```
 

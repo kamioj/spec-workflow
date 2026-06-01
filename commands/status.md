@@ -13,8 +13,8 @@ allowed-tools: Read, Glob, Bash(ls:*)
 
 1. **Glob `spec/changes/*/`** 列出所有未归档 change
 2. 对每个 change 检查产物存在性：
-   - `research.md`、`design.md`、`proposal.md`、`tasks.md`
-3. 读 `research.md` 统计 `[TBD-N]` 数量和 `## Decided` 段条目数
+   - `research.md`（索引）+ `research/` 下方向正文、`design.md`、`proposal.md`、`tasks.md`
+3. 读 `research.md` 索引统计 `## Directions` 方向数（active / superseded）、`[TBD-N]` 数量、`## Decided` 条目数
 4. 读 `proposal.md` 检查是否含 HARD GATE 批准标记（`<!-- APPROVED: YYYY-MM-DD HH:mm -->`）
 
 ## 输出格式
@@ -31,7 +31,8 @@ allowed-tools: Read, Glob, Bash(ls:*)
 ```
 活跃 change：<kebab-name>
 产物：
-  research.md ✓
+  research.md ✓（索引）
+    方向:       <K> 个（active: <title>）
     Open [TBD]: <N> 个
     Decided:    <M> 条
   design.md   <✓/✗>（未产出时备注是否需要）
