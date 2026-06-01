@@ -13,9 +13,9 @@ allowed-tools: Read, Glob, Bash(ls:*)
 
 1. **Glob `spec/changes/*/`** 列出所有未归档 change
 2. 对每个 change 检查产物存在性：
-   - `research.md`（当前调研）+ `research/` 下废稿（如有）、`design.md`、`proposal.md`、`tasks.md`
+   - `research.md`（当前调研）+ `research/` 废稿（如有）、`design.md`、`proposal.md`、`tasks.md`、`test-checklist.md`、`verdict.md`、`.fingerprint.json`
 3. 读 `research.md` 统计 `## Open [TBD]` 的 `[TBD-N]` 数量、`## Decided` 条目数；数 `research/` 下废稿数（如有）
-4. 读 `proposal.md` 检查是否含 HARD GATE 批准标记（`<!-- APPROVED: YYYY-MM-DD HH:mm -->`）
+4. 读 `proposal.md` 检查 `APPROVED ... fp:`（已批准+铸指纹）与 `VERIFIED ... verdict:pass`（已验证通过）标记
 
 ## 输出格式
 

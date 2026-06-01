@@ -18,7 +18,7 @@ allowed-tools: Read, Bash, Edit, Grep, Glob
 ## 三维验证框架（Claude 自审，所有模式都先跑）
 
 ### 1. Completeness（完整性）
-- proposal `## What` 的每个项都实现了吗？
+- **`test-checklist.md` 的每个 `T-N` 验收点**都满足吗？（无 test-checklist 时退回按 proposal `## What` 逐项核）
 - 接口契约（design.md 若有）的输入 / 输出都对齐？
 - 测试覆盖关键路径？
 
@@ -82,6 +82,47 @@ pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -Timeout
 
 无 flag 时只输出 `[自审]` 部分。
 
+## 裁决产物：verdict.md + VERIFIED 标记
+
+自审（+ 可选 codex）跑完，**写 `spec/changes/<name>/verdict.md`**（这一版的质量报告）：
+
+```markdown
+# Verdict: <change-name>
+
+裁决：<pass | fail>  ·  isolation:<shared|subagent>  ·  model:<claude | codex | ...>
+
+## 逐点（对照 test-checklist.md 的 T-N）
+- [x] T-1: <验收条件> — pass
+- [ ] T-2: <验收条件> — fail
+      复现：<最小步骤>
+      问题点：<现象 / 报错 + 文件:行>
+      分诊：<bug | requirement> — <一句理由>
+
+## 三维
+- Completeness / Correctness / Coherence：<各 pass/fail/partial + 说明>
+```
+
+然后**确定性盖裁决锚点**（算当前契约指纹写进 VERIFIED 标记，归档门认它）：
+
+```powershell
+pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/stamp-verdict.ps1 -ChangeDir spec/changes/<name> -Verdict <pass|fail>
+```
+
+- 整体 **pass** → 盖 `verdict:pass`，`/spec:archive` 才放行。
+- 整体 **fail** → 盖 `verdict:fail`，归档被拦；按下方分诊回流。
+- **isolation/model 字段如实写**——共享档自审**不许**标成独立验证（v3 会把隔离做成可选，这里先记真实值）。
+
+## 两条回流（分诊，verify 只分类不替你跑下一步）
+
+每个失败点在 verdict.md 标 `分诊：bug | requirement`：
+
+| 分诊 | 含义 | 去向 | 指纹 |
+|---|---|---|---|
+| **bug** | 契约没错、代码错 | 回**实施域**改代码（快道） | **不变**，改完直接重 `/spec:verify` |
+| **requirement** | 契约本身错 / 缺 | 回**决策域** `/spec:revise` 改契约 | **重铸**：改完重跑 `/spec:apply` 重铸指纹再实施 |
+
+**分诊作弊不了**：标 bug 却要改 proposal/design → 写源码时 PreToolUse 门会拦（契约漂移），逼你按 requirement 走重铸。
+
 ## 失败处理（定位，不规定方案）
 
 自审失败时**报告具体失败点**：
@@ -108,7 +149,7 @@ pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -Timeout
 
 ## 不做的事
 
-- 不主动推荐「下一步用哪个命令」——这是 `/spec:status` 的职责，verify 只报告
+- 不主动推荐「下一步用哪个命令」——verify 只报告 + 分类（bug/requirement），路由由用户决定
 - 无 `--fix` 时不改代码（改是 `/spec:apply` 的事）
-- 不改 proposal（`/spec:revise` 的事）
-- 不归档（`/spec:archive` 的事）
+- 不改 proposal **内容**（`/spec:revise` 的事）——只在末尾盖 VERIFIED 标记（不计入契约指纹）
+- 不归档（`/spec:archive` 的事）；verify 只产 verdict + 盖标记，归档门据此放行 / 拦截
