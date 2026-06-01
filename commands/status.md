@@ -57,7 +57,7 @@ allowed-tools: Read, Glob, Bash(ls:*)
 | `proposal.md` 含 APPROVED + tasks.md（如有）有未勾任务，或代码改动未跑 verify | 实施中 | `/sdd:apply` 续做 / 每完成一节点就近 `/sdd:verify` |
 | 主体实施完毕但未跑 verify | 待验证 | `/sdd:verify` 跑三维验证 |
 | `/sdd:verify` 报告含 fail | 验证失败 | 看 verify 报告决定：`/sdd:apply` 续修 / `/sdd:revise` 改 proposal（若 proposal 错） |
-| `/sdd:verify` 三维全 pass | 验证通过 | **不主动推 archive**——等用户决定。要归档时调 `/sdd:archive` |
+| `/sdd:verify` 三维全 pass | 验证通过（自审） | 可选：codex 异构他审 → `/sdd:verify --codex`（补盲区，--fix 让 codex 改）。**不主动推 archive**——要归档时调 `/sdd:archive` |
 | 用户说"归档" | 待归档 | `/sdd:archive` |
 
 **关键反模式**：

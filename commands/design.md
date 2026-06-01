@@ -29,7 +29,7 @@ allowed-tools: Read, Write, Edit, Glob
 2. Read `spec/changes/<name>/design.md`（若已存在则在原基础修订）
 3. 写 / 更新 `spec/changes/<name>/design.md`
 
-**详细格式 + 段约束 + 边界规则 + 反模式** → [`skills/sdd/references/design-spec.md`](../skills/sdd/references/design-spec.md)
+**详细格式 + 段约束 + 边界规则 + 反模式** → [`skills/workflow/references/design-spec.md`](../skills/workflow/references/design-spec.md)
 
 ## 反模式（概要）
 
@@ -37,4 +37,4 @@ allowed-tools: Read, Write, Edit, Glob
 - ❌ 把 proposal 的 How 段全文搬过来（design 装"为什么"的深度论证，不是结论复制）
 - ❌ 凭空画架构图：没读 research.md / 没扫项目代码就画
 
-完整反模式清单见 [`design-spec.md`](../skills/sdd/references/design-spec.md)。
+完整反模式清单见 [`design-spec.md`](../skills/workflow/references/design-spec.md)。
