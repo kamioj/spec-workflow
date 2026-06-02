@@ -241,6 +241,8 @@ predicate:
 
 实现期再展开的细节(非阻塞):`verdict.md` / 声明文件 / 测试清单的**具体字段 schema**,留到各自实现时定。
 
+**JSON 维护取舍(确认保留)**:声明文件保持 JSON——它是唯一零依赖、pwsh `ConvertFrom-Json` 原生 + jq/python/node 都能解析的格式,正服务 Codex 可移植目标(YAML/TOML/.psd1 要么引解析依赖、要么绑死单语言)。无注释的软肋用 `_comment` 字段解决(JSON 通行变通,不是 smell);详尽的"为什么"住本 doc,不塞进 JSON。换格式只动 `Read-WorkflowModel` 一处,故不锁死。曾考虑的 `$doc` 指针得不偿失(把解释删了换来指向 doc 的弱指针),否决。
+
 ---
 
 ## 参考
