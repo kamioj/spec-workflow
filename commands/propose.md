@@ -91,7 +91,7 @@ pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -Timeout
 路径：spec/changes/<name>/proposal.md
 （若同步生成 tasks.md → 加一行：+ tasks.md（<N> 阶段任务分解 + deps + owner））
 
-变化点：<首版含什么 / 关键决策点摘要>
+变化点：<关键决策逐点写实质，每点一句"定了什么 + 为什么"——不是"做了若干改动"的空话，让用户扫一眼就能判断要不要批准>
 
 下一步：
   ✅ 满意 → 调 /spec:apply 进入实施
