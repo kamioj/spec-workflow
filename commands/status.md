@@ -1,0 +1,75 @@
+---
+description: 报告当前 SDD change 在哪一步、有哪些产物、下一步可走哪些命令。被打断后回来不知道在哪时用
+allowed-tools: Read, Glob, Bash(ls:*)
+---
+
+# /spec:status
+
+## 任务
+
+读 `spec/changes/` 目录（不含 `archive/`），输出当前 change 状态。
+
+## 检查流程
+
+1. **Glob `spec/changes/*/`** 列出所有未归档 change
+2. 对每个 change 检查产物存在性：
+   - `research.md`（当前调研）+ `research/` 下废稿（如有）、`design.md`、`proposal.md`、`tasks.md`
+3. 读 `research.md` 统计 `## Open [TBD]` 的 `[TBD-N]` 数量、`## Decided` 条目数；数 `research/` 下废稿数（如有）
+4. 读 `proposal.md` 检查是否含 HARD GATE 批准标记（`<!-- APPROVED: YYYY-MM-DD HH:mm -->`）
+
+## 输出格式
+
+无活跃 change：
+
+```
+无活跃 SDD change。
+开新任务：/spec:research "<方向>"
+```
+
+有活跃 change：
+
+```
+活跃 change：<kebab-name>
+产物：
+  research.md ✓（当前调研）
+    废稿:       <K> 份（research/ 下，如有）
+    Open [TBD]: <N> 个
+    Decided:    <M> 条
+  design.md   <✓/✗>（未产出时备注是否需要）
+  proposal.md ✓（HARD GATE: <待批准 / 已批准 / 驳回>）
+  tasks.md    <✓/✗>
+
+当前阶段：<按下方状态机判定>
+下一步推荐：<按下方状态机映射选具体内容，不要凭记忆生成>
+```
+
+多个未归档 change → 全部列出，并提示：本工作流按**单活跃 change** 设计，没有切换命令；存在多个时先 `/spec:archive` 收掉已完成的，或在后续指令里点名是哪个 change。
+
+## 状态机映射（"当前阶段" + "下一步推荐"输出的权威定义）
+
+**严格按下表生成输出**，不要基于训练数据凭记忆补——否则会输出已废弃的旧流程（如"回 开始|go|实施"）。
+
+**下一步推荐要自包含**（SKILL「提示自包含」）：不只甩命令名，带上"为什么是这步"（当前状态导致的具体原因）。下表推荐文本已含简短理由，照搬即可、别删成光秃命令。
+
+| 检测条件 | 当前阶段 | 下一步推荐（直接输出这段文本） |
+|---|---|---|
+| `spec/changes/` 空 | 无活跃 change | `/spec:research "<方向>"` 开新调研 |
+| `research.md` 存在 + `## Open [TBD]` 非空 | 调研含 TBD | `/spec:ask` 消化待决点 |
+| `research.md` 存在 + Open [TBD] 空 + 无 `proposal.md` | 拷问完待 propose | 复杂任务先 `/spec:design`（架构 / 接口 >3 / 数据流图）；否则 `/spec:propose` |
+| `proposal.md` 存在 + **无** `<!-- APPROVED: ... -->` 标记 | 待批准 HARD GATE | ✅ 满意 → `/spec:apply`（apply 自动追加 APPROVED 后实施）<br>🔧 局部改 → `/spec:revise [why \| what \| how \| risk]`<br>💭 想讨论 → `/spec:chat`<br>🔄 方向变了 → `/spec:research "<新方向>"` |
+| `proposal.md` 含 APPROVED + tasks.md（如有）有未勾任务，或代码改动未跑 verify | 实施中 | `/spec:apply` 续做 / 每完成一节点就近 `/spec:verify` |
+| 主体实施完毕但未跑 verify | 待验证 | `/spec:verify` 跑三维验证 |
+| `/spec:verify` 报告含 fail | 验证失败 | 看 verify 报告决定：`/spec:apply` 续修 / `/spec:revise` 改 proposal（若 proposal 错） |
+| `/spec:verify` 三维全 pass | 验证通过（自审） | 可选：codex 异构他审 → `/spec:verify --codex`（补盲区，--fix 让 codex 改）。**不主动推 archive**——要归档时调 `/spec:archive` |
+| 用户说"归档" | 待归档 | `/spec:archive` |
+
+**关键反模式**：
+
+- ❌ 待批准阶段输出"批准 → 回 开始/go/实施"（**已废弃**——现在 `/spec:apply` 自动追加 APPROVED，不需要"回 go"中间步骤）
+- ❌ 验证通过阶段主动推"可走 /spec:archive 归档"（用户决定，不主动 push）
+- ❌ 凭记忆补"下一步推荐"——必须按本表对照当前阶段输出
+
+## 不做的事
+
+- 不创建、不修改任何文件
+- 只读不写

@@ -1,21 +1,21 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "kamioj-sdd",
+  "name": "spec-workflow",
   "description": "kamioj 个人 SDD 工作流 plugin marketplace",
   "owner": {
     "name": "kamioj"
   },
   "plugins": [
     {
-      "name": "sdd",
-      "source": "./plugins/sdd",
+      "name": "spec",
+      "source": "./",
       "description": "Spec-driven development plugin: research → ask → propose → apply → verify → archive 全流程，含 placeholder scan / HARD GATE 硬约束 hook 和前后端开发 agent",
       "version": "0.1.0",
       "author": {
         "name": "kamioj"
       },
       "category": "development",
-      "keywords": ["sdd", "spec", "proposal", "workflow", "hook"]
+      "keywords": ["spec", "proposal", "workflow", "hook", "sdd"]
     }
   ]
 }
