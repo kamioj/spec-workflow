@@ -1,6 +1,6 @@
 # 前端反 AI slop 原则（opt-in，默认不加载）
 
-> ⚠️ **重要**：本文件**默认不被 spec-frontend-dev 自动加载**——日常前端实施大头是工具型 UI / 后台 / 调试页，反 slop 反而违和。
+> ⚠️ **重要**：本文件**默认不被 spec-dev（frontend scope）自动加载**——日常前端实施大头是工具型 UI / 后台 / 调试页，反 slop 反而违和。
 >
 > 启用方式：用户在 `/spec:apply` 后加 `design` flag。
 >
@@ -9,7 +9,7 @@
 > /spec:apply design verify  # 同时启用反幻觉
 > ```
 >
-> 主对话识别到 `design` flag 后在派遣 prompt 里追加"启用 anti-ai-slop"，spec-frontend-dev 据此读本文件。
+> 主对话识别到 `design` flag 后在派遣 prompt 里追加"启用 anti-ai-slop"，spec-dev（frontend scope）据此读本文件。
 >
 > **为什么是 opt-in**：你日常项目（公司同步工具 / 内部仪表盘 / 调试面板）属于"工作驱动"——可读性、一致性、可预测性压倒"独特"。强制反 slop 会让 agent 在不该折腾的地方折腾。
 

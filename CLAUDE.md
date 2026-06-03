@@ -65,7 +65,7 @@ hook 约定（改 hook 时必须守）：
 - `<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 在执行前自动追加**（视"用户主动调 apply"为批准动作）——**不是** propose 追加，**不需要**用户回"go"。这是近期重构掉的冗余（见 git log `fix: 简化 HARD GATE`），改这块逻辑时注意别把"回复 go"加回来。
 - HARD GATE 输出后**绝不写项目源码**，等下一条命令。
 
-**2 个开发 agent**（`agents/sdd-{frontend,backend}-dev.md`），在 `/spec:apply` 阶段派遣：
+**1 个开发 agent**（`agents/spec-dev.md`），在 `/spec:apply` 阶段按 scope 派遣（跨前后端 = 一条消息并发派两个：frontend + backend scope）：
 - 按 proposal `## What` 涉及的代码类型分派（前端 UI/路由/组件 vs 后端 API/数据模型/迁移）。
 - **跨前后端 = 契约先行 + 并行**：接口契约先固化在 `design.md ## Interfaces`，然后**同一条消息并发派两个 agent**（不串行——串行浪费 50% 时间）。agent frontmatter 用 `model: inherit`。
 

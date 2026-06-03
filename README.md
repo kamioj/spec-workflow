@@ -95,14 +95,14 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
 
-### 2 development agents
+### 1 development agent (dispatched by scope)
 
-| Agent | When it's used |
+| scope | Responsible for |
 |---|---|
-| `spec-frontend-dev` | UI / routing / components / styling / client-side interaction |
-| `spec-backend-dev` | server-side logic / API / data models / DB migrations / middleware |
+| `frontend` | UI / routing / components / styling / client-side interaction |
+| `backend` | server-side logic / API / data models / DB migrations / middleware |
 
-In a cross-stack project, the interface contract is pinned down first in `design.md ## Interfaces`, then both agents **build in parallel** — never one after the other.
+`spec-dev` is a single agent; frontend/backend is a dispatch-time scope. In a cross-stack project, the interface contract is pinned down first in `design.md ## Interfaces`, then **two `spec-dev` instances** (one frontend, one backend) **build in parallel** — never one after the other.
 
 ### opt-in enhancement flags
 
@@ -163,8 +163,7 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 │   ├── check-tbd.ps1
 │   └── check-gate.ps1
 ├── agents/                         # development agents
-│   ├── spec-frontend-dev.md
-│   └── spec-backend-dev.md
+│   └── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
 └── skills/core/
     ├── SKILL.md                    # plugin overview (shared principles)
     └── references/                 # knowledge base
@@ -242,7 +241,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 How this plugin cooperates with the global CLAUDE.md protocol:
 
 - **Language** — proposal and research content is written in Chinese; section headers stay in English (## Why / ## What / ## How / ## Risk) so tools can spot them and `revise` can target them by name.
-- **Subagent delegation** — the research stage hands off to the global `@researcher`; the apply stage hands off to the in-plugin `spec-frontend-dev` / `spec-backend-dev`.
+- **Subagent delegation** — the research stage hands off to the global `@researcher`; the apply stage hands off to the in-plugin `spec-dev` (dispatched by scope).
 - **Concurrency** — independent tasks are dispatched all at once.
 
 ---
@@ -254,7 +253,7 @@ Design calls I worried about, then confirmed safe after digging in:
 | Item | Verdict | Evidence |
 |---|---|---|
 | `user_prompt` field name | ✅ correct | hookify/core/rule_engine.py lines 226–228 read `input_data.get('user_prompt', '')` |
-| how to invoke a plugin agent | ✅ use the agent name directly (`spec-frontend-dev`) — no plugin prefix | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
+| how to invoke a plugin agent | ✅ use the agent name directly (`spec-dev`) — no plugin prefix | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
 | required agent frontmatter | ✅ name / description / model / color all present | plugin-dev/skills/agent-development/SKILL.md § Frontmatter Fields |
 | agent model strategy | ✅ `inherit` (takes the parent conversation's model — the official recommendation) | plugin-dev/skills/agent-development/SKILL.md § model |
 

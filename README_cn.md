@@ -95,14 +95,14 @@ claude plugin install spec@spec-workflow
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
 
-### 2 个开发 Agent
+### 1 个开发 Agent（按 scope 派遣）
 
-| Agent | 触发场景 |
+| scope | 负责 |
 |---|---|
-| `spec-frontend-dev` | UI / 路由 / 组件 / 样式 / 客户端交互 |
-| `spec-backend-dev` | 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 |
+| `frontend` | UI / 路由 / 组件 / 样式 / 客户端交互 |
+| `backend` | 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 |
 
-跨前后端项目，接口契约先固化在 `design.md ## Interfaces`，两个 agent **并行实施**（不串行）。
+`spec-dev` 一个 agent，前端 / 后端是派遣时传的 scope。跨前后端项目，接口契约先固化在 `design.md ## Interfaces`，**并发派两个 `spec-dev`**（一 frontend、一 backend）并行实施（不串行）。
 
 ### opt-in 增强 flag
 
@@ -163,8 +163,7 @@ graph LR
 │   ├── check-tbd.ps1
 │   └── check-gate.ps1
 ├── agents/                         # 开发 agent
-│   ├── spec-frontend-dev.md
-│   └── spec-backend-dev.md
+│   └── spec-dev.md                 # 按 scope（frontend/backend）派遣；跨栈并发派两个
 └── skills/core/
     ├── SKILL.md                    # plugin 总览（共享精神）
     └── references/                 # 知识库
@@ -173,6 +172,7 @@ graph LR
         ├── tasks-spec.md
         ├── agent-principles.md     # opt-in: 反偷懒 + 反幻觉
         ├── frontend-aesthetics.md  # opt-in: 反 AI slop
+        ├── code-charter.md         # 编码期基线: fail-fast / 反静默兜底 / 不留旧逻辑回退
         ├── alibaba-java.md         # 14 个语言/框架规范
         ├── bulletproof-react.md
         ├── vue-style.md vue-patterns.md
@@ -242,7 +242,7 @@ claude --plugin-dir .
 与全局 CLAUDE.md 协议的协作约定：
 
 - **中文**：proposal / research 内容中文；段标题英文（## Why / ## What / ## How / ## Risk）便于工具识别和 revise 参数化
-- **子代理委派**：research 阶段派全局 `@researcher`、apply 阶段派 plugin 内 `spec-frontend-dev` / `spec-backend-dev`
+- **子代理委派**：research 阶段派全局 `@researcher`、apply 阶段派 plugin 内 `spec-dev`（按 scope）
 - **并发**：互不依赖的任务一次性并发派单
 
 ---
@@ -254,7 +254,7 @@ claude --plugin-dir .
 | 项 | 结论 | 证据 |
 |---|---|---|
 | `user_prompt` 字段名 | ✅ 正确 | hookify/core/rule_engine.py 第 226-228 行实际访问 `input_data.get('user_prompt', '')` |
-| plugin agent 调用方式 | ✅ 直接用 agent name（`spec-frontend-dev`），无需 plugin 前缀 | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
+| plugin agent 调用方式 | ✅ 直接用 agent name（`spec-dev`），无需 plugin 前缀 | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
 | agent frontmatter 必填字段 | ✅ name / description / model / color 全部就位 | plugin-dev/skills/agent-development/SKILL.md § Frontmatter Fields |
 | agent model 策略 | ✅ `inherit`（继承父对话模型，官方推荐） | plugin-dev/skills/agent-development/SKILL.md § model |
 
