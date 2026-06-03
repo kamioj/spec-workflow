@@ -33,6 +33,12 @@ try {
         exit 2
     }
 
+    if ($changes.Count -gt 1) {
+        $names = ($changes | ForEach-Object { $_.Name }) -join ', '
+        [Console]::Error.WriteLine("SDD: 检测到多个活跃 change（$names）。本工作流假设单活跃 change——先 /spec:archive 其余、或清理后再 /spec:propose")
+        exit 2
+    }
+
     foreach ($change in $changes) {
         $researchPath = Join-Path $change.FullName 'research.md'
         if (-not (Test-Path $researchPath)) {
@@ -42,13 +48,12 @@ try {
 
         $content = Get-Content $researchPath -Raw -Encoding UTF8
 
-        # 提取 ## Open [TBD] 段（直到下一个 ## 或文件结尾）
-        if ($content -match '(?ms)^##\s*Open\s*\[TBD\][\s\S]*?(?=^##\s+|\z)') {
-            $openSection = $matches[0]
-            if ($openSection -match '\[TBD-\d+\]') {
-                [Console]::Error.WriteLine("SDD: research.md ($($change.Name)) 含未消化的 [TBD] 决策点。先调 /spec:ask 消化")
-                exit 2
-            }
+        # 去掉 ## Decided 段（其中 "来源 [TBD-N]" 是已消化引用、不算未决），剩余全文扫未消化的 [TBD-N]
+        # 兜底：即使 LLM 漏写 ## Open [TBD] 标题、或把 [TBD-N] 埋在别的段，也能拦住（硬约束不被静默绕过）
+        $scanText = $content -replace '(?ms)^##\s*Decided[\s\S]*?(?=^##\s+|\z)', ''
+        if ($scanText -match '\[TBD-\d+\]') {
+            [Console]::Error.WriteLine("SDD: research.md ($($change.Name)) 含未消化的 [TBD] 决策点。先调 /spec:ask 消化")
+            exit 2
         }
     }
 

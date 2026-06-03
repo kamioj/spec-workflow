@@ -1,5 +1,5 @@
 ---
-description: 局部修改 proposal.md 某一段（why / what / how / risk）。保留其他段不动。改完必须重新 HARD GATE
+description: 局部修改 proposal.md 某一段（why / what / how / risk）。整体重写走 /spec:propose。改完必须重新 HARD GATE
 allowed-tools: Read, Edit
 ---
 
@@ -17,7 +17,6 @@ allowed-tools: Read, Edit
 | `what` | `## What` |
 | `how` | `## How` |
 | `risk` | `## Risk` |
-| `all` | 整体重写（等价 `/spec:propose` 重跑） |
 | 无 | 询问用户改哪段（用 AskUserQuestion） |
 
 2. Read `spec/changes/<name>/proposal.md`，定位目标段
@@ -59,7 +58,7 @@ allowed-tools: Read, Edit
 |---|---|
 | 目标变了，需要重新调研 | `/spec:research <新方向>` |
 | 只想聊不动文档 | `/spec:chat` |
-| 整体重写 proposal | `/spec:propose` 或 `/spec:revise all` |
+| 整体重写 proposal | `/spec:propose`（revise 只改单段；propose 有 hook 守 TBD / 单-change，revise 无 hook） |
 | 局部改 proposal 某段 | `/spec:revise [section]` |
 
 ## 反模式
@@ -67,4 +66,3 @@ allowed-tools: Read, Edit
 - ❌ 改了某段没重过 HARD GATE 就继续推进
 - ❌ 没移除旧 APPROVED 标记（让 `/spec:apply` hook 误以为已批准）
 - ❌ 改了一段顺手"清理"其他段（用户没说就别动）
-- ❌ 用 `/spec:revise all` 当 `/spec:propose` 用（重写整个用 propose 语义更清晰）

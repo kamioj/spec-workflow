@@ -93,7 +93,8 @@ deps 列全部前置的整合任务。典型：
 
 ## 反模式
 
-- ❌ 单线程简单任务也生成 tasks.md（增加维护负担，apply 直接按 proposal What 走更轻）
+- ❌ 单线程简单任务也生成 tasks.md（增加维护负担，apply 直接按 proposal What 推进更轻）
+- ❌ 在 tasks 里重述方案内容（tasks 只写 owner / deps / 验收，方案指回 proposal / design；见 SKILL「阶段职责矩阵」）
 - ❌ 子任务粒度过大（>1 小时）→ 应继续拆
 - ❌ 子任务粒度过小（<10 分钟）→ 应合并
 - ❌ 跨前后端项目不写 owner → apply 时无法决定派哪个 agent
