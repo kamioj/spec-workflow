@@ -27,7 +27,7 @@ hook 已在命令前扫描 research.md。如果 hook 阻断 → 转 `/spec:ask` 
 
 满足任一条件时，**propose 阶段一并生成** `spec/changes/<name>/tasks.md`：
 
-- 跨前后端项目（apply 阶段要派 spec-frontend-dev + spec-backend-dev 并行实施）
+- 跨前后端项目（apply 阶段要并发派两个 spec-dev——frontend + backend scope——并行实施）
 - 任务可拆 >5 个独立子任务（线性大改动）
 - 多执行体协作（需要 owner 字段——给不同 agent / 不同人）
 
