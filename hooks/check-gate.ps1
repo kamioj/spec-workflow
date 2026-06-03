@@ -33,6 +33,12 @@ try {
         exit 2
     }
 
+    if ($changes.Count -gt 1) {
+        $names = ($changes | ForEach-Object { $_.Name }) -join ', '
+        [Console]::Error.WriteLine("SDD: 检测到多个活跃 change（$names）。本工作流假设单活跃 change——先 /spec:archive 其余、或清理后再 /spec:apply（否则草稿 change 会挡住已批准 change）")
+        exit 2
+    }
+
     foreach ($change in $changes) {
         $proposalPath = Join-Path $change.FullName 'proposal.md'
         if (-not (Test-Path $proposalPath)) {
@@ -42,8 +48,8 @@ try {
 
         $content = Get-Content $proposalPath -Raw -Encoding UTF8
 
-        # 接受多种 APPROVED 标记格式
-        $approvedPattern = '(?i)(<!--\s*APPROVED\s*[:>])|(##\s+HARD\s+GATE.*APPROVED)|(APPROVED\s*:\s*\d{4}-\d{2}-\d{2})'
+        # APPROVED 标记：只认 apply 写入的 <!-- APPROVED: ... --> 注释形式（裸文本 / 标题不认，避免正文误匹配放行）
+        $approvedPattern = '(?i)<!--\s*APPROVED\s*[:>]'
 
         if ($content -notmatch $approvedPattern) {
             [Console]::Error.WriteLine("SDD: proposal.md ($($change.Name)) 未含 APPROVED 标记。先调 /spec:propose 过 HARD GATE，满意后直接调 /spec:apply（apply 会自动追加 APPROVED 标记）")

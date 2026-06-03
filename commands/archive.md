@@ -1,6 +1,6 @@
 ---
 description: 归档当前 change 到 spec/archive/YYYY-MM-DD-<name>/。仅用户说"归档"时调。归档前会检查未提交代码
-allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
+allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, git:*)
 ---
 
 # /spec:archive
@@ -17,7 +17,7 @@ allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, date:*, git:*)
 ## 流程
 
 1. 从 `spec/changes/<name>/` 读当前 change 名
-2. 计算归档路径：`spec/archive/$(date +%Y-%m-%d)-<name>/`
+2. 计算归档路径：`spec/archive/<YYYY-MM-DD>-<name>/`（用当天日期，无需调 shell——日期在上下文里）
 3. `mv` 整个目录过去
 4. 输出摘要：
    ```

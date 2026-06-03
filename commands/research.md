@@ -26,12 +26,12 @@ spec/changes/<name>/
 # Research: <change-name>
 
 ## Practices
-- 方案 A：实现要点 / 性能 / 集成成本 / 踩坑
+- 方案 A：实现要点 / 性能 / 集成成本 / 已知问题 ｜ 为何纳入候选（在何种约束下值得考虑）
 - 方案 B：...
 关键参考：<URL>
 
 ## Constraints
-- 兼容性 / 性能目标 / 依赖版本 / 安全要求
+- <约束>：兼容性 / 性能目标 / 依赖版本 / 安全要求 ｜ 违反的后果（说不出后果的约束多为冗余）
 
 ## Open [TBD]
 - [TBD-1] <偏好型决策点>（候选 A / B / C，倾向 X，需用户确认）
@@ -40,14 +40,17 @@ spec/changes/<name>/
 （拷问后从 Open 移来。格式：[DEC-N] <决策> | 来源 [TBD-N] | 理由）
 ```
 
+**只写外部信息**（见 SKILL「阶段职责矩阵」）：架构 / 接口 / schema 属 design、变更文件清单属 proposal `## What`——不写入 research；原始检索过程不留于正文（换方向时移入 `research/` 废稿堆）。`## Decided` 的 DEC-N 是**决策登记**（结论 + 一句理由），**不是深度论证的真相源**（深度论证仅 1-2 个争议决策、在 design `## Key Decisions`）；proposal `## How` 须**前递结论 + 一句理由**至 apply（apply 不读 research），不使执行者仅得到"见 DEC-N"的空指针。
+
 ## 流程
 
 1. **确认 change 目录**：无活跃 change → 新开 `spec/changes/<kebab-name>/`，name 从用户描述提炼；有活跃 change 且方向相符 → 在 research.md 续写
 2. **派 `@researcher` 子代理**调研，写进 research.md：
-   - WebSearch 方案 A/B/C 对比、踩坑、benchmark → `## Practices`
+   - WebSearch 方案 A/B/C 对比、已知问题、benchmark → `## Practices`
    - 硬约束（兼容性 / 性能 / 安全 / 依赖版本）→ `## Constraints`
    - 引用必须给 URL
-3. 主对话 Grep / Glob 项目内相关模块，理清调用链
+   - **先过四问再落笔**（SKILL「主张自审」）：查得的内容不全部写入——每条 practice / constraint 先问"删除后会怎样"，删除无影响者不写；约束须能说明"违反后在何处出问题"。杜绝"百科式堆砌"。
+3. 主对话 Grep / Glob 项目内相关模块，**理清现有调用链 / 约束**（写入 `## Constraints`——这是"理解现状"，不是"设计新架构"；新架构属 design）
 4. **标 [TBD]**：偏好型决策点写进 `## Open`：
    - 事实型（读代码 / 查文档能定死）→ 自己定，标"按现状定：X"
    - 偏好型（多选项都成立，取决于用户取舍）→ 必须标 `[TBD]` 留给 `/spec:ask`
@@ -55,7 +58,7 @@ spec/changes/<name>/
 
 ## 换方向（用户传入新方向）
 
-**硬步骤，顺序不能反**——research.md 会被覆盖，漏了存废稿旧方向就没了：
+**硬性步骤，顺序不可颠倒**——research.md 将被覆盖，若遗漏存稿则旧方向丢失：
 
 1. **先存废稿**：把当前 research.md **整篇**另存为 `research/<旧方向标题>-research.md`（`research/` 不存在先 mkdir）
 2. **再覆写**：把 research.md 重写为新方向的调研（Practices / Constraints）
@@ -81,6 +84,7 @@ spec/changes/<name>/
 
 ## 反作弊
 
-- 没真查到的链接 / benchmark 数字**禁止伪造**
-- 调研覆盖不全主动说"未查到 X，建议用户补充"，不许凭印象写
-- 项目内调用链没读全主动说"未扫描 Y 模块"，不许猜
+- 未真正查到的链接 / benchmark 数字**禁止伪造**
+- 调研覆盖不全须主动说明"未查到 X，建议用户补充"，不得凭印象编写
+- 项目内调用链未读全须主动说明"未扫描 Y 模块"，不得臆测
+- ❌ 百科式堆砌：将检索到的所有方案 / 约束不经第④问（能否删减）尽数罗列——经删减后仍保留者才写（SKILL「主张自审」）

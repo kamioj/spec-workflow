@@ -52,7 +52,8 @@ Get-ChildItem -Recurse -Filter *.json | ForEach-Object { Get-Content $_.FullName
 hook 约定（改 hook 时必须守）：
 - stdin JSON 的字段名是 **`user_prompt`**（不是 `prompt`）+ `cwd`。这点踩过坑，README 里专门记了证据。
 - **fail-open**：hook 自身报错走 catch → `exit 0` 放行。hook 的 bug 绝不能阻断用户正常流程。
-- `check-gate.ps1` 的 APPROVED 正则接受多种格式（`<!-- APPROVED:` / `## HARD GATE...APPROVED` / `APPROVED: YYYY-MM-DD`），改标记格式时正则要一起改。
+- `check-gate.ps1` 的 APPROVED 正则只认 `<!-- APPROVED:` 注释形式（apply 写入的就是它；裸文本 / 标题一律不认，避免 proposal 正文提到该字样被误判放行）。改标记格式时正则要一起改。
+- **多活跃 change**：两个 hook 在 `spec/changes/` 下有 >1 个非 archive 目录时都 `exit 2`，要求先归档至单 change（本工作流假设单活跃 change，否则草稿 change 会交叉阻断已批准 change）。
 
 ## 架构大图：命令 + agent + 产物
 
@@ -83,7 +84,9 @@ hook 约定（改 hook 时必须守）：
 │   └── tasks.md     可选       多执行体协作清单（owner + deps）
 └── archive/<YYYY-MM-DD-name>/  已归档 change
 ```
-hook 据此判断状态：扫 `spec/changes/` 下非 `archive` 的目录当作"活跃 change"。
+hook 据此判断状态：扫 `spec/changes/` 下非 `archive` 的目录当作"活跃 change"（归档目标是 `spec/archive/` 兄弟目录；hook 里 `-ne 'archive'` 仅防御"曾归档进 `spec/changes/archive/`"的旧布局，当前布局下不触发）。
+
+**产物固定为这四件 + 废稿堆**；各产物"写什么 / 不写什么"与软预算见 SKILL「阶段职责矩阵」（跨产物去重的真相源）——模型自增计划外文件（app-current / decisions / migration-inventory 等）须经用户显式批准，是文档膨胀的常见来源。
 
 ## 写作约定（改 command/agent/reference 时守）
 

@@ -33,8 +33,9 @@ allowed-tools: Read, Write, Edit, Glob
 
 ## 反模式（概要）
 
-- ❌ 为复杂而复杂：proposal 几句话能讲清的硬塞 design
+- ❌ 为复杂而复杂：proposal 数句即可说明者，强行写入 design
 - ❌ 把 proposal 的 How 段全文搬过来（design 装"为什么"的深度论证，不是结论复制）
 - ❌ 凭空画架构图：没读 research.md / 没扫项目代码就画
+- ❌ 决策不分争议、全部展开（应仅展开 1-2 个争议决策，其余指向 research DEC-N；见 SKILL「阶段职责矩阵」+ design-spec）
 
 完整反模式清单见 [`design-spec.md`](../skills/core/references/design-spec.md)。
