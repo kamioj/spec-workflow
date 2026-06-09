@@ -1,128 +1,128 @@
 ---
-description: 写或整体重写 proposal.md（## Why / ## What / ## How / ## Risk 四段）。写前 hook 强制扫描 research.md 的 [TBD] 必须清空。写完输出 HARD GATE 等用户批准
+description: Write or fully rewrite proposal.md (## Why / ## What / ## How / ## Risk). A pre-command hook forces research.md's [TBD] list to be empty. On completion, emit the HARD GATE and wait for user approval
 allowed-tools: Read, Write, Edit, Glob
 ---
 
 # /spec:propose
 
-## 前置检查
+## Pre-checks
 
-hook 已在命令前扫描 research.md。如果 hook 阻断 → 转 `/spec:ask` 消化 [TBD]。
+The hook already scanned research.md before the command. If the hook blocks → switch to `/spec:ask` to resolve the [TBD] items.
 
-精神层面也要自觉：
+Stay disciplined at the prompt level too:
 
-- `spec/changes/<name>/research.md` 必须存在
-- `## Open [TBD]` 必须为空
+- `spec/changes/<name>/research.md` must exist
+- `## Open [TBD]` must be empty
 
-## 流程
+## Flow
 
-1. Read research.md：读 `## Decided` + `## Practices` / `## Constraints`（当前方向调研结论；`research/` 废稿不参与，除非已捞回 research.md）
-2. Read design.md（若存在）
-3. 写 `spec/changes/<name>/proposal.md`
-4. **输出 HARD GATE 收尾**
+1. Read research.md: read `## Decided` + `## Practices` / `## Constraints` (the research conclusions for the current direction; `research/` drafts don't participate unless already revived into research.md)
+2. Read design.md (if it exists)
+3. Write `spec/changes/<name>/proposal.md`
+4. **Emit the HARD GATE closing block**
 
-**详细格式 + HARD GATE 批准标记规则 + 修订流程** → [`skills/core/references/proposal-spec.md`](../skills/core/references/proposal-spec.md)
+**Full format + HARD GATE approval-marker rules + revision flow** → [`skills/core/references/proposal-spec.md`](../skills/core/references/proposal-spec.md)
 
-## 何时同时生成 tasks.md
+## When to also generate tasks.md
 
-满足任一条件时，**propose 阶段一并生成** `spec/changes/<name>/tasks.md`：
+When any one condition holds, **the propose stage generates** `spec/changes/<name>/tasks.md` as well:
 
-- 跨前后端项目（apply 阶段要并发派两个 spec-dev——frontend + backend scope——并行实施）
-- 任务可拆 >5 个独立子任务（线性大改动）
-- 多执行体协作（需要 owner 字段——给不同 agent / 不同人）
+- Cross-stack project (in the apply stage, two spec-dev instances — frontend + backend scope — are dispatched concurrently to build in parallel)
+- The task splits into >5 independent subtasks (a large linear change)
+- Multi-executor collaboration (needs the owner field — assigning to different agents / people)
 
-**简单单线程实施不生成** —— apply 直接按 proposal `## What` 列表推进。
+**Simple single-threaded implementation gets none** — apply advances straight down the proposal `## What` list.
 
-### tasks.md 生成步骤
+### tasks.md generation steps
 
-1. **取信息源**（按优先级）：
-   - 主源：proposal.md `## What` —— 每个 What 项 → 一级任务节点
-   - 跨前后端：design.md `## Interfaces` 落**契约任务**（必须先于所有实施任务）
-   - 决策细节：research.md `## Decided` 反映在子任务的具体动作上
+1. **Source the information** (by priority):
+   - Primary: proposal.md `## What` — each What item → one level-1 task node
+   - Cross-stack: design.md `## Interfaces` lands the **contract task** (must precede all implementation tasks)
+   - Decision detail: research.md `## Decided` is reflected in the concrete actions of the subtasks
 
-2. **拆分粒度**：
-   - 一级 = What 项的对应模块（如 "用户认证模块"、"前端"、"集成"）
-   - 二级 = 可独立完成的子动作（如 "DB schema 设计"、"接口契约 OpenAPI"）
-   - 粒度判据：单个子任务**预计 10 分钟 - 1 小时**。太小合并，太大继续拆
+2. **Splitting granularity**:
+   - Level 1 = the module corresponding to a What item (e.g. "user authentication module", "frontend", "integration")
+   - Level 2 = an independently completable sub-action (e.g. "DB schema design", "interface contract OpenAPI")
+   - Granularity test: a single subtask **takes an estimated 10 minutes – 1 hour**. Too small, merge; too large, keep splitting
 
-3. **owner 分配**：
-   - 跨前后端：子任务标 `owner: frontend` / `owner: backend`
-   - 单执行体：不标 owner
-   - 接口契约 / DB 迁移 / 集成测试常**不标 owner**（主对话或共担）
+3. **owner assignment**:
+   - Cross-stack: mark subtasks `owner: frontend` / `owner: backend`
+   - Single executor: no owner
+   - Interface contract / DB migration / integration tests often carry **no owner** (main conversation or shared)
 
-4. **deps 推导**：
-   - 缺省顺序执行（不写 deps）
-   - **高扇出节点**（接口契约 / DB 迁移）→ 所有依赖它的子任务显式标 `deps: <node>`
-   - **跨枝并行**（前端 mock 依赖 backend 契约任务）→ 显式 deps 跳过中间任务
-   - **末端集成 / e2e 测试** → deps 列全部前置
+4. **deps derivation**:
+   - Omitted = sequential (don't write deps)
+   - **High-fan-out node** (interface contract / DB migration) → every subtask that depends on it gets an explicit `deps: <node>`
+   - **Cross-branch parallel** (frontend mock depends on the backend contract task) → explicit deps skipping the intervening tasks
+   - **Terminal integration / e2e tests** → deps list all prerequisites
 
-5. **执行**：**主对话**（不派 dev agent）写 `spec/changes/<name>/tasks.md`，跟 proposal.md 同 propose 阶段产出
+5. **Execution**: the **main conversation** (not a dispatched dev agent) writes `spec/changes/<name>/tasks.md`, produced in the same propose stage as proposal.md
 
-**详细格式 + 字段规则 + 完成标注 + 生命周期** → [`skills/core/references/tasks-spec.md`](../skills/core/references/tasks-spec.md)
+**Full format + field rules + completion marking + lifecycle** → [`skills/core/references/tasks-spec.md`](../skills/core/references/tasks-spec.md)
 
-## --codex：方案异构挑刺（可选）
+## --codex: heterogeneous adversarial review (optional)
 
-带 `--codex` 时，proposal.md 写完后**显式**调 codex 对方案做 adversarial 挑刺——在 HARD GATE 决策前，用异构模型暴露方案的逻辑漏洞 / 被忽略的失败模式 / 过度乐观的假设。
+With `--codex`, after proposal.md is written, **explicitly** call codex to adversarially poke holes in the solution — before the HARD GATE decision, use a heterogeneous model to expose the solution's logical holes / overlooked failure modes / over-optimistic assumptions.
 
-**codex 只挑刺、不改方案**（方案是用户 HARD GATE 决策的产物，改走 `/spec:revise`，codex 不能绕过决策权动 proposal）。
+**codex only critiques, it doesn't edit the solution** (the solution is the product of the user's HARD GATE decision; edits go through `/spec:revise`, and codex can't bypass that decision authority to touch the proposal).
 
-调用统一封装脚本 `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1`（Windows 绕坑 #336/#337 + `effort=low` 控成本 + 超时防卡死 + 残留进程清理 + session 解析全在脚本里，"为什么必须这么调"见脚本头注释）：
+Invoke the unified wrapper script `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1` (Windows workarounds for #336/#337 + `effort=low` for cost control + timeout against hangs + leftover-process cleanup + session parsing all live in the script; "why it must be called this way" is in the script's header comment):
 
 ```powershell
 $prompt = @"
-对以下技术方案做 adversarial 审查，只挑问题、不给改写：
-逻辑漏洞、被忽略的失败模式、过度乐观的假设、风险点（auth / 数据丢失 / 并发 / 回滚）。
-方案：<proposal.md 全文>
+Adversarially review the following technical solution; surface problems only, don't rewrite it:
+logical holes, overlooked failure modes, over-optimistic assumptions, risk points (auth / data loss / concurrency / rollback).
+Solution: <full text of proposal.md>
 "@
 pwsh -File ${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1 -Prompt $prompt -TimeoutSec 180
 ```
 
-**存 session id**：脚本末行输出 `OK:session=<id>`，把 `<id>` 写入 `spec/changes/<name>/.codex-session`——供后续 `/spec:verify --codex` 用 resume 续会话，让 codex 审代码时记得它审过的方案。
+**Save the session id**: the script's last line outputs `OK:session=<id>`; write `<id>` into `spec/changes/<name>/.codex-session` — for a later `/spec:verify --codex` to resume the session so codex remembers the solution it reviewed.
 
-**挑刺结果附 HARD GATE**：codex 的 findings 作为「⚠️ codex 异构挑刺」块附在下方 HARD GATE 输出里，供你决策（采纳哪条 → `/spec:revise`；不采纳的说明理由）。**codex 挑刺不阻断 HARD GATE**——你仍是最终决策者。
+**Attach the critique to the HARD GATE**: codex's findings go as a "⚠️ codex heterogeneous critique" block in the HARD GATE output below, for your decision (which to adopt → `/spec:revise`; explain why for any you don't). **The codex critique does not block the HARD GATE** — you are still the final decision-maker.
 
-## HARD GATE 输出（固定收尾）
+## HARD GATE output (fixed closing)
 
-写完 proposal.md（+ 可能 tasks.md）后**必须输出**：
+After writing proposal.md (+ possibly tasks.md), you **MUST emit**:
 
 ```
 <HARD-GATE>
-=== 提案就绪 ===
-路径：spec/changes/<name>/proposal.md
-（若同步生成 tasks.md → 加一行：+ tasks.md（<N> 阶段任务分解 + deps + owner））
+=== Proposal ready ===
+Path: spec/changes/<name>/proposal.md
+(if tasks.md was generated too → add a line: + tasks.md (<N>-phase breakdown + deps + owner))
 
-变化点：<关键决策逐点写实质，每点一句"定了什么 + 为什么"——不是"做了若干改动"的空话，让用户扫一眼就能判断要不要批准>
+Changes: <list each key decision in substance, one line of "what was decided + why" per point — not the empty "made several changes", so the user can decide approval at a glance>
 
-下一步：
-  ✅ 满意 → 调 /spec:apply 进入实施
-     apply 会自动在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
-  🔧 局部改某段 → /spec:revise [why | what | how | risk]
-  💭 方向想再聊 → /spec:chat
-  🔄 调研要重做 → /spec:research "<新方向>"
+Next:
+  ✅ Looks good → run /spec:apply to start implementing
+     apply will automatically append the <!-- APPROVED: ... --> marker to the end of proposal.md
+  🔧 Tweak one section → /spec:revise [why | what | how | risk]
+  💭 Want to talk the direction over → /spec:chat
+  🔄 Research needs redoing → /spec:research "<new direction>"
 </HARD-GATE>
 ```
 
-**HARD GATE 输出后绝不写代码**——等用户调 `/spec:apply` 或其他命令。
+**After emitting the HARD GATE, NEVER write code** — wait for the user to run `/spec:apply` or another command.
 
-`<!-- APPROVED: ... -->` 标记由 **`/spec:apply` 命令在执行前自动追加**（视用户主动调用为批准动作）——propose 命令不直接追加。这样设计减少 UX 一步"回复 go"的冗余。
+The `<!-- APPROVED: ... -->` marker is **appended automatically by `/spec:apply` before it runs** (treating the user's deliberate invocation as the act of approval) — the propose command does not append it directly. This design removes a redundant "reply go" step from the UX.
 
-用户驳回 → 走 `/spec:revise [section]`（局部）或 `/spec:chat`（重聊方向）。
+User rejects → go through `/spec:revise [section]` (local) or `/spec:chat` (rethink the direction).
 
-## 驳回处理
+## Handling rejection
 
-| 用户反应 | 处理 |
+| User reaction | Handling |
 |---|---|
-| 同一目标、方案微调（"X 改成 Y"） | `/spec:revise [section]`，重新过 HARD GATE |
-| 目标 / 方向变了 | `/spec:chat` 聊清楚，再决定 `/spec:research <新方向>` 还是 `/spec:revise` 微调 |
-| 含糊不明 | 问"局部调整还是换方向"，不猜 |
+| Same goal, minor tweak ("change X to Y") | `/spec:revise [section]`, re-run the HARD GATE |
+| Goal / direction changed | `/spec:chat` to talk it through, then decide between `/spec:research <new direction>` and a `/spec:revise` tweak |
+| Vague / unclear | Ask "a local tweak or a change of direction", don't guess |
 
-## 反模式
+## Anti-patterns
 
-- ❌ 写代码（HARD GATE 没批准前禁止 Write/Edit 项目源码）
-- ❌ research.md 还有 [TBD] 就开始写 proposal
-- ❌ `## How` 复制 research.md `## Decided` 原文（要提炼，不搬运）
-- ❌ proposal 段撑爆塞内容（该挪 design）
-- ❌ **HARD GATE 等待期间**未经用户确认就提前自己加 APPROVED 标记（这才是"替用户批准"）
-- ❌ 用户驳回 / 修订时仍保留旧 APPROVED（应被 `/spec:revise` 主动移除）
+- ❌ Writing code (NEVER Write/Edit project source before the HARD GATE is approved)
+- ❌ Starting the proposal while research.md still has [TBD]
+- ❌ `## How` copying research.md `## Decided` verbatim (distill, don't transport)
+- ❌ Bursting the proposal sections with content (it should move to design)
+- ❌ **During the HARD GATE wait**, adding the APPROVED marker yourself without user confirmation (that is "approving on the user's behalf")
+- ❌ Keeping the old APPROVED when the user rejects / revises (it should be actively removed by `/spec:revise`)
 
-完整 proposal.md / tasks.md 反模式清单分别见各自 spec 文件。
+The full anti-pattern lists for proposal.md / tasks.md are in their respective spec files.

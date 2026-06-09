@@ -1,185 +1,185 @@
 ---
-name: React 工程化与设计模式（国内主流版）
-companion: bulletproof-react.md（国外社区 fork，作为现代化升级路径参考）+ js-style.md / ts-conventions.md
-note: 本文聚焦"国内 React 项目怎么组织"。通用语法 / 命名 / TS 规则见 google-ts-style.md。
+name: React Engineering & Design Patterns (China Mainstream Edition)
+companion: bulletproof-react.md (international community fork, used as a modernization upgrade reference) + js-style.md / ts-conventions.md
+note: This document focuses on how React projects are organized in the Chinese ecosystem. For general syntax / naming / TypeScript rules, see google-ts-style.md.
 ---
 
-# React 工程化与设计模式（国内实战导向）
+# React Engineering & Design Patterns (China Production-Oriented)
 
-国内 React 生态与国外社区差异极大。Bulletproof-React / Zustand / TanStack 全家桶是国外推荐，但国内 80%+ 的 React 项目（尤其中后台）跑在 **Umi + Ant Design + dva/RTK** 这套阿里事实标准上。本文以国内现状作为**默认推荐**，国外栈作为可选升级路径。
+The React ecosystem in China differs dramatically from the international community. Bulletproof-React / Zustand / TanStack are the internationally recommended defaults, but 80%+ of React projects in China — especially admin dashboards and internal tools — run on the Alibaba de-facto standard: **Umi + Ant Design + dva/RTK**. This document treats the Chinese mainstream as the **default recommendation**, with the international stack covered as an optional upgrade path.
 
-`bulletproof-react.md` 是国外参考；本文是国内决策 + 设计模式 + 反模式。
+`bulletproof-react.md` is the international reference; this document covers China-specific decision-making, design patterns, and anti-patterns.
 
 ---
 
-## 1. 国内 React 项目类型分布（前提认知）
+## 1. React Project Type Distribution in China (Prerequisite Context)
 
-按出现频次排：
+Ordered by frequency:
 
-| 类型 | 占比（粗估）| 典型场景 | 主推栈 |
+| Type | Estimated Share | Typical Use Cases | Primary Stack |
 |---|---|---|---|
-| **企业中后台**（admin / 管理后台 / SaaS）| ~60% | OA、CRM、数据平台、内部工具 | **Umi + Ant Design Pro + dva** |
-| **C 端 H5**（活动页、营销、官网）| ~20% | 电商活动、落地页、轻应用 | Vite + React + 轻量 UI |
-| **小程序 / 跨端**（微信 / 抖音 / 京东等）| ~15% | 商城、工具类小程序 | **Taro** |
-| **SSR / 全栈**（NextJS / Umi SSR）| ~5% | 内容站、SEO 需求 | Umi SSR > Next.js（国内 Next 受 GFW 影响小但生态弱）|
+| **Enterprise admin dashboards** (admin / management systems / SaaS) | ~60% | OA, CRM, data platforms, internal tools | **Umi + Ant Design Pro + dva** |
+| **Mobile H5** (campaign pages, marketing, official sites) | ~20% | e-commerce campaigns, landing pages, lightweight apps | Vite + React + lightweight UI |
+| **Mini programs / cross-platform** (WeChat / Douyin / JD, etc.) | ~15% | storefronts, utility mini programs | **Taro** |
+| **SSR / full-stack** (Next.js / Umi SSR) | ~5% | content sites, SEO requirements | Umi SSR > Next.js (Next.js has limited GFW impact but weaker domestic ecosystem) |
 
-**重要事实**：
+**Key facts**:
 
-- 国内 React 项目 ≈ 中后台项目。"React 工程化"在国内语境下默认指**中后台工程化**
-- C 端高性能场景仍以 Vue 居多（尤努雨溪国内号召力 + 字节系部分团队偏好）
-- React 19 国内普及度低，存量大量 React 17 / 18 项目；Class Component 老项目仍占可观比例
-
----
-
-## 2. 默认技术栈选型（国内 2026 主流）
-
-### 2.1 中后台（首选场景）
-
-| 维度 | 国内主流 | 国外参考（升级路径）|
-|---|---|---|
-| 框架 | **UmiJS 4**（阿里出品 / Ant Design Pro 默认）| Vite + React Router |
-| 脚手架 | **Ant Design Pro** | create-vite + 手搭 |
-| 路由 | Umi 约定式路由（`src/pages/` 自动映射）| TanStack Router |
-| UI 库 | **Ant Design 5** + **Pro Components** | shadcn/ui / Radix |
-| 数据流 | **dva**（Umi 内置）/ **@umijs/max** model | Zustand / Jotai |
-| 请求 | **umi-request** / **axios** + Pro Service 约定 | TanStack Query |
-| 表单 | **Ant Design Form** + `ProForm` | react-hook-form + zod |
-| 表格 | **ProTable**（杀手锏）| TanStack Table |
-| 图表 | **AntV G2 / G6 / X6** | Recharts / D3 |
-| 样式 | Less / CSS Modules（Umi 默认）| Tailwind CSS |
-| 构建 | Umi 内置（基于 Vite / Webpack 可切）| Vite |
-| 类型 | TypeScript（Ant Design Pro 5 起默认）| 同 |
-| 测试 | Jest + RTL（Umi 内置）| Vitest + RTL |
-
-### 2.2 C 端 H5
-
-| 维度 | 国内主流 | 备注 |
-|---|---|---|
-| 构建 | **Vite** | 新项目 |
-| UI | **Vant**（有赞）/ **NutUI**（京东）/ **Antd Mobile** | 移动端三大件 |
-| 路由 | React Router v6 | 简单够用 |
-| 状态 | useState + Context / Zustand | 不引入 dva |
-| 请求 | axios + 自封装 hooks | 不上 TanStack Query 也行 |
-| 兼容 | 关注 iOS Safari / 微信内置浏览器 | 国内必须 |
-
-### 2.3 小程序 / 跨端
-
-- **Taro**（京东开源）—— 国内事实标准，一套 React 代码编译到微信 / 支付宝 / 抖音 / 京东 / 百度 / QQ / 鸿蒙 / H5 / RN
-- **Remax**（蚂蚁）—— 已不太活跃，存量项目
-- **uni-app（Vue 系）** —— 跨端最强但是 Vue，React 团队基本不选
-
-### 2.4 不建议在新项目用
-
-- `create-react-app`（已废弃）
-- Webpack 4 / Babel 6 老配置
-- Class Component（仅老项目）
-- dva 直接版（用 Umi 内置的 `@umijs/max` 数据流，等价但配置少）
-- Arco Design（**字节官方维护近乎停滞**，2025 起社区报告 issue 堆积、核心贡献者离场，不建议新项目选型）
-- Next.js（除非明确需要 Vercel / 国外部署；国内 Umi SSR 生态适配更好）
-- styled-components（国内基本不用，Less / CSS Modules 占绝对主流）
+- React projects in China ≈ admin dashboard projects. "React engineering" in the Chinese context defaults to **admin dashboard engineering**
+- High-performance consumer-facing products still lean heavily toward Vue (Evan You's influence in China + some ByteDance teams' preference)
+- React 19 adoption is low domestically; a large installed base of React 17 / 18 projects exists; Class Component legacy projects still represent a significant portion
 
 ---
 
-## 3. 国内中后台标准目录结构（Umi + Ant Design Pro 约定）
+## 2. Default Stack Choices (China Mainstream, 2026)
+
+### 2.1 Admin Dashboards (Primary Use Case)
+
+| Dimension | China Mainstream | International Reference (Upgrade Path) |
+|---|---|---|
+| Framework | **UmiJS 4** (by Alibaba / Ant Design Pro default) | Vite + React Router |
+| Scaffold | **Ant Design Pro** | create-vite + manual setup |
+| Routing | Umi convention-based routing (auto-mapped from `src/pages/`) | TanStack Router |
+| UI library | **Ant Design 5** + **Pro Components** | shadcn/ui / Radix |
+| Data layer | **dva** (built into Umi) / **@umijs/max** model | Zustand / Jotai |
+| Data fetching | **umi-request** / **axios** + Pro Service conventions | TanStack Query |
+| Forms | **Ant Design Form** + `ProForm` | react-hook-form + zod |
+| Tables | **ProTable** (killer feature) | TanStack Table |
+| Charts | **AntV G2 / G6 / X6** | Recharts / D3 |
+| Styling | Less / CSS Modules (Umi default) | Tailwind CSS |
+| Build | Umi built-in (Vite / Webpack switchable) | Vite |
+| Types | TypeScript (Ant Design Pro 5+ default) | same |
+| Testing | Jest + RTL (Umi built-in) | Vitest + RTL |
+
+### 2.2 Mobile H5
+
+| Dimension | China Mainstream | Notes |
+|---|---|---|
+| Build | **Vite** | new projects |
+| UI | **Vant** (Youzan) / **NutUI** (JD.com) / **Antd Mobile** | the three major mobile UI libraries |
+| Routing | React Router v6 | simple and sufficient |
+| State | useState + Context / Zustand | no need for dva |
+| Data fetching | axios + custom hooks | TanStack Query optional |
+| Compatibility | Focus on iOS Safari / WeChat in-app browser | mandatory for China |
+
+### 2.3 Mini Programs / Cross-Platform
+
+- **Taro** (JD.com open source) — the de-facto domestic standard; one React codebase compiles to WeChat / Alipay / Douyin / JD / Baidu / QQ / HarmonyOS / H5 / RN
+- **Remax** (Ant Group) — largely inactive now; exists mainly in legacy projects
+- **uni-app (Vue ecosystem)** — strongest cross-platform coverage but Vue-based; React teams generally avoid it
+
+### 2.4 Avoid in New Projects
+
+- `create-react-app` (deprecated)
+- Webpack 4 / Babel 6 legacy configs
+- Class Components (legacy projects only)
+- Standalone dva package (use `@umijs/max` built-in model instead — equivalent but requires less configuration)
+- Arco Design (**ByteDance has effectively halted official maintenance**; since 2025 the community has reported accumulating issues and departing core contributors — not recommended for new projects)
+- Next.js (unless explicitly targeting Vercel / international deployment; Umi SSR has better domestic ecosystem integration)
+- styled-components (virtually unused in China; Less / CSS Modules dominate by a wide margin)
+
+---
+
+## 3. Standard Directory Structure for Chinese Admin Dashboards (Umi + Ant Design Pro Conventions)
 
 ```
 src/
-├── pages/                    ← ★ 约定式路由（Umi 核心）
+├── pages/                    ← ★ Convention-based routing (Umi core)
 │   ├── index.tsx             →  /
 │   ├── user/
 │   │   ├── list.tsx          →  /user/list
 │   │   ├── detail.[id].tsx   →  /user/detail/:id
-│   │   └── components/       页面专属组件
+│   │   └── components/       page-specific components
 │   └── 404.tsx
-├── components/               ← 跨页面复用组件（按层平铺）
+├── components/               ← Cross-page reusable components (flat by layer)
 │   ├── RightContent/
 │   ├── HeaderDropdown/
 │   └── Footer/
-├── services/                 ← ★ 接口层（按业务域组织）
-│   ├── user.ts               所有 user 相关接口
+├── services/                 ← ★ API layer (organized by business domain)
+│   ├── user.ts               all user-related API calls
 │   ├── order.ts
-│   └── typings.d.ts          接口类型定义
-├── models/                   ← ★ dva / @umijs/max model
-│   ├── user.ts               全局用户态
-│   └── global.ts             全局配置态
-├── layouts/                  ← 布局组件
+│   └── typings.d.ts          API type definitions
+├── models/                   ← ★ dva / @umijs/max models
+│   ├── user.ts               global user state
+│   └── global.ts             global configuration state
+├── layouts/                  ← layout components
 │   └── BasicLayout.tsx
-├── utils/                    ← 纯函数工具
-├── hooks/                    ← 跨页面 hooks
-├── constants/                ← 枚举 / 常量
-├── locales/                  ← i18n（zh-CN / en-US）
-├── assets/                   ← 图片 / 字体
-├── access.ts                 ← Umi 权限配置
-├── app.tsx                   ← Umi 运行时配置（请求拦截、布局、初始数据）
+├── utils/                    ← pure utility functions
+├── hooks/                    ← cross-page hooks
+├── constants/                ← enums / constants
+├── locales/                  ← i18n (zh-CN / en-US)
+├── assets/                   ← images / fonts
+├── access.ts                 ← Umi access control config
+├── app.tsx                   ← Umi runtime config (request interceptors, layout, initial data)
 ├── global.less
 └── typings.d.ts
 
 config/
-├── config.ts                 ← Umi 主配置
-├── routes.ts                 ← 路由配置（也可走约定式）
-├── proxy.ts                  ← 本地代理
-└── defaultSettings.ts        ← Pro Layout 配置
+├── config.ts                 ← Umi main config
+├── routes.ts                 ← route config (or use convention-based routing)
+├── proxy.ts                  ← local dev proxy
+└── defaultSettings.ts        ← Pro Layout config
 ```
 
-**国内目录结构的核心特征**：**按层平铺**（pages / services / models / components）而非 Bulletproof 的**按 feature 拆分**。原因：
+**The defining characteristic of Chinese directory structures**: **flat-by-layer** (pages / services / models / components) rather than Bulletproof's **feature-based splitting**. Reasons:
 
-1. **Umi 约定式路由强制 `src/pages/`** —— 框架定死了入口
-2. **Ant Design Pro 脚手架就是这个结构** —— 新人接手成本低
-3. **国内中后台业务边界模糊**，按 feature 拆完反而难维护（feature 之间频繁互调）
-4. **大厂二开模板都是按层** —— 阿里 / 蚂蚁内部模板沿用此约定
+1. **Umi convention-based routing hard-codes `src/pages/`** — the framework dictates the entry point
+2. **Ant Design Pro scaffolds use this exact structure** — low onboarding cost for new team members
+3. **Business boundaries in Chinese admin systems are blurry** — feature-based splitting often makes maintenance harder, since features call into each other frequently
+4. **All major vendor internal templates use the layered approach** — Alibaba / Ant Group internal templates follow these conventions
 
-> 国外的 Bulletproof `features/` 结构更"工程正确"但国内团队普遍**不买账**——新人不熟、模板不匹配、跟阿里官方文档对不上。仅在「大型 SaaS / 长期演进项目 / 团队有 React 老兵把控」时才考虑迁移到 feature-based。
+> The Bulletproof `features/` structure is more "architecturally correct" but is broadly **rejected by Chinese teams** — unfamiliar to new hires, mismatched with scaffolding, and out of step with Alibaba's official documentation. Only consider migrating to feature-based structure for large-scale SaaS / long-lived projects with experienced React engineers at the helm.
 
 ---
 
-## 4. 国内 C 端 H5 项目结构
+## 4. Chinese Mobile H5 Project Structure
 
-H5 项目要轻，不上 Umi：
+H5 projects should stay lean — do not use Umi:
 
 ```
 src/
-├── pages/                    ← 按页面平铺
+├── pages/                    ← flat by page
 │   ├── Home/
 │   │   ├── index.tsx
 │   │   ├── index.module.less
 │   │   └── components/
 │   └── Order/
-├── components/               ← 通用组件
-├── api/                      ← 接口封装（不用叫 services 也行）
+├── components/               ← shared components
+├── api/                      ← API wrappers (calling it "services" is fine too)
 ├── hooks/
 ├── utils/
-├── store/                    ← Zustand / 简单 Context
+├── store/                    ← Zustand / simple Context
 ├── styles/
 │   ├── reset.less
 │   └── variables.less
 ├── App.tsx
-└── main.tsx                  ← Vite 入口
+└── main.tsx                  ← Vite entry point
 ```
 
-**H5 关注点**：
+**H5 priorities**:
 
-- 首屏体积（路由懒加载 + Vant 按需引入）
-- 适配（rem / vw）—— `postcss-pxtorem`
-- 微信浏览器兼容（iOS WKWebView 坑多）
-- 不要套 Umi（杀鸡用牛刀，构建慢）
+- Initial bundle size (route lazy loading + Vant tree-shaking)
+- Viewport scaling (rem / vw) — `postcss-pxtorem`
+- WeChat in-app browser compatibility (many iOS WKWebView pitfalls)
+- NEVER use Umi for H5 (overkill; slower builds)
 
 ---
 
-## 5. Taro 跨端项目结构
+## 5. Taro Cross-Platform Project Structure
 
 ```
 src/
 ├── pages/
 │   ├── index/
 │   │   ├── index.tsx
-│   │   ├── index.config.ts   ← 小程序页面配置（导航栏、tabBar）
+│   │   ├── index.config.ts   ← mini program page config (nav bar, tabBar)
 │   │   └── index.less
 ├── components/
 ├── services/
 ├── store/
 ├── utils/
-├── app.tsx                   ← 应用入口
-├── app.config.ts             ← 全局配置（pages 列表、tabBar）
+├── app.tsx                   ← app entry point
+├── app.config.ts             ← global config (pages list, tabBar)
 └── app.less
 config/
 ├── index.ts
@@ -187,29 +187,29 @@ config/
 └── prod.ts
 ```
 
-**Taro 关键约定**：
+**Key Taro conventions**:
 
-- 每个页面带 `.config.ts`（小程序原生约定）
-- 用 `Taro.request` 或封装版，不能直接 `fetch`
-- DOM API 不可用（小程序无 window / document）
-- 样式单位用 `rpx` 或配置 `pxTransform`
-- React 写法基本一致但**事件名要查 Taro 文档**（`onClick` → 小程序自动转 `bindtap`）
+- Every page MUST have a `.config.ts` (native mini program requirement)
+- Use `Taro.request` or a wrapper — do not use `fetch` directly
+- DOM APIs are unavailable (mini programs have no `window` / `document`)
+- Use `rpx` units or configure `pxTransform`
+- React syntax is mostly identical, but **always check Taro docs for event names** (`onClick` is automatically mapped to `bindtap` in mini programs)
 
-跨端兼容需写**条件编译**：
+Cross-platform compatibility requires **conditional compilation**:
 
 ```typescript
 if (process.env.TARO_ENV === 'weapp') {
-  // 微信特有逻辑
+  // WeChat-specific logic
 } else if (process.env.TARO_ENV === 'h5') {
-  // H5 特有逻辑
+  // H5-specific logic
 }
 ```
 
 ---
 
-## 6. dva / @umijs/max model（国内中后台数据流核心）
+## 6. dva / @umijs/max Model (Core Data Layer for Chinese Admin Dashboards)
 
-Umi 4 + `@umijs/max` 内置 model 方案，是 dva 的简化版。**国内中后台数据流的绝对默认**。
+Umi 4 + `@umijs/max` ships a built-in model solution — a streamlined version of dva. This is **the absolute default for state management in Chinese admin dashboards**.
 
 ```typescript
 // src/models/user.ts
@@ -234,7 +234,7 @@ export default function useUserModel() {
 ```
 
 ```typescript
-// 任意组件消费
+// consuming the model in any component
 import { useModel } from '@umijs/max'
 
 function Header() {
@@ -243,70 +243,70 @@ function Header() {
 }
 ```
 
-**与传统 dva 的区别**：
+**Differences from traditional dva**:
 
-- 不再需要写 `namespace / state / effects / reducers` 四件套
-- model = 一个 hook，纯 React 心智
-- 老 dva 项目可继续使用 `dva` 包，新项目直接用 `@umijs/max` model
+- No more `namespace / state / effects / reducers` boilerplate
+- A model is just a hook — pure React mental model
+- Legacy dva projects can keep using the `dva` package; new projects should use `@umijs/max` model directly
 
-**dva model 何时仍合理**：项目已存在大量 dva 代码、团队熟悉 redux-saga、需要严格的 action 审计日志。
+**When traditional dva still makes sense**: the codebase already has substantial dva code, the team is familiar with redux-saga, or strict action audit logging is required.
 
 ---
 
-## 7. Ant Design 实战要点
+## 7. Ant Design in Practice
 
-### 7.1 表单（国内 99% 用 AntD Form，react-hook-form 占比 < 5%）
+### 7.1 Forms (99% of Chinese projects use AntD Form; react-hook-form adoption is < 5%)
 
 ```typescript
-// ✅ 推荐：ProForm（中后台杀手锏）
+// ✅ Recommended: ProForm (the killer feature for admin dashboards)
 import { ProForm, ProFormText, ProFormSelect } from '@ant-design/pro-components'
 
 <ProForm
   onFinish={async (values) => {
     await services.createUser(values)
-    message.success('提交成功')
+    message.success('Submitted')
     return true
   }}
 >
-  <ProFormText name="name" label="姓名" rules={[{ required: true }]} />
+  <ProFormText name="name" label="Name" rules={[{ required: true }]} />
   <ProFormSelect
     name="role"
-    label="角色"
-    request={async () => services.getRoleOptions()}  // 远程加载
+    label="Role"
+    request={async () => services.getRoleOptions()}  // remote data loading
   />
 </ProForm>
 ```
 
 ```typescript
-// ✅ 普通 Form（C 端 / 复杂自定义）
+// ✅ Plain Form (consumer-facing / complex custom layouts)
 const [form] = Form.useForm()
 
 <Form form={form} layout="vertical" onFinish={onSubmit}>
-  <Form.Item name="name" label="姓名" rules={[{ required: true, message: '请输入' }]}>
+  <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please enter' }]}>
     <Input />
   </Form.Item>
 </Form>
 ```
 
-### 7.2 ProTable（中后台标配，省 80% 表格样板）
+### 7.2 ProTable (Standard for Admin Dashboards — Eliminates ~80% of Table Boilerplate)
 
 ```typescript
 <ProTable<API.User>
   columns={columns}
   request={async (params) => {
-    // params 含 current / pageSize / 搜索字段
+    // params includes current / pageSize / search fields
     const { data, total } = await services.queryUsers(params)
     return { data, total, success: true }
   }}
   rowKey="id"
   search={{ labelWidth: 'auto' }}
-  toolBarRender={() => [<Button type="primary">新建</Button>]}
+  toolBarRender={() => [<Button type="primary">New</Button>]}
 />
 ```
 
-ProTable 内置搜索表单、分页、列设置、密度切换、导出—— **国内中后台不上 ProTable 等于自虐**。
+ProTable ships with built-in search forms, pagination, column visibility toggles, density controls, and export — **not using ProTable in a Chinese admin dashboard is working against yourself**.
 
-### 7.3 全局配置
+### 7.3 Global Configuration
 
 ```typescript
 // app.tsx
@@ -320,12 +320,12 @@ export function rootContainer(container) {
 
 ---
 
-## 8. Custom Hooks（仍是核心模式，用国内场景举例）
+## 8. Custom Hooks (Still a Core Pattern — Chinese Use Cases)
 
-国内项目常见 hooks：
+Common hooks in domestic projects:
 
 ```typescript
-// 1. usePermission —— RBAC 权限判断（中后台高频）
+// 1. usePermission — RBAC access checks (extremely common in admin dashboards)
 export function usePermission() {
   const { initialState } = useModel('@@initialState')
   const access = initialState?.currentUser?.access ?? []
@@ -336,12 +336,12 @@ export function usePermission() {
   }
 }
 
-// 2. useUrlState —— 表格筛选条件同步到 URL（避免刷新丢状态）
+// 2. useUrlState — sync table filter state to the URL (prevents state loss on page refresh)
 import { useUrlState } from 'ahooks'
 
 const [filter, setFilter] = useUrlState({ status: 'all', page: 1 })
 
-// 3. useRequest（ahooks 出品，国内中后台请求事实标准）
+// 3. useRequest (by ahooks — the de-facto standard for data fetching in Chinese admin dashboards)
 import { useRequest } from 'ahooks'
 
 const { data, loading, run, refresh } = useRequest(
@@ -350,206 +350,206 @@ const { data, loading, run, refresh } = useRequest(
 )
 ```
 
-**ahooks**（阿里出品）国内使用率极高，包含 useRequest / useDebounce / useUrlState / useAntdTable 等 60+ hooks，**是国内 React 项目的瑞士军刀**，地位类似 lodash。
+**ahooks** (by Alibaba) has extremely high adoption in China. It includes `useRequest`, `useDebounce`, `useUrlState`, `useAntdTable`, and 60+ other hooks. It is **the Swiss Army knife of Chinese React projects** — occupying a role similar to lodash.
 
-### 何时拆 Hook
+### When to Extract a Hook
 
-| 场景 | 是否拆 |
+| Scenario | Extract? |
 |---|---|
-| 多组件相同响应式逻辑 | ✅ 必须 |
-| 单组件超 300 行 | ✅ 拆 |
-| 涉及多 lifecycle 配合 | ✅ Hook 是唯一方式 |
-| 纯计算（无 state / effect）| ❌ 放 `utils/` |
-| 一次性逻辑不复用 | ❌ 直接写组件内 |
+| Same reactive logic needed across multiple components | ✅ MUST |
+| Single component exceeds 300 lines | ✅ extract |
+| Logic involves coordinating multiple lifecycle effects | ✅ hooks are the only clean way |
+| Pure computation (no state / effects) | ❌ put it in `utils/` |
+| One-off logic with no reuse | ❌ keep it inline in the component |
 
 ---
 
-## 9. 状态管理决策矩阵（国内实战版）
+## 9. State Management Decision Matrix (China Production Edition)
 
 ```
-状态种类：
-├── 服务端数据（API 响应）
-│   ├── 中后台 → ahooks useRequest / ProTable.request
-│   └── 国外升级路径 → TanStack Query / SWR
-├── 全局客户端（用户、主题、菜单、权限）
-│   ├── 中后台 → @umijs/max model / dva
-│   ├── H5 / Taro → Zustand（够轻）
-│   └── 大型存量 → Redux Toolkit
-├── 组件本地 / 表单 → useState / AntD Form
-└── URL 状态 → useUrlState / 路由参数
+State category:
+├── Server data (API responses)
+│   ├── Admin dashboards → ahooks useRequest / ProTable.request
+│   └── International upgrade path → TanStack Query / SWR
+├── Global client state (user, theme, menu, permissions)
+│   ├── Admin dashboards → @umijs/max model / dva
+│   ├── H5 / Taro → Zustand (lightweight enough)
+│   └── Large legacy codebases → Redux Toolkit
+├── Local component state / forms → useState / AntD Form
+└── URL state → useUrlState / route params
 ```
 
-**国内反模式**：
+**Common anti-patterns in China**:
 
-- 中后台不用 ProTable.request，自己写 `useEffect + setState` 管列表数据
-- 全局态全塞 dva model，包括只有一个页面用到的临时态
-- model 之间互相 import 形成环
-- 用 Redux 但不用 RTK，写一堆 `actionType` 字符串常量
+- Not using `ProTable.request` in admin dashboards, and instead manually managing list data with `useEffect + setState`
+- Stuffing all state into dva models, including ephemeral state that only one page uses
+- Models importing from each other, creating circular dependencies
+- Using Redux without RTK, resulting in forests of `actionType` string constants
 
 ---
 
-## 10. 设计模式（国内场景适配）
+## 10. Design Patterns (Adapted for Chinese Use Cases)
 
-| 模式 | 状态 | 国内典型用法 |
+| Pattern | Status | Typical Chinese Usage |
 |---|---|---|
-| **Custom Hooks** | ✅ 核心 | 90% 复用场景；ahooks 是范本 |
-| **Compound Components** | ✅ 仍有价值 | Ant Design 内部大量使用（Tabs / Form.Item / Select.Option）|
-| **HOC** | ⚠️ 减少但仍见 | `withAuth` / dva 的 `connect()` |
-| **Provider** | ✅ 慎用 | `ConfigProvider` / 主题；高频值禁用 |
-| **Render Props** | ❌ 过时 | 被 hooks 取代 |
-| **Container/Presenter** | ⚠️ 弱化 | 用 hooks 自然分层 |
+| **Custom Hooks** | ✅ Core | 90% of reuse scenarios; ahooks serves as the canonical reference |
+| **Compound Components** | ✅ Still valuable | Used extensively inside Ant Design (Tabs / Form.Item / Select.Option) |
+| **HOC** | ⚠️ Declining but still present | `withAuth` / dva's `connect()` |
+| **Provider** | ✅ Use with care | `ConfigProvider` / theming; avoid for high-frequency values |
+| **Render Props** | ❌ Obsolete | Replaced by hooks |
+| **Container/Presenter** | ⚠️ Weakened | Hooks naturally provide the same layering |
 
-### Compound Components 国内典型：ProTable Columns
+### Compound Components — Chinese Example: ProTable Columns
 
 ```typescript
 const columns: ProColumns<User>[] = [
-  { title: '姓名', dataIndex: 'name', copyable: true },
-  { title: '状态', dataIndex: 'status', valueType: 'select', valueEnum: { 0: '禁用', 1: '启用' } },
+  { title: 'Name', dataIndex: 'name', copyable: true },
+  { title: 'Status', dataIndex: 'status', valueType: 'select', valueEnum: { 0: 'Disabled', 1: 'Enabled' } },
   {
-    title: '操作',
+    title: 'Actions',
     valueType: 'option',
     render: (_, record) => [
-      <a key="edit" onClick={() => handleEdit(record)}>编辑</a>,
-      <a key="del" onClick={() => handleDel(record)}>删除</a>,
+      <a key="edit" onClick={() => handleEdit(record)}>Edit</a>,
+      <a key="del" onClick={() => handleDel(record)}>Delete</a>,
     ],
   },
 ]
 ```
 
-`valueType` + `valueEnum` 是 Pro Components 的"约定即配置"模式核心。
+`valueType` + `valueEnum` is the heart of Pro Components' "convention as configuration" model.
 
 ---
 
-## 11. 反模式清单（按国内项目高频度排序）
+## 11. Anti-Pattern Catalog (Ordered by Frequency in Chinese Projects)
 
-| 反模式 | 频次 | 后果 |
+| Anti-pattern | Frequency | Consequence |
 |---|---|---|
-| **dva model 过大**（单 model 上千行 / 50+ effects）| ★★★★★ | 改一处影响一片，无法热更新精确定位 |
-| **AntD Form 嵌套 Form.List 超过 2 层** | ★★★★★ | 性能崩溃 + 验证逻辑写不出 |
-| **Ant Design 二次封装失控**（封了个 `MyButton` 改了 50 个 props）| ★★★★☆ | 升级 AntD 一次炸全站 |
-| **ProTable request 内做复杂数据 transform** | ★★★★☆ | 排序 / 分页参数错乱 |
-| **services 文件按页面拆**（`pages/user/services.ts`）| ★★★★☆ | 接口复用困难，缓存 / mock 配置散乱 |
-| **`useEffect` 链式依赖**（A 改 B，B 改 C，C 改 A）| ★★★★☆ | 死循环 / 难以追溯 |
-| **dva connect 进所有组件**（不该拿全局态的也拿）| ★★★★ | 任何全局 state 变都触发大面积 re-render |
-| **不用 ProForm / Form 自动校验，自己 setState 校验** | ★★★★ | 重复造轮子且不一致 |
-| **服务端数据塞 dva**（自己手动缓存 + 失效逻辑）| ★★★ | 重复造 useRequest |
-| **Class Component 与 Hooks 混用** | ★★★ | 团队习惯混乱，老项目重灾区 |
-| **Context 管高频变化**（如鼠标位置 / 滚动位置）| ★★★ | 全树 re-render |
-| **props drilling > 3 层** | ★★★ | 重构成本陡增 |
-| **`key={index}` 列表** | ★★★ | reorder bug 经典案例 |
-| **`useEffect` 没 cleanup** | ★★ | 内存泄漏 |
-| **Redux 不用 RTK，原版 `createStore`** | ★★ | 样板地狱 |
-| **跨页面直接 import `pages/xxx/components/Foo`** | ★★ | 路由解耦失败，重构难 |
-| **`React.FC` 写新代码** | ★ | 影响泛型，被官方反推荐 |
+| **Bloated dva models** (single model with 1000+ lines / 50+ effects) | ★★★★★ | One change ripples everywhere; hot-reload cannot pinpoint the source |
+| **AntD Form with more than 2 levels of Form.List nesting** | ★★★★★ | Performance collapse + impossible-to-write validation logic |
+| **Ant Design wrapper components that get out of hand** (a `MyButton` with 50 overridden props) | ★★★★☆ | Every AntD upgrade nukes the whole site |
+| **Complex data transforms inside ProTable `request`** | ★★★★☆ | Sorting / pagination parameters get mangled |
+| **Splitting `services` files by page** (`pages/user/services.ts`) | ★★★★☆ | API reuse becomes painful; caching / mock configs are scattered |
+| **Chained `useEffect` dependencies** (A triggers B, B triggers C, C triggers A) | ★★★★☆ | Infinite loops / impossible to trace |
+| **dva `connect` on every component** (pulling global state that doesn't need it) | ★★★★ | Any global state change triggers a massive re-render wave |
+| **Manual `setState` validation instead of ProForm / Form's built-in validation** | ★★★★ | Reinventing the wheel inconsistently |
+| **Storing server data in dva** (manual cache + invalidation logic) | ★★★ | Reimplementing useRequest by hand |
+| **Mixing Class Components with Hooks** | ★★★ | Confused team conventions; rampant in legacy projects |
+| **Context managing high-frequency updates** (mouse position, scroll position) | ★★★ | Full tree re-renders on every update |
+| **Props drilling more than 3 levels deep** | ★★★ | Refactoring cost escalates sharply |
+| **`key={index}` on lists** | ★★★ | The classic reorder bug |
+| **`useEffect` without cleanup** | ★★ | Memory leaks |
+| **Redux without RTK, using raw `createStore`** | ★★ | Boilerplate hell |
+| **Cross-page imports of `pages/xxx/components/Foo`** | ★★ | Breaks routing decoupling; makes refactoring painful |
+| **`React.FC` in new code** | ★ | Breaks generics; officially discouraged |
 
 ---
 
-## 12. 性能模式（国内中后台关注点）
+## 12. Performance Patterns (Chinese Admin Dashboard Priorities)
 
-| 场景 | 做法 |
+| Scenario | Approach |
 |---|---|
-| 大列表（>500 行）| 虚拟滚动（rc-virtual-list / ProTable 配置 `scroll.y`）|
-| Form.List 长表单 | 拆子组件 + `React.memo`，避免整表单 re-render |
-| 路由级懒加载 | Umi 自动 split + `dynamic()`；非 Umi 用 `lazy()` |
-| AntD 按需加载 | Umi / Ant Design Pro 默认开启 babel-plugin-import |
-| 图表 | AntV G2 按需引入；大数据量用 G2 + Web Worker |
-| 防 re-render | `React.memo` + 稳定引用；ahooks `useMemoizedFn` |
-| 静态资源 | 阿里云 OSS / 腾讯云 COS + CDN；不要直接 import 大图 |
+| Large tables (> 500 rows) | Virtual scrolling (rc-virtual-list / ProTable with `scroll.y`) |
+| Long Form.List forms | Split into sub-components + `React.memo` to avoid whole-form re-renders |
+| Route-level lazy loading | Umi auto code-splitting + `dynamic()`; for non-Umi projects use `lazy()` |
+| AntD tree-shaking | Umi / Ant Design Pro enables babel-plugin-import by default |
+| Charts | AntV G2 with tree-shaking; large datasets with G2 + Web Worker |
+| Preventing re-renders | `React.memo` + stable references; ahooks `useMemoizedFn` |
+| Static assets | Alibaba Cloud OSS / Tencent Cloud COS + CDN; never import large images directly |
 
-**国内 React 19 Compiler 普及度低**，多数项目仍需手动 `useMemo / useCallback`。
+**React 19 Compiler adoption in China is negligible** — most projects still require manual `useMemo / useCallback`.
 
 ---
 
-## 13. SOLID 在 React 中（简版）
+## 13. SOLID Principles in React (Condensed)
 
-| 原则 | React 表现 |
+| Principle | React Expression |
 |---|---|
-| S 单一职责 | 一个组件一个职责；超 300 行拆 |
-| O 开闭 | props 扩展 + slot-style children；ProComponents `fieldProps` 模式 |
-| L 里氏替换 | 衍生组件应能替代基础组件 |
-| I 接口隔离 | props 精确，不传 `Record<string, any>` |
-| D 依赖反转 | 组件依赖 props / hooks，不直接 import 具体 model |
+| S — Single Responsibility | One component, one concern; split at 300+ lines |
+| O — Open/Closed | Extend via props + slot-style children; ProComponents `fieldProps` pattern |
+| L — Liskov Substitution | Derived components should be substitutable for their base component |
+| I — Interface Segregation | Precise props; avoid `Record<string, any>` |
+| D — Dependency Inversion | Components depend on props / hooks, not direct imports of concrete models |
 
 ---
 
-## 14. 国外栈降级 / 升级路径参考
+## 14. International Stack Migration Reference
 
-> 国内项目何时考虑切到国外栈（Bulletproof + Zustand + TanStack）？
+> When should a Chinese project consider switching to the international stack (Bulletproof + Zustand + TanStack)?
 
-**适合切换**：
+**Good reasons to switch**:
 
-- 全新长期项目、团队有 React 老兵
-- 国际化部署、海外用户为主
-- 强类型安全要求（TanStack Router 类型化路由优势明显）
-- 跳出 Ant Design 视觉风格（C 端品牌定制）
+- Brand-new long-lived project with experienced React engineers on the team
+- International deployment, primarily serving overseas users
+- Strong type-safety requirements (TanStack Router's typed routing is a clear win)
+- Breaking away from Ant Design's visual language (consumer-facing brand customization)
 
-**不要切换**：
+**Reasons not to switch**:
 
-- 中后台 + Ant Design 设计稿（切走没收益）
-- 团队主力是后端兼前端 / 初学者（Umi 文档中文齐全）
-- 项目周期短（< 3 个月）
-- 需要 ProTable / ProForm 这种业务级组件（自己拼成本极高）
+- Admin dashboard + Ant Design design specs (no real benefit to migrating)
+- Team consists mainly of backend developers doing some frontend work, or junior engineers (Umi's Chinese documentation is comprehensive)
+- Short project timeline (< 3 months)
+- Requires ProTable / ProForm-level business components (building equivalents from scratch is extremely costly)
 
-**渐进升级**：在 Umi 项目里**逐步引入** TanStack Query 替代 dva 中的服务端数据部分，是国内常见的现代化中庸路径。
+**Incremental modernization**: gradually introducing TanStack Query inside a Umi project to replace the server-data parts of dva is a common pragmatic upgrade path in China.
 
 ---
 
-## 15. 大厂前端规约对 React 的态度（概览）
+## 15. How Major Chinese Tech Companies Approach React (Overview)
 
-| 厂 | 主推 | 备注 |
+| Company | Primary Stack | Notes |
 |---|---|---|
-| 阿里 | **Umi + Ant Design + dva/RTK** | Ant Design 出自蚂蚁，事实标准 |
-| 字节 | **Modern.js**（自研全栈框架）+ Semi Design | Arco 维护停滞，内部转 Semi |
-| 腾讯 | TDesign + 自由选型 | 各 BG 自治，无统一栈 |
-| 京东 | **Taro**（自家开源）+ NutUI | 小程序业务为主 |
-| 百度 | 内部自研 + Ant Design Pro | 中后台主流 |
-| 美团 | Mtfe（内部）+ Ant Design | 内部框架严格规约 |
+| Alibaba | **Umi + Ant Design + dva/RTK** | Ant Design originates from Ant Group; the de-facto standard |
+| ByteDance | **Modern.js** (in-house full-stack framework) + Semi Design | Arco maintenance has stalled; internal teams are shifting to Semi |
+| Tencent | TDesign + open stack | Each BG operates independently; no unified stack |
+| JD.com | **Taro** (in-house open source) + NutUI | Mini program business is the primary focus |
+| Baidu | In-house frameworks + Ant Design Pro | Admin dashboard mainstream |
+| Meituan | Mtfe (internal) + Ant Design | Strict internal framework conventions |
 
-**实战结论**：除非进特定大厂用其内部栈，**社招市场最通用的还是 Umi + Ant Design Pro**。
+**Practical conclusion**: unless you're joining a specific company and adopting their internal stack, **Umi + Ant Design Pro is still the most universally applicable choice in the general hiring market**.
 
 ---
 
-## 16. React 19 在国内的现状
+## 16. React 19 in China — Current State
 
-- 普及度低，2026 Q1 国内新项目用 React 19 的不到 20%
-- 主要阻碍：Ant Design 5 部分组件对 React 19 strict mode 兼容仍在跟进、企业项目对升级保守
-- **新 API 实际用得最多的是 `use(promise)`**，其次 `useActionState`
-- React Compiler 几乎没人开（生态适配不全）
-- 老项目以 React 17 / 18 为主，dva / Umi 3 在维护期
+- Adoption is low; as of Q1 2026, fewer than 20% of new domestic projects use React 19
+- Primary blockers: Ant Design 5's React 19 strict mode compatibility is still catching up; enterprise projects are conservative about upgrades
+- **The most-used new API is `use(promise)`**, followed by `useActionState`
+- React Compiler has virtually no adoption (insufficient ecosystem support)
+- Legacy codebases run primarily on React 17 / 18, with dva / Umi 3 still under maintenance
 
 ```typescript
-// React 19 新 API（国内项目可选）
-const value = use(promise)                              // ✅ 用得到
-const [error, action, pending] = useActionState(...)   // ⚠️ AntD Form 已覆盖此场景
-const [optimistic, addOptimistic] = useOptimistic(...) // ⚠️ 小众
+// React 19 new APIs (optional for domestic projects)
+const value = use(promise)                              // ✅ practical
+const [error, action, pending] = useActionState(...)   // ⚠️ AntD Form already covers this use case
+const [optimistic, addOptimistic] = useOptimistic(...) // ⚠️ niche
 ```
 
-如果项目仍是 React 18，不必为了用新 API 而升。
+If your project is still on React 18, there is no need to upgrade just to access the new APIs.
 
 ---
 
-## 17. 权威信息源
+## 17. Authoritative Sources
 
-国内主流：
+China mainstream:
 
-- [UmiJS 官方](https://umijs.org/) —— 阿里 React 应用框架
-- [Ant Design](https://ant.design/) —— 国内中后台 UI 事实标准
-- [Ant Design Pro](https://pro.ant.design/) —— 中后台脚手架
-- [Pro Components](https://procomponents.ant.design/) —— ProTable / ProForm 等
-- [ahooks](https://ahooks.js.org/) —— 阿里 React Hooks 库
-- [Taro](https://taro.zone/) —— 京东跨端
-- [AntV](https://antv.antgroup.com/) —— 蚂蚁数据可视化
-- [Semi Design](https://semi.design/) —— 字节抖音前端组件库
+- [UmiJS Official Docs](https://umijs.org/) — Alibaba's React application framework
+- [Ant Design](https://ant.design/) — the de-facto standard UI library for Chinese admin dashboards
+- [Ant Design Pro](https://pro.ant.design/) — admin dashboard scaffold
+- [Pro Components](https://procomponents.ant.design/) — ProTable / ProForm and more
+- [ahooks](https://ahooks.js.org/) — Alibaba's React Hooks library
+- [Taro](https://taro.zone/) — JD.com cross-platform framework
+- [AntV](https://antv.antgroup.com/) — Ant Group data visualization
+- [Semi Design](https://semi.design/) — ByteDance / Douyin frontend component library
 
-国外参考（升级路径）：
+International reference (upgrade path):
 
-- [Bulletproof-React](https://github.com/alan2207/bulletproof-react) —— 本目录 `bulletproof-react.md` 即是 fork
-- [React 官方文档](https://react.dev/)
+- [Bulletproof-React](https://github.com/alan2207/bulletproof-react) — the `bulletproof-react.md` in this directory is forked from here
+- [React Official Docs](https://react.dev/)
 - [TanStack Router / Query](https://tanstack.com/)
 - [Zustand](https://github.com/pmndrs/zustand)
 
 ---
 
-## 18. 一句话总结
+## 18. One-Line Summary
 
-**国内 React = 中后台 React = Umi + Ant Design Pro + Pro Components + dva/Max model + ahooks**。不熟这套就接不了国内项目。Bulletproof / Zustand / TanStack 是好东西，但**先把国内主流跑通再谈升级**。
+**React in China = admin dashboard React = Umi + Ant Design Pro + Pro Components + dva/Max model + ahooks**. Without fluency in this stack, you cannot work on most domestic projects. Bulletproof / Zustand / TanStack are all excellent — but get comfortable with the Chinese mainstream first, then talk about upgrading.

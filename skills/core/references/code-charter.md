@@ -1,39 +1,39 @@
-# 编码公约（仅编码阶段 · 所有写代码者必守）
+# Coding Charter (coding phase only · binding on everyone who writes code)
 
-> **适用范围：只在写代码时**——`/spec:apply` 实施（dev agent）+ 主对话自理脚本 / 配置。
-> `research` / `ask` / `design` / `propose` 等**方案阶段不载入本文**：那些阶段需要自由地把"降级 / 容错 / 回退"当作**设计选项**发散，本文的 fail-fast 纪律只约束**落键实现**、不约束思考。
+> **Scope: only when writing code** — `/spec:apply` implementation (dev agent) + scripts / config the main conversation handles itself.
+> The **planning phases** `research` / `ask` / `design` / `propose` **do not load this document**: those phases need the freedom to explore "degradation / fault-tolerance / fallback" as **design options**; the fail-fast discipline here governs **keystroke-level implementation** only, not thinking.
 >
-> **根**：本文是 SKILL「反作弊」之"不把失败伪装成成功"在**实现代码**里的具体形态。
+> **Root**: this document is the concrete, in-code form of the SKILL "Anti-Cheating" principle "don't disguise failure as success".
 
 ---
 
-## 一、失败要响亮，禁止静默改道
+## 1. Failure must be loud — no silent re-routing
 
-一个操作的前提不满足 / 查不到 / 出错时，**抛异常或返回明确错误**，让上层响亮地停下。**禁止**默默换另一条查询 / 另一条路径去凑一个结果——那个结果多半语义不对，且没人知道走了备用路，错误会以"脏数据"的形式无声扩散。
+When an operation's precondition isn't met / nothing is found / it errors out, **throw an exception or return an explicit error** so the caller stops loudly. **NEVER** quietly switch to another query / another path to scrape together a result — that result is almost certainly semantically wrong, nobody knows a fallback path was taken, and the error spreads silently as "dirty data".
 
-- ❌ `try { 主查询 } catch { 换一种方式再查一遍 }` → 返回语义不对的数据，调用方当真用
-- ✅ 查不到 / 出错就 `throw`（带清晰信息）。**要不要降级是上层的决策，不是这一层偷偷替它做**
+- ❌ `try { primary query } catch { query again a different way }` → returns semantically wrong data that the caller trusts
+- ✅ Found nothing / errored → `throw` (with a clear message). **Whether to degrade is the caller's decision, not something this layer makes for it on the sly**
 
-## 二、改逻辑 = 替换，禁止把旧逻辑留作回退
+## 2. Changing logic = replacement — never keep the old logic as a fallback
 
-修改 / 重构代码时，**删干净旧逻辑，绝不把它留作"回退策略"**。`try { 新逻辑 } catch { 旧逻辑 }`、`if (新条件) 新路 else 旧路(本该删)` 是**脏数据 + 功能不稳定的头号来源**：
+When modifying / refactoring code, **delete the old logic cleanly; never keep it around as a "fallback strategy"**. `try { new logic } catch { old logic }` and `if (new condition) new path else old path (which should be deleted)` are the **number-one source of dirty data + unstable behavior**:
 
-- 两条路同时活 → 不确定哪条跑、产出两种格式的数据混存 = **脏数据**
-- 旧路兜底 → **掩盖新逻辑的 bug**，新逻辑永远测不充分，线上行为飘忽 = **不稳定**
-- ✅ 新逻辑就是新逻辑，旧的删净；新逻辑有不变式就 `assert`。真要灰度 / 可回滚 → 走**显式开关 + 标注**，绝不靠 catch 里偷偷兜
+- Both paths alive → you can't be sure which one runs, and data in two formats gets stored intermixed = **dirty data**
+- Old path as a safety net → **hides bugs in the new logic**, the new logic never gets exercised fully, and production behavior drifts = **instability**
+- ✅ New logic is the new logic; delete the old cleanly; `assert` the new logic's invariants. If you genuinely need a gradual rollout / rollback → use an **explicit switch + a flag**, never a sneaky catch-block fallback
 
-## 三、核心逻辑 fail-fast，不要防御
+## 3. fail-fast for core logic — don't get defensive
 
-有已知不变式的核心逻辑，违反即 bug，要**立刻炸**：`assert x != null`（"由 X 保证"）胜过 `if (x == null) x = default`——后者把契约违反藏起来，留给三个月后的 debug 地狱。
+Core logic with a known invariant: violating it is a bug, so **blow up immediately** — `assert x != null` ("guaranteed by X") beats `if (x == null) x = default`, which hides the contract violation and saves it for a debugging hell three months later.
 
-## 四、降级只在信任边界，且必须响亮
+## 4. Degrade only at a trust boundary, and always loudly
 
-外部服务 / 网络 / 不可信输入这类**真会失败**的边界，降级合理——但必须 **log + 上报**，绝不静默。判据：说得出"挡的是哪个**预期**失败" → 留；说不出 → 删掉让它崩。
+At boundaries that **genuinely can fail** — external services / network / untrusted input — degradation is reasonable, but it MUST **log + report**, never silently. Test: if you can name "which **expected** failure it guards against" → keep it; if you can't → delete it and let it crash.
 
-## 五、绝不凭空造 fallback 值
+## 5. Never fabricate a fallback value
 
-返回空列表 / 0 / 默认值 / mock 去"让它看起来没崩" = 跟 patch 测试返回 true 同罪。
+Returning an empty list / 0 / a default / a mock to "make it look like nothing crashed" is the same crime as patching a test to return true.
 
 ---
 
-**总判据**：删掉这个兜底 / 旧路 / 默认值，会让一个**真实 bug 响亮暴露**吗？会 → 它在替你藏 bug，删。会让**真实边界失去韧性**吗？会 → 留，但加 log + 上报。
+**Overall test**: would deleting this safety net / old path / default value make a **real bug surface loudly**? Yes → it's hiding a bug for you, delete it. Would it make a **real boundary lose its resilience**? Yes → keep it, but add log + reporting.

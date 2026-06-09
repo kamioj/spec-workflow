@@ -1,101 +1,101 @@
 # tasks.md spec
 
-`spec/changes/<change-name>/tasks.md` 是 sdd 工作流中**可选**的任务追踪产物。仅在跨前后端、多执行体协作、或任务可拆 >5 个独立子任务时生成。
+`spec/changes/<change-name>/tasks.md` is the **optional** task-tracking artifact of the sdd workflow. Produced only for cross-stack work, multi-executor collaboration, or when a task splits into >5 independent subtasks.
 
-## 何时存在
+## When it exists
 
-由 `/spec:propose` 生成（触发条件 + 生成步骤详见 [`commands/propose.md`](../../../commands/propose.md) "何时同时生成 tasks.md" 段）。
+Produced by `/spec:propose` (trigger conditions + generation steps are detailed in [`commands/propose.md`](../../../commands/propose.md) § "When to also generate tasks.md").
 
-后续 `/spec:apply` 按它推进、`/spec:status` 读它报告进度、`/spec:archive` 归档时打包。
+Afterward `/spec:apply` advances by it, `/spec:status` reads it to report progress, and `/spec:archive` packages it on archive.
 
-## 格式
+## Format
 
 ```markdown
 # Tasks: <change-name>
 
-> deps 缺省 = 顺序接上一条；只在并行 / 跨枝门控时显式标
-> owner 仅多执行体协作时出现
+> deps omitted = sequential, follows the previous item; mark explicitly only for parallel / cross-branch gating
+> owner appears only in multi-executor collaboration
 
-- [ ] 1. 用户认证模块
-  - [ ] 1.1 DB schema 设计
-  - [ ] 1.2 接口契约 OpenAPI（同步落 design.md ## Interfaces）
-  - [ ] 1.3 后端 API 实现            owner: backend
-- [ ] 2. 前端
-  - [ ] 2.1 页面骨架 + mock 数据     owner: frontend  deps: 1.2
-  - [ ] 2.2 接真实接口               owner: frontend  deps: 1.3, 2.1
-- [ ] 3. 集成
-  - [ ] 3.1 e2e 测试                                  deps: 1.3, 2.2
+- [ ] 1. User authentication module
+  - [ ] 1.1 DB schema design
+  - [ ] 1.2 Interface contract OpenAPI (also land it in design.md ## Interfaces)
+  - [ ] 1.3 Backend API implementation        owner: backend
+- [ ] 2. Frontend
+  - [ ] 2.1 Page skeleton + mock data          owner: frontend  deps: 1.2
+  - [ ] 2.2 Wire up the real interface         owner: frontend  deps: 1.3, 2.1
+- [ ] 3. Integration
+  - [ ] 3.1 e2e tests                                          deps: 1.3, 2.2
 ```
 
-## 字段规则
+## Field rules
 
-### 嵌套编号
+### Nested numbering
 
-分解层级。父任务 = 子任务全勾才算完。
+The decomposition hierarchy. A parent task is done only when all its subtasks are checked.
 
-- 一级（1, 2, 3）= 模块 / 阶段
-- 二级（1.1, 1.2）= 该模块的子动作
-- 三级（1.1.1）= 极复杂时才用，一般不需要
+- Level 1 (1, 2, 3) = module / phase
+- Level 2 (1.1, 1.2) = a sub-action of that module
+- Level 3 (1.1.1) = only for the extremely complex; usually unnecessary
 
 ### deps
 
-依赖前置任务：
+Prerequisite tasks:
 
-- **缺省**（不写）= 顺序执行（接上一条）
-- `deps: X` = 越过中间任务，直接依赖 X
-- `deps: X, Y` = 多前置门控（两个都完成才能开始）
+- **omitted** (not written) = sequential (follows the previous item)
+- `deps: X` = skip the intervening tasks and depend directly on X
+- `deps: X, Y` = multi-prerequisite gate (both must finish before it can start)
 
 ### owner
 
-执行体：
+The executor:
 
-- 跨前后端：`owner: frontend` / `owner: backend`
-- 单执行体：不标
-- 接口契约 / DB 迁移 / 集成测试这类"共担任务"通常不标 owner
+- Cross-stack: `owner: frontend` / `owner: backend`
+- Single executor: unmarked
+- Shared tasks like the interface contract / DB migration / integration tests usually carry no owner
 
-## 关键节点类型
+## Key node types
 
-### 高扇出节点（gate）
+### High-fan-out node (gate)
 
-被多个任务依赖的"枢纽任务"，必须先于依赖者完成。典型：
+A "hub task" that many tasks depend on; it must finish before its dependents. Typical:
 
-- **接口契约**（design.md `## Interfaces` 落地）→ frontend 和 backend 都依赖
-- **DB schema 迁移** → backend 实现的前置
-- **共享 lib / SDK 发布** → 多模块依赖
+- **Interface contract** (landing design.md `## Interfaces`) → both frontend and backend depend on it
+- **DB schema migration** → a prerequisite for the backend implementation
+- **Shared lib / SDK release** → multiple modules depend on it
 
-跨前后端时**契约任务必须先于实施任务**，否则 frontend / backend agent 无法并行。
+In cross-stack work the **contract task must precede the implementation tasks**, otherwise the frontend / backend agents can't parallelize.
 
-### 末端节点
+### Terminal node
 
-deps 列全部前置的整合任务。典型：
+The integration task whose deps list all prerequisites. Typical:
 
-- 集成测试 / e2e 测试
-- 部署 / 发布
-- 文档收尾
+- Integration / e2e tests
+- Deploy / release
+- Documentation wrap-up
 
-## 完成标注
+## Marking completion
 
-任务完成时把 `- [ ]` 改成 `- [x]`。**谁完成谁标**：
+When a task is done, change `- [ ]` to `- [x]`. **Whoever finishes it marks it:**
 
-- dev agent 标自己 owner 的子任务
-- 主对话标自理项（配置 / 脚本 / 跨模块协调类）
+- the dev agent marks the subtasks it owns
+- the main conversation marks the items it handles itself (config / scripts / cross-module coordination)
 
-父任务 `- [ ]` 改 `- [x]` 的条件：所有子任务都已 `[x]`。
+The condition for changing a parent `- [ ]` to `- [x]`: all its subtasks are already `[x]`.
 
-## 生命周期
+## Lifecycle
 
-| 阶段 | 命令 | 操作 |
+| Stage | Command | Action |
 |---|---|---|
-| 生成 | `/spec:propose` | 跟 proposal.md 同步产出 |
-| 推进 | `/spec:apply` | 按 deps 推进 → 完成时标 [x] |
-| 报告 | `/spec:status` | 统计 X/Y 完成进度 |
-| 归档 | `/spec:archive` | 打包到 spec/archive/ |
+| Generate | `/spec:propose` | produced alongside proposal.md |
+| Advance | `/spec:apply` | advance by deps → mark [x] on completion |
+| Report | `/spec:status` | tally X/Y completion progress |
+| Archive | `/spec:archive` | package into spec/archive/ |
 
-## 反模式
+## Anti-patterns
 
-- ❌ 单线程简单任务也生成 tasks.md（增加维护负担，apply 直接按 proposal What 推进更轻）
-- ❌ 在 tasks 里重述方案内容（tasks 只写 owner / deps / 验收，方案指回 proposal / design；见 SKILL「阶段职责矩阵」）
-- ❌ 子任务粒度过大（>1 小时）→ 应继续拆
-- ❌ 子任务粒度过小（<10 分钟）→ 应合并
-- ❌ 跨前后端项目不写 owner → apply 时无法决定派哪个 agent
-- ❌ 高扇出节点不显式标 deps → 并行实施触发死锁
+- ❌ Generating tasks.md even for a single-threaded simple task (adds maintenance burden; apply advancing straight from proposal What is lighter)
+- ❌ Restating the solution inside tasks (tasks write only owner / deps / acceptance; point the solution back to proposal / design — see SKILL § Phase Responsibility Matrix)
+- ❌ Subtask granularity too large (>1 hour) → keep splitting
+- ❌ Subtask granularity too small (<10 minutes) → merge
+- ❌ A cross-stack project without owner → apply can't decide which agent to dispatch
+- ❌ A high-fan-out node without explicit deps → parallel implementation deadlocks

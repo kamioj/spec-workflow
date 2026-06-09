@@ -1,38 +1,39 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  统一封装 codex CLI 调用 —— 供 /spec:propose --codex 和 /spec:verify --codex 复用。
+  Unified wrapper for invoking the codex CLI — shared by /spec:propose --codex and /spec:verify --codex.
 
 .DESCRIPTION
-  把 codex 异构审查的全部调用机制收在一处（单一真相源），命令文件只调本脚本，不再各自内联。
+  Keeps the entire invocation mechanism for codex's heterogeneous review in one place (single source of truth);
+  command files just call this script instead of inlining their own copies.
 
-  实测约束（违反则在 Windows 卡死 / 静默失败，已验证）：
-    --dangerously-bypass-approvals-and-sandbox   绕 #336：Windows 沙盒挂起（-s read-only 实测卡死 11 分钟）
-    命令行直调、不走 node spawn（本脚本用 & codex）  绕 #337：spawn('codex') 报 ENOENT
-    -c model_reasoning_effort=low                控成本：xhigh 一次烧 ~2.2 万 token
-    Start-Job + 超时 + 残留进程清理              防卡死：实测裸跑会卡 11 分钟
+  Measured constraints (violating them hangs / silently fails on Windows, verified):
+    --dangerously-bypass-approvals-and-sandbox   works around #336: the Windows sandbox hangs (-s read-only measured hanging for 11 minutes)
+    direct command-line call, not via node spawn (this script uses & codex)  works around #337: spawn('codex') throws ENOENT
+    -c model_reasoning_effort=low                cost control: one xhigh run burns ~22k tokens
+    Start-Job + timeout + leftover-process cleanup   anti-hang: a bare run was measured hanging for 11 minutes
 
 .PARAMETER Prompt
-  审查提示（必填）。--fix 场景传"审查并修复"指令即可，bypass sandbox 允许 codex 写文件。
+  The review prompt (required). For the --fix case, pass a "review and fix" instruction; bypassing the sandbox lets codex write files.
 
 .PARAMETER TimeoutSec
-  超时秒数，默认 300。propose 挑刺方案惯用 180，verify 审代码惯用 300。
+  Timeout in seconds, default 300. propose's solution critique typically uses 180, verify's code review typically uses 300.
 
 .PARAMETER ProjectDir
-  codex 工作目录（传 -C）。verify 审代码传项目根；propose 纯文本挑刺可省略。
+  codex working directory (passed as -C). verify's code review passes the project root; propose's plain-text critique can omit it.
 
 .PARAMETER ResumeSession
-  续会话 id。verify 若 propose --codex 留过 .codex-session，传入让 codex 记得它审过的方案。
+  The session id to resume. If propose --codex left a .codex-session, pass it so codex remembers the solution it reviewed.
 
 .OUTPUTS
-  codex 正文（findings）逐行输出，最后一行为结构化状态：
-    OK:session=<id>     成功（解析不到 session 时 <id> 为空）
-    ERR:timeout:<n>s    超时
-    ERR:<message>       其他失败
-  fail-open 由调用方决定 —— 本脚本只如实返回状态，不阻断流程。
+  codex's body (findings) is emitted line by line, with the last line being a structured status:
+    OK:session=<id>     success (<id> is empty when the session can't be parsed)
+    ERR:timeout:<n>s    timeout
+    ERR:<message>       other failure
+  fail-open is the caller's decision — this script only returns the status faithfully, it doesn't block the flow.
 
 .EXAMPLE
-  pwsh -File codex-exec.ps1 -Prompt "审一下这段改动" -TimeoutSec 300 -ProjectDir "D:\proj"
+  pwsh -File codex-exec.ps1 -Prompt "Review this diff" -TimeoutSec 300 -ProjectDir "D:\proj"
 
 .EXAMPLE
   pwsh -File codex-exec.ps1 -Prompt $p -ResumeSession 0f3a... -ProjectDir "D:\proj"
@@ -48,10 +49,10 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = 'Continue'
 
-# 组装 codex 参数（命令行直调 + splat，不走 node spawn —— 绕 #337）
+# Assemble the codex arguments (direct command-line call + splat, not via node spawn — works around #337)
 $codexArgs = @('exec')
 if ($ResumeSession) { $codexArgs += @('resume', $ResumeSession) }
-$codexArgs += @('--dangerously-bypass-approvals-and-sandbox', '-c', 'model_reasoning_effort=low')  # 绕 #336 + 控成本
+$codexArgs += @('--dangerously-bypass-approvals-and-sandbox', '-c', 'model_reasoning_effort=low')  # works around #336 + cost control
 if ($ProjectDir)    { $codexArgs += @('-C', $ProjectDir) }
 $codexArgs += $Prompt
 
@@ -61,9 +62,9 @@ $job = Start-Job -ScriptBlock { param($a) & codex @a 2>&1 } -ArgumentList (, $co
 try {
     if (Wait-Job $job -Timeout $TimeoutSec) {
         $out = Receive-Job $job
-        $out                                   # 原样输出 codex 正文（findings）
+        $out                                   # emit codex's body (findings) as-is
 
-        # 解析 session id（codex 输出形如 "session id: <id>"）
+        # Parse the session id (codex output looks like "session id: <id>")
         $sid = ''
         $hit = $out | Select-String -Pattern 'session id:\s*(\S+)' | Select-Object -First 1
         if ($hit) { $sid = $hit.Matches[0].Groups[1].Value }
@@ -79,7 +80,7 @@ catch {
 }
 finally {
     Remove-Job $job -Force -ErrorAction SilentlyContinue
-    # 清理残留 codex 进程（实测裸跑会卡）
+    # Clean up leftover codex processes (a bare run was measured hanging)
     Get-Process codex -ErrorAction SilentlyContinue |
         Where-Object { $_.StartTime -gt $t0 } |
         Stop-Process -Force -ErrorAction SilentlyContinue

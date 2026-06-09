@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
-# /spec:propose 前置检查：research.md 的 ## Open [TBD] 必须清空
-# 触发：UserPromptSubmit hook
-# 行为：用户输入含 /spec:propose 时扫描 research.md；含 [TBD] 则 exit 2 阻断
+# Pre-check for /spec:propose: research.md's ## Open [TBD] section must be empty
+# Trigger: UserPromptSubmit hook
+# Behavior: when the user input contains /spec:propose, scan research.md; if it contains [TBD], exit 2 to block
 
 # UTF-8 stdin/stdout
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -14,14 +14,14 @@ try {
     if ([string]::IsNullOrWhiteSpace($stdin)) { exit 0 }
 
     $data = $stdin | ConvertFrom-Json
-    # UserPromptSubmit 的 stdin JSON 字段名是 user_prompt（不是 prompt）
+    # The UserPromptSubmit stdin JSON field is named user_prompt (not prompt)
     $userPrompt = $data.user_prompt
     $cwd = $data.cwd
 
-    # 只在用户输入含 /spec:propose 时触发
+    # Only trigger when the user input contains /spec:propose
     if ($userPrompt -notmatch '/spec:propose') { exit 0 }
 
-    # 找未归档 change（spec/changes/<name>/，排除 archive）
+    # Find the un-archived change (spec/changes/<name>/, excluding archive)
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) { exit 0 }
 
@@ -29,37 +29,37 @@ try {
                Where-Object { $_.Name -ne 'archive' }
 
     if (-not $changes -or $changes.Count -eq 0) {
-        [Console]::Error.WriteLine('SDD: 没有活跃 change。先调 /spec:research <方向> 启动')
+        [Console]::Error.WriteLine('SDD: no active change. Start with /spec:research <direction>')
         exit 2
     }
 
     if ($changes.Count -gt 1) {
         $names = ($changes | ForEach-Object { $_.Name }) -join ', '
-        [Console]::Error.WriteLine("SDD: 检测到多个活跃 change（$names）。本工作流假设单活跃 change——先 /spec:archive 其余、或清理后再 /spec:propose")
+        [Console]::Error.WriteLine("SDD: multiple active changes detected ($names). This workflow assumes a single active change -- /spec:archive the rest (or clean them up) before /spec:propose")
         exit 2
     }
 
     foreach ($change in $changes) {
         $researchPath = Join-Path $change.FullName 'research.md'
         if (-not (Test-Path $researchPath)) {
-            [Console]::Error.WriteLine("SDD: $($change.Name) 缺 research.md。先调 /spec:research <方向>")
+            [Console]::Error.WriteLine("SDD: $($change.Name) is missing research.md. Run /spec:research <direction> first")
             exit 2
         }
 
         $content = Get-Content $researchPath -Raw -Encoding UTF8
 
-        # 去掉 ## Decided 段（其中 "来源 [TBD-N]" 是已消化引用、不算未决），剩余全文扫未消化的 [TBD-N]
-        # 兜底：即使 LLM 漏写 ## Open [TBD] 标题、或把 [TBD-N] 埋在别的段，也能拦住（硬约束不被静默绕过）
+        # Strip the ## Decided section (its "source [TBD-N]" references are resolved citations, not open items), then scan the rest for unresolved [TBD-N]
+        # Backstop: even if the LLM omits the ## Open [TBD] heading, or buries [TBD-N] in another section, this still catches it (the hard constraint can't be silently bypassed)
         $scanText = $content -replace '(?ms)^##\s*Decided[\s\S]*?(?=^##\s+|\z)', ''
         if ($scanText -match '\[TBD-\d+\]') {
-            [Console]::Error.WriteLine("SDD: research.md ($($change.Name)) 含未消化的 [TBD] 决策点。先调 /spec:ask 消化")
+            [Console]::Error.WriteLine("SDD: research.md ($($change.Name)) has unresolved [TBD] decision points. Run /spec:ask to resolve them first")
             exit 2
         }
     }
 
     exit 0
 } catch {
-    # hook 自身 bug 不应阻断流程
-    [Console]::Error.WriteLine("SDD check-tbd hook 内部错误（已放行）: $_")
+    # A bug in the hook itself must not block the flow
+    [Console]::Error.WriteLine("SDD check-tbd hook internal error (fail-open): $_")
     exit 0
 }

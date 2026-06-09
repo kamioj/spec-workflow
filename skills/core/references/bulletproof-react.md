@@ -1,104 +1,104 @@
 ---
-name: Bulletproof-React 架构参考（fork）
+name: Bulletproof-React Architecture Reference (fork)
 source: https://github.com/alan2207/bulletproof-react
-note: 内容从官方 docs/ 抓取整理，companion: react-patterns.md（自写工程化决策与设计模式）
+note: Content extracted and organized from the official docs/. Companion file: react-patterns.md (hand-written engineering decisions and design patterns).
 ---
 
-# Bulletproof-React 架构参考
+# Bulletproof-React Architecture Reference
 
-> 来源：https://github.com/alan2207/bulletproof-react
-> 整理日期：2026-05-16
-
----
-
-## 一、项目概述
-
-Bulletproof-React 是一个团队协作讨论平台演示，核心价值在于**示范生产级 React 架构**。
-
-**四个核心数据模型**：User / Team / Discussion / Comment
-
-**权限体系**：
-- `ADMIN`：可管理讨论、评论和用户，编辑个人资料
-- `USER`：仅可编辑自身评论和个人资料
-
-**支持三种部署形态**：React Vite、Next.js App Router、Next.js Pages Router——各应用目录均有独立 README。
+> Source: https://github.com/alan2207/bulletproof-react
+> Compiled: 2026-05-16
 
 ---
 
-## 二、项目结构 ★ 核心章节
+## 1. Project Overview
 
-### 2.1 src 顶层目录树
+Bulletproof-React is a team collaboration and discussion platform demo. Its core value lies in **demonstrating production-grade React architecture**.
+
+**Four core data models**: User / Team / Discussion / Comment
+
+**Permission system**:
+- `ADMIN`: can manage discussions, comments, and users; can edit their own profile
+- `USER`: can only edit their own comments and profile
+
+**Three supported deployment targets**: React Vite, Next.js App Router, Next.js Pages Router — each app directory has its own README.
+
+---
+
+## 2. Project Structure ★ Core Section
+
+### 2.1 Top-level `src` directory tree
 
 ```
 src/
-├── app/            # 应用入口层：路由、Provider、主组件、router 配置
-├── assets/         # 静态资源（图片、字体）
-├── components/     # 跨功能共享组件
-├── config/         # 全局配置、环境变量导出
-├── features/       # 功能模块（核心组织单元）★
-├── hooks/          # 跨应用共享 hooks
-├── lib/            # 预配置的可复用第三方库封装
-├── stores/         # 全局状态管理
-├── testing/        # 测试工具与 mock 数据
-├── types/          # 跨应用共享 TypeScript 类型
-└── utils/          # 共享工具函数
+├── app/            # Application entry layer: routing, providers, root component, router config
+├── assets/         # Static assets (images, fonts)
+├── components/     # Shared components used across features
+├── config/         # Global configuration and environment variable exports
+├── features/       # Feature modules (the primary organizational unit) ★
+├── hooks/          # Shared hooks used across the application
+├── lib/            # Pre-configured, reusable wrappers around third-party libraries
+├── stores/         # Global state management
+├── testing/        # Test utilities and mock data
+├── types/          # Shared TypeScript types used across the application
+└── utils/          # Shared utility functions
 ```
 
-### 2.2 单个 feature 内部结构
+### 2.2 Internal structure of a single feature
 
 ```
 src/features/awesome-feature/
-├── api/            # 该功能的 API 请求声明与 react-query hooks
-├── assets/         # 该功能的静态资源
-├── components/     # 该功能专属组件
-├── hooks/          # 该功能专属 hooks
-├── stores/         # 该功能的状态 store
-├── types/          # 该功能的 TypeScript 类型
-├── utils/          # 该功能的工具函数
-└── index.ts        # 公开 API 入口（Public API）★
+├── api/            # API request declarations and react-query hooks for this feature
+├── assets/         # Static assets for this feature
+├── components/     # Components scoped to this feature
+├── hooks/          # Hooks scoped to this feature
+├── stores/         # State stores for this feature
+├── types/          # TypeScript types for this feature
+├── utils/          # Utility functions for this feature
+└── index.ts        # Public API entry point ★
 ```
 
-> 原则：**只保留必要的子文件夹**，不要过度设计。废弃一个功能时，只需删除对应的 `features/xxx` 目录。
+> Principle: **only create subdirectories you actually need** — don't over-engineer the structure. To remove a feature, simply delete its `features/xxx` directory.
 
-### 2.3 三大架构原则
+### 2.3 Three core architectural principles
 
-**① 单向代码流（Unidirectional Flow）**
+**① Unidirectional Code Flow**
 
 ```
-shared（components/hooks/utils）
+shared (components / hooks / utils)
     ↓
-features（功能模块）
+features (feature modules)
     ↓
-app（路由/Provider 层）
+app (routing / provider layer)
 ```
 
-禁止反向依赖，禁止平级 feature 互相导入。
+Reverse dependencies are NEVER allowed. Cross-feature imports at the same level are NEVER allowed.
 
-**② 禁止跨 feature 导入**
+**② No cross-feature imports**
 
-feature 之间不得互相 import，需要组合时在 `app` 层完成。
+Features MUST NOT import from one another. When composition is needed, wire things together in the `app` layer.
 
-**③ 禁用 Barrel 文件（index 桶式导出）**
+**③ No barrel files (index re-export patterns)**
 
-直接 import 具体文件路径，而非通过 `index.ts` 统一 re-export。原因是 Vite tree-shaking 对 barrel 文件支持不好，影响构建性能。
+Import from the specific file path directly rather than re-exporting everything through `index.ts`. The reason: Vite's tree-shaking has poor support for barrel files, which hurts build performance.
 
-> 例外：每个 feature 的根 `index.ts` 作为对外公开 API，仅暴露需要被外部使用的内容。
+> Exception: each feature's root `index.ts` serves as its public API — it MUST only expose what external consumers need.
 
-### 2.4 ESLint 强制边界
+### 2.4 ESLint-enforced boundaries
 
-**方案 A：`no-restricted-imports`（推荐，简洁）**
+**Option A: `no-restricted-imports` (recommended — simple)**
 
 ```javascript
 // .eslintrc.js
 'no-restricted-imports': [
   'error',
   {
-    patterns: ['@/features/*/*'],  // 禁止直接 import feature 内部文件，必须通过 index.ts
+    patterns: ['@/features/*/*'],  // Prevent importing feature internals directly; must go through index.ts
   },
 ]
 ```
 
-**方案 B：`import/no-restricted-paths`（更细粒度）**
+**Option B: `import/no-restricted-paths` (finer-grained)**
 
 ```javascript
 'import/no-restricted-paths': [
@@ -110,7 +110,7 @@ feature 之间不得互相 import，需要组合时在 `app` 层完成。
       { target: './src/features/discussions', from: './src/features', except: ['./discussions'] },
       { target: './src/features/teams',       from: './src/features', except: ['./teams'] },
       { target: './src/features/users',       from: './src/features', except: ['./users'] },
-      // 强制单向流：shared 不能 import features/app
+      // Enforce unidirectional flow: shared layers MUST NOT import from features or app
       { target: './src/components',           from: ['./src/features', './src/app'] },
       { target: './src/hooks',                from: ['./src/features', './src/app'] },
       { target: './src/lib',                  from: ['./src/features', './src/app'] },
@@ -121,23 +121,23 @@ feature 之间不得互相 import，需要组合时在 `app` 层完成。
 
 ---
 
-## 三、组件与样式
+## 3. Components and Styling
 
-**核心原则**：状态、组件、样式就近放置，不要过早提升层级。
+**Core principle**: keep state, components, and styles close to where they are used — don't lift them prematurely.
 
 ```typescript
-// ❌ 错误：在大组件里写嵌套渲染函数
+// ❌ Wrong: nested render functions inside a large component
 function Component() {
-  function Items() { return <ul>...</ul>; }   // ← 每次渲染重新创建
+  function Items() { return <ul>...</ul>; }   // ← recreated on every render
   return <div><Items /></div>;
 }
 
-// ✅ 正确：提取为独立组件
+// ✅ Correct: extract as a standalone component
 function Items() { return <ul>...</ul>; }
 function Component() { return <div><Items /></div>; }
 ```
 
-**反腐层（Anti-Corruption Layer）**：封装第三方组件，隔离上游 breaking change：
+**Anti-Corruption Layer**: wrap third-party components to isolate yourself from upstream breaking changes:
 
 ```typescript
 import { Link as RouterLink, LinkProps } from 'react-router-dom';
@@ -149,21 +149,21 @@ export const Link = ({ className, children, ...props }: LinkProps) => (
 );
 ```
 
-**组件库选型参考**：
+**Component library options**:
 
-- 快速原型：Chakra UI / MUI / Mantine（全功能型）
-- 自定义设计系统：Radix UI / Headless UI（无头组件）
-- 折中方案：ShadCN UI / Park UI（可定制预构建）
+- Rapid prototyping: Chakra UI / MUI / Mantine (full-featured)
+- Custom design systems: Radix UI / Headless UI (headless components)
+- Middle ground: ShadCN UI / Park UI (customizable pre-built)
 
-**开发工具**：用 Storybook 作组件目录，隔离开发，便于发现和复用。
+**Tooling**: use Storybook as a component catalog to develop components in isolation and make them easy to discover and reuse.
 
 ---
 
-## 四、API 层
+## 4. API Layer
 
-**单一客户端实例**：全局维护一个预配置的 API client（fetch / axios / apollo-client），不在各处各自初始化。
+**Single client instance**: maintain one pre-configured API client globally (fetch / axios / apollo-client) — NEVER initialize separate clients in different parts of the app.
 
-**每个 API 声明包含三要素**：
+**Each API declaration MUST include three elements**:
 
 ```typescript
 // src/features/discussions/api/get-discussions.ts
@@ -171,8 +171,8 @@ import { api } from '@/lib/api-client';
 import { useQuery } from '@tanstack/react-query';
 import { Discussion } from '../types';
 
-// 1. 类型 + 验证 schema
-// 2. 请求函数
+// 1. Types + validation schema
+// 2. Request function
 export const getDiscussions = (): Promise<Discussion[]> =>
   api.get('/discussions');
 
@@ -181,74 +181,74 @@ export const useDiscussions = () =>
   useQuery({ queryKey: ['discussions'], queryFn: getDiscussions });
 ```
 
-优势：端点集中可查，类型推断增强安全性，逻辑全部在一处。
+Benefits: all endpoints are centralized and easy to find; type inference improves safety; all related logic lives in one place.
 
 ---
 
-## 五、状态管理
+## 5. State Management
 
-状态分五类，各自用合适工具：
+State falls into five categories, each handled by the appropriate tool:
 
-| 类别 | 工具 |
+| Category | Tool |
 |---|---|
-| 组件状态（简单） | `useState` |
-| 组件状态（复杂） | `useReducer` |
-| 应用全局状态 | Context + Hooks / Zustand / Jotai / Redux Toolkit |
-| 服务器缓存 | React Query / SWR / Apollo Client / RTK Query |
-| 表单状态 | React Hook Form / Formik，配合 Zod/Yup 验证 |
-| URL 状态 | react-router-dom（路由参数 + query string） |
+| Component state (simple) | `useState` |
+| Component state (complex) | `useReducer` |
+| Application-wide global state | Context + Hooks / Zustand / Jotai / Redux Toolkit |
+| Server cache | React Query / SWR / Apollo Client / RTK Query |
+| Form state | React Hook Form / Formik, paired with Zod/Yup for validation |
+| URL state | react-router-dom (route params + query strings) |
 
-**核心原则**：
+**Core principles**:
 
-- 状态尽量本地化，必要时才提升
-- 服务器数据**不要**放进 Redux，交给专用缓存库
-- 创建抽象的 Form 组件和 Input 组件，避免重复配置
-
----
-
-## 六、错误处理
-
-**三层防线**：
-
-1. **API 拦截器**：统一处理 401（登出/刷新 token）、网络错误触发通知
-   - 参考实现：`apps/react-vite/src/lib/api-client.ts`
-
-2. **React 错误边界**：在不同区域放置**多个**边界（非单一全局），实现局部隔离
-   - 参考实现：`apps/react-vite/src/app/routes/app/discussions/discussion.tsx`
-
-3. **生产监控**：接入 Sentry，上传 source map，精确定位源码位置，获取平台/浏览器等上下文
+- Keep state as local as possible; only lift it when necessary
+- Server data MUST NOT go into Redux — hand it off to a dedicated caching library
+- Create abstract Form and Input components to avoid repetitive configuration
 
 ---
 
-## 七、测试策略
+## 6. Error Handling
 
-**优先级**：集成测试 > 端到端测试 > 单元测试
+**Three layers of defense**:
 
-> 原文：「集成测试和端到端测试的全面覆盖，才能提供真正的应用功能信心」
+1. **API interceptor**: centrally handles 401s (sign out / token refresh) and triggers notifications on network errors
+   - Reference implementation: `apps/react-vite/src/lib/api-client.ts`
 
-**工具栈**：
+2. **React Error Boundaries**: place **multiple** boundaries in different regions (not a single global one) for localized fault isolation
+   - Reference implementation: `apps/react-vite/src/app/routes/app/discussions/discussion.tsx`
 
-| 工具 | 用途 |
+3. **Production monitoring**: integrate Sentry, upload source maps for precise stack traces pointing to original source, and capture platform/browser context
+
+---
+
+## 7. Testing Strategy
+
+**Priority order**: integration tests > end-to-end tests > unit tests
+
+> From the source: "Comprehensive integration and end-to-end test coverage is what gives you real confidence that the application works."
+
+**Toolchain**:
+
+| Tool | Purpose |
 |---|---|
-| Vitest | 测试框架（比 Jest 更轻量，Vite 原生支持） |
-| Testing Library | 模拟真实用户行为编写测试，重构后仍有效 |
-| Playwright | 浏览器 E2E 自动化（支持 headless 模式） |
-| MSW（Mock Service Worker） | 在 Service Worker 层 mock API，可先设计接口再等后端 |
+| Vitest | Test runner (lighter than Jest, native Vite support) |
+| Testing Library | Write tests that simulate real user interactions; remains valid after refactors |
+| Playwright | Browser-based E2E automation (supports headless mode) |
+| MSW (Mock Service Worker) | Mock APIs at the Service Worker level; design the interface before the backend is ready |
 
-**实践建议**：
+**Practical recommendations**:
 
-- 大部分精力投入集成测试，验证模块间协作
-- 用 MSW mock 原型化 API 设计，而非硬编码响应数据
-- 测试按真实用户使用方式编写，不依赖实现细节
+- Invest the majority of testing effort in integration tests that verify how modules work together
+- Use MSW to prototype API designs rather than hard-coding response fixtures
+- Write tests from the perspective of a real user — avoid coupling to implementation details
 
 ---
 
-## 总评
+## Summary
 
-Bulletproof-React 用**功能模块化 + 单向依赖 + ESLint 强制边界**三板斧，将大型 React 项目的混乱度控制在可预测范围内，是目前开源社区对"可扩展前端架构"描述最具体、最可直接落地的参考实现。
+Bulletproof-React combines **feature-based modularization**, **unidirectional dependency flow**, and **ESLint-enforced boundaries** to keep large React applications predictably organized. It is currently the most concrete, immediately actionable open-source reference for scalable frontend architecture.
 
-## 信息源
+## Sources
 
 - [bulletproof-react GitHub](https://github.com/alan2207/bulletproof-react)
 - [project-structure.md](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
-- [其余 docs/* 文档](https://github.com/alan2207/bulletproof-react/tree/master/docs)
+- [Other docs/* documentation](https://github.com/alan2207/bulletproof-react/tree/master/docs)

@@ -1,110 +1,110 @@
 ---
-name: Java/Spring Backend Conventions (自写)
-companion: alibaba-java.md (阿里手册原文，先读这个)
-note: 阿里手册规定的是"分层职责"不规定包路径；本文件补足包结构、设计模式应用、任务拆分等手册没说的部分。
+name: Java/Spring Backend Conventions (custom)
+companion: alibaba-java.md (Alibaba Java guide, read this first)
+note: The Alibaba guide covers "layer responsibilities" but not package paths. This file fills in the gaps — package structure, design pattern usage, task decomposition — the areas the guide leaves open.
 ---
 
-# Java/Spring 后端工程规范
+# Java/Spring Backend Engineering Conventions
 
-阿里手册（`alibaba-java.md`）是规则参考；本文件是落地约束。两份配合使用：手册告诉你"该不该"，本文件告诉你"具体怎么放".
+The Alibaba guide (`alibaba-java.md`) is the rule reference; this file is the implementation constraint. Use both together: the guide tells you *whether* something is right, this file tells you *exactly where to put it*.
 
 ---
 
-## 1. 包结构决策
+## 1. Package Structure Decisions
 
-阿里手册**不规定包路径**。Spring 官方推荐 `package-by-feature`（按业务分包）。国内脚手架（若依等）多用 `package-by-layer`（按层分包）。三种各有适用：
+The Alibaba guide **does not prescribe package paths**. Spring officially recommends `package-by-feature`. Many domestic scaffolding frameworks (Ruoyi, etc.) use `package-by-layer`. Each approach has its place:
 
-### 决策矩阵
+### Decision Matrix
 
-| 项目特征 | 推荐 | 标签 |
+| Project Characteristics | Recommendation | Label |
 |---|---|---|
-| 小型 CRUD（<10 业务模块）、3 人内团队、短期 | **A. 按层分包** | 国内脚手架风格，简单 |
-| **中型业务系统（10-30 模块）、5-10 人、可能演进** | **B. 按业务（DDD-lite）** ⭐ **默认推荐** | package-by-feature |
-| 复杂业务（金融/电商/订单/履约）、长期演进、可能拆微服务 | **C. 严格 DDD** | Hexagonal / Onion |
-| 框架/SDK/工具库 | 按技术职责分包 | 像 Dubbo / Sentinel |
+| Small CRUD (<10 business modules), team ≤3, short-lived | **A. Package by Layer** | Standard scaffolding style, simple |
+| **Medium business system (10–30 modules), 5–10 people, likely to evolve** | **B. Package by Feature (DDD-lite)** ⭐ **Default recommendation** | package-by-feature |
+| Complex domain (finance/e-commerce/order fulfillment), long-lived, potential microservice split | **C. Strict DDD** | Hexagonal / Onion |
+| Framework/SDK/utility library | Package by technical responsibility | Like Dubbo / Sentinel |
 
-### 现有项目检测（最高优先级规则）
+### Detecting Existing Projects (Highest-Priority Rule)
 
-**进入 SDD 时第一件事**：`Glob src/main/java/<root-package>/` 看第一级目录。
+**The first thing you do when entering SDD**: run `Glob src/main/java/<root-package>/` and inspect the top-level directories.
 
 ```
-检测到的第一级目录                判定
-─────────────────────────         ──────────────────
-controller/, service/, dao/...    现有项目是 A，跟随
-user/, order/, payment/...        现有项目是 B 或 C，看模块内进一步判断
-模块内有 domain/+application/+    现有项目是 C 严格 DDD
+Detected top-level directories              Classification
+─────────────────────────                   ──────────────────
+controller/, service/, dao/...              Existing project is A — follow it
+user/, order/, payment/...                  Existing project is B or C — inspect module internals
+Module contains domain/+application/+       Existing project is strict DDD (C)
 infrastructure/+interfaces/
-模块内有 controller/+service/+    现有项目是 B 简化版
+Module contains controller/+service/+       Existing project is simplified DDD (B)
 repository/+domain/
 ```
 
-**禁止规则**：新模块的结构**必须跟现有项目同档次**。已经 A 的项目不允许新加 C 模块；反之亦然。这是为了避免半 A 半 C 的混乱代码库。
+**Hard rule**: new modules MUST match the structural tier of the existing project. A project already on tier A MUST NOT introduce tier-C modules, and vice versa. This prevents a codebase that is half-A and half-C — a maintenance nightmare.
 
-如果用户明确说"重构整个项目用 X"——那是另一个独立 SDD 提案，不要在普通新增模块里偷偷做。
+If the user explicitly asks to "refactor the entire project to style X," treat that as a separate SDD proposal. Do not sneak it in as part of an ordinary feature addition.
 
 ---
 
-## 2. B. 按业务模块（DDD-lite）—— 默认推荐结构
+## 2. B. Package by Feature (DDD-lite) — Default Recommended Structure
 
 ```
 com.company.app
-├── user/                      ← 限界上下文 / 业务模块
-│   ├── controller/            (Web 层：HTTP 入口、参数校验)
+├── user/                      ← Bounded context / business module
+│   ├── controller/            (Web layer: HTTP entry points, request validation)
 │   │   ├── UserController.java
-│   │   └── dto/               (Web 层 DTO：req/resp)
+│   │   └── dto/               (Web-layer DTOs: request/response)
 │   │       ├── CreateUserReq.java
 │   │       └── UserResp.java
-│   ├── service/               (业务服务：编排业务逻辑)
+│   ├── service/               (Business service: orchestrates business logic)
 │   │   ├── UserService.java
 │   │   └── impl/
 │   │       └── UserServiceImpl.java
-│   ├── repository/            (数据访问)
+│   ├── repository/            (Data access)
 │   │   ├── UserMapper.java
 │   │   └── UserMapper.xml
-│   ├── domain/                (领域模型：实体、值对象)
-│   │   ├── User.java          (DO，数据库映射)
-│   │   ├── UserBO.java        (业务对象，可选)
+│   ├── domain/                (Domain model: entities, value objects)
+│   │   ├── User.java          (DO, database mapping)
+│   │   ├── UserBO.java        (Business object, optional)
 │   │   └── enums/
 │   │       └── UserStatus.java
-│   └── manager/               (可选：跨多 DAO 组合 / 第三方调用封装)
+│   └── manager/               (Optional: multi-DAO aggregation / third-party call wrappers)
 │       └── UserManager.java
 ├── order/
-│   └── (同样结构)
+│   └── (same structure)
 ├── payment/
-│   └── (同样结构)
-├── common/                    ← 跨业务共享
+│   └── (same structure)
+├── common/                    ← Cross-module shared code
 │   ├── exception/
 │   ├── response/
 │   ├── util/
 │   └── constants/
-├── config/                    ← Spring 配置类
+├── config/                    ← Spring configuration classes
 │   ├── WebMvcConfig.java
 │   ├── MybatisConfig.java
 │   └── RedisConfig.java
-└── infrastructure/            ← 技术基础设施（可选）
+└── infrastructure/            ← Technical infrastructure (optional)
     ├── cache/
     └── mq/
 ```
 
-### 关键约束
+### Key Constraints
 
-- **单业务模块对外只暴露 `service` 包的接口**，其他包（controller/domain）禁止跨模块直接 import
-- **`common/` 不放业务逻辑**，只放纯工具类、通用异常、全局响应模型
-- **`config/` 不放业务**，只放 Spring 配置和 Bean 定义
-- **Manager 层是阿里手册的精髓**：当一个 Service 需要调多个 DAO 或第三方 API 时，下沉到 Manager，避免 Service 臃肿
+- **Each business module MUST expose only its `service` package interfaces to the outside world.** Cross-module direct imports of `controller` or `domain` packages are NEVER allowed.
+- **`common/` MUST NOT contain business logic** — only pure utilities, shared exceptions, and global response models.
+- **`config/` MUST NOT contain business logic** — only Spring configuration and Bean definitions.
+- **The Manager layer is the core insight of the Alibaba guide**: when a Service needs to call multiple DAOs or third-party APIs, push that coordination down to a Manager to keep the Service from becoming bloated.
 
-### 何时引入 Manager 层
+### When to Introduce a Manager Layer
 
-| 场景 | 是否引入 Manager |
+| Scenario | Introduce Manager? |
 |---|---|
-| Service 调单 DAO 做 CRUD | ❌ 不需要 |
-| Service 调 2-3 个 DAO 组合数据 | ⚠️ 看复杂度，超 50 行考虑下沉 |
-| Service 调第三方 API（短信/支付/OSS）| ✅ 必须，封装到 Manager |
-| Service 需要 Redis/MQ/缓存编排 | ✅ Manager 或 infrastructure |
+| Service calls a single DAO for CRUD | ❌ Not needed |
+| Service aggregates data from 2–3 DAOs | ⚠️ Depends on complexity — consider pushing down if the logic exceeds ~50 lines |
+| Service calls a third-party API (SMS / payment / OSS) | ✅ MUST — wrap it in a Manager |
+| Service coordinates Redis / MQ / cache | ✅ Manager or infrastructure layer |
 
 ---
 
-## 3. A. 按层分包（国内脚手架风格，可选）
+## 3. A. Package by Layer (Scaffolding Style, Optional)
 
 ```
 com.company.app
@@ -125,72 +125,72 @@ com.company.app
 └── common/
 ```
 
-适用：跟随若依/JeecgBoot 等脚手架现状、小型 CRUD。
+Use this when: following an existing Ruoyi/JeecgBoot scaffolding, or for small CRUD applications.
 
-不推荐用于新项目（项目长大后单业务的代码会散在多个顶层包，diff 不集中，难以演进）。但**已有项目用这套时跟随，不擅自重构**。
+Not recommended for greenfield projects (as the project grows, code for a single feature scatters across multiple top-level packages, diffs become unfocused, and evolution gets painful). But **when an existing project already uses this style, follow it — do not refactor it unilaterally**.
 
 ---
 
-## 4. C. 严格 DDD（仅复杂业务）
+## 4. C. Strict DDD (Complex Business Domains Only)
 
 ```
-com.company.app.user/         ← 限界上下文
-├── domain/                   ← 核心层，无外部依赖
+com.company.app.user/         ← Bounded context
+├── domain/                   ← Core layer, no external dependencies
 │   ├── model/
-│   │   ├── User.java        (聚合根 Aggregate Root)
-│   │   ├── UserId.java      (值对象 Value Object)
-│   │   └── Email.java       (值对象)
-│   ├── service/              (领域服务，纯业务规则)
-│   ├── event/                (领域事件)
+│   │   ├── User.java        (Aggregate Root)
+│   │   ├── UserId.java      (Value Object)
+│   │   └── Email.java       (Value Object)
+│   ├── service/              (Domain service, pure business rules)
+│   ├── event/                (Domain events)
 │   └── repository/
-│       └── UserRepository.java (接口！实现在 infrastructure)
-├── application/              ← 用例编排
-│   ├── command/              (写：CQRS Command 侧)
-│   ├── query/                (读：CQRS Query 侧)
+│       └── UserRepository.java (Interface only — implementation lives in infrastructure)
+├── application/              ← Use case orchestration
+│   ├── command/              (Write side: CQRS Commands)
+│   ├── query/                (Read side: CQRS Queries)
 │   └── UserAppService.java
-├── infrastructure/           ← 技术实现，依赖反转
+├── infrastructure/           ← Technical implementation, dependency inversion
 │   ├── persistence/
 │   │   └── UserRepositoryImpl.java
-│   ├── gateway/              (调外部系统)
+│   ├── gateway/              (External system adapters)
 │   └── messaging/
-└── interfaces/               ← 输入适配器
+└── interfaces/               ← Input adapters
     ├── rest/
     │   └── UserController.java
     ├── grpc/
-    └── consumer/             (MQ 消费者)
+    └── consumer/             (MQ consumers)
 ```
 
-仅在以下情况推荐：
-- 业务规则复杂（不是 CRUD）
-- 长期演进、可能拆微服务
-- 团队熟悉 DDD 概念，能维护"领域纯净"的边界
+Only recommended when:
+- Business rules are genuinely complex (not just CRUD)
+- The system is long-lived and a microservice split is plausible
+- The team understands DDD concepts and can maintain clean domain boundaries
 
-否则**不要用 C**，C 的成本（接口/适配器/聚合根概念）会拖累简单项目。
+Otherwise **do not use C**. The overhead of interfaces, adapters, and aggregate root concepts will slow down simple projects.
 
 ---
 
-## 5. Spring Boot 高频设计模式
+## 5. High-Frequency Design Patterns in Spring Boot
 
-LLM 默认写法常缺设计模式，本节列出**8 个真正高频且简单**的模式 + 使用条件。不要为用模式而用——分支 <3 且不会扩展直接 `if-else`。
+LLM-generated code routinely skips design patterns. This section lists **8 genuinely high-frequency and practical patterns** along with the conditions that warrant them. Do not use a pattern for its own sake — if the branches are fewer than 3 and unlikely to grow, a plain `if-else` is the right call.
 
-### 5.1 策略模式（最常用）
+### 5.1 Strategy (Most Common)
 
-**场景**：业务有 3+ 种"做法"且未来可能扩展（支付方式、消息推送渠道、文件存储类型）
+**When to use**: the business has 3+ ways of doing something, and more may be added later (payment methods, notification channels, file storage backends).
 
 ```java
-// 接口
+// Interface
 public interface PayStrategy {
     String getName();
     PayResult pay(PayRequest req);
 }
 
-// 实现（多个 Bean）
+// Implementations (multiple Beans)
 @Component("alipay")
 public class AlipayStrategy implements PayStrategy { ... }
 @Component("wechat")
 public class WechatPayStrategy implements PayStrategy { ... }
 
-// 注入 + 路由
+// Injection + routing
 @Service
 public class PayService {
     private final Map<String, PayStrategy> strategies;
@@ -200,24 +200,24 @@ public class PayService {
     }
     public PayResult pay(String channel, PayRequest req) {
         PayStrategy s = strategies.get(channel);
-        if (s == null) throw new BizException("不支持的支付方式: " + channel);
+        if (s == null) throw new BizException("Unsupported payment channel: " + channel);
         return s.pay(req);
     }
 }
 ```
 
-**判断**：如果是 `if (channel.equals("alipay")) { ... } else if (channel.equals("wechat")) { ... }` 这种形态 → 改策略。
+**Signal**: if you see `if (channel.equals("alipay")) { ... } else if (channel.equals("wechat")) { ... }`, refactor to Strategy.
 
-### 5.2 模板方法（流程固定步骤可变）
+### 5.2 Template Method (Fixed Skeleton, Variable Steps)
 
-**场景**：导入导出、批处理、消息消费等"骨架固定，细节可变"的流程
+**When to use**: import/export flows, batch processing, message consumption — anything with a fixed skeleton where only the details vary.
 
 ```java
 public abstract class ImportTemplate<T> {
     public final ImportResult execute(File file) {
-        validate(file);           // 骨架步骤 1
-        List<T> records = parse(file);   // 子类实现
-        records.forEach(this::process);  // 子类实现
+        validate(file);           // Skeleton step 1
+        List<T> records = parse(file);   // Implemented by subclass
+        records.forEach(this::process);  // Implemented by subclass
         return summary(records);
     }
     protected abstract List<T> parse(File file);
@@ -226,17 +226,17 @@ public abstract class ImportTemplate<T> {
 }
 ```
 
-### 5.3 责任链（多步处理、可中断）
+### 5.3 Chain of Responsibility (Multi-Step Processing, Interruptible)
 
-**场景**：审批流、过滤器链、规则引擎
+**When to use**: approval workflows, filter chains, rule engines.
 
-Spring Security `FilterChain`、Spring MVC `HandlerInterceptor` 都是责任链。业务上常用于：
-- 风控规则链
-- 审批流（每节点决定是否放行 / 转交）
+Spring Security `FilterChain` and Spring MVC `HandlerInterceptor` are both chain-of-responsibility implementations. Common business uses include:
+- Risk-control rule chains
+- Approval workflows (each node decides whether to pass or redirect)
 
-### 5.4 观察者 / 事件（解耦）
+### 5.4 Observer / Event (Decoupling)
 
-**场景**：下单成功后异步触发"扣库存 + 发短信 + 加积分"——用 Spring `ApplicationEventPublisher` 解耦
+**When to use**: after a successful order placement, asynchronously triggering "deduct inventory + send SMS + award points" — use Spring `ApplicationEventPublisher` to decouple these.
 
 ```java
 @Service
@@ -244,7 +244,7 @@ public class OrderService {
     @Autowired ApplicationEventPublisher publisher;
     public void placeOrder(Order o) {
         save(o);
-        publisher.publishEvent(new OrderPlacedEvent(o));  // 发事件
+        publisher.publishEvent(new OrderPlacedEvent(o));  // Publish event
     }
 }
 
@@ -258,11 +258,11 @@ public class InventoryListener {
 }
 ```
 
-**判断**：当一个核心操作触发 N 个独立副作用 → 用事件解耦。
+**Signal**: when a core operation triggers N independent side effects, use events to decouple them.
 
-### 5.5 装饰器 / AOP（横切关注点）
+### 5.5 Decorator / AOP (Cross-Cutting Concerns)
 
-**场景**：日志、监控、权限、缓存、限流——这些不属于业务逻辑但每个方法都要做的事
+**When to use**: logging, monitoring, authorization, caching, rate limiting — things that don't belong in business logic but need to happen in many places.
 
 ```java
 @Aspect
@@ -270,94 +270,94 @@ public class InventoryListener {
 public class AuditLogAspect {
     @Around("@annotation(audit)")
     public Object log(ProceedingJoinPoint pjp, Audit audit) throws Throwable {
-        // 前置：记录入参
+        // Before: record input parameters
         Object result = pjp.proceed();
-        // 后置：记录出参
+        // After: record output
         return result;
     }
 }
 ```
 
-### 5.6 建造者（多参数对象）
+### 5.6 Builder (Many-Parameter Objects)
 
-**场景**：DTO/Entity 字段多（>4 个），用 Lombok `@Builder`
+**When to use**: DTOs or entities with more than 4 fields — use Lombok `@Builder`.
 
 ```java
 User user = User.builder()
-    .name("张三")
+    .name("Alice")
     .age(25)
     .email("zs@x.com")
     .role(Role.ADMIN)
     .build();
 ```
 
-### 5.7 单例（Spring 默认）
+### 5.7 Singleton (Spring Default)
 
-Spring Bean 默认单例，除非 `@Scope("prototype")`。**了解但不主动用**——多数时候 Spring 已替你处理。
+Spring Beans are singletons by default unless annotated `@Scope("prototype")`. **Be aware of this but do not actively apply it** — Spring already handles it for you in most cases.
 
-### 5.8 工厂（动态选择实现）
+### 5.8 Factory (Dynamic Implementation Selection)
 
-**场景**：类似策略，但实现可能是动态创建而非已注册的 Bean。频率低，用到再说。
+**When to use**: similar to Strategy, but the implementation may be created dynamically rather than pre-registered as a Bean. Low frequency — reach for it when you actually need it.
 
-### 反模式：什么时候不要用设计模式
+### Anti-Pattern: When NOT to Use Design Patterns
 
-- 业务分支 ≤2 且明确不会扩展 → 直接 `if-else`
-- 一次性需求、不复用 → 不要预设抽象
-- 团队没人理解某个模式 → 别用，否则维护噩梦
-- "用模式让代码看起来高级" → 这是反模式中的反模式
+- Business branches ≤2 and definitely won't grow → use `if-else` directly
+- One-off requirement that will never be reused → do not introduce premature abstractions
+- Nobody on the team understands a given pattern → don't use it; the maintenance burden is not worth it
+- "Using a pattern to make the code look sophisticated" → this is the anti-pattern of anti-patterns
 
 ---
 
-## 6. Tasks 拆分模板（前后端并行，monorepo 适用）
+## 6. Task Decomposition Template (Frontend/Backend Parallel, Monorepo)
 
-全栈项目的 task 必须**显式标注分支可独立性**，让用户能开多个对话并行做。
+In full-stack projects, tasks MUST **explicitly indicate which branches are independently parallelizable**, so the user can run multiple Claude conversations simultaneously.
 
-### Monorepo 全栈 tasks 模板
+### Monorepo Full-Stack Tasks Template
 
 ```markdown
 ## Tasks
 
-### 后端任务（branch: feat/<name>-backend）
-- [ ] B1. 新增 `User` 实体 + `UserMapper` + `UserMapper.xml`
-- [ ] B2. `UserService` 业务逻辑（用到设计模式：策略 - 处理多种用户类型）
-- [ ] B3. `UserController` REST 接口
-- [ ] B4. 接口契约文档（OpenAPI yaml 或 markdown）
+### Backend Tasks (branch: feat/<name>-backend)
+- [ ] B1. Add `User` entity + `UserMapper` + `UserMapper.xml`
+- [ ] B2. `UserService` business logic (design pattern used: Strategy — handles multiple user types)
+- [ ] B3. `UserController` REST endpoints
+- [ ] B4. API contract documentation (OpenAPI yaml or markdown)
 
-### 前端任务（branch: feat/<name>-frontend，可与后端并行）
-- [ ] F1. `api/user.ts` 接口封装（先 mock 数据）
-- [ ] F2. `views/user/UserList.vue` 列表页
-- [ ] F3. `composables/useUser.ts` 数据钩子
-- [ ] F4. 路由 + 权限配置
+### Frontend Tasks (branch: feat/<name>-frontend, parallelizable with backend)
+- [ ] F1. `api/user.ts` API wrapper (mock data first)
+- [ ] F2. `views/user/UserList.vue` list page
+- [ ] F3. `composables/useUser.ts` data hook
+- [ ] F4. Routing + permission configuration
 
-### 契约同步（前置：B4 + F1）
-- [ ] C1. 前端切换 mock → 真实接口
-- [ ] C2. 字段联调
+### Contract Sync (prerequisite: B4 + F1)
+- [ ] C1. Switch frontend from mock to real API
+- [ ] C2. Field-level integration testing
 
-### 集成任务（必须串行，B 全 + F 全 + C 全完成后）
-- [ ] I1. 端到端测试场景
-- [ ] I2. 错误处理与边界 case
-- [ ] I3. 文档更新（README + 用户手册）
+### Integration Tasks (must be sequential — after all B, F, and C tasks are complete)
+- [ ] I1. End-to-end test scenarios
+- [ ] I2. Error handling and edge cases
+- [ ] I3. Documentation updates (README + user guide)
 ```
 
-### 关键约束
+### Key Constraints
 
-- **B 和 F 完全独立可并行**——用户可开两个 Claude 对话同时跑
-- **B4 是契约任务**，必须先于 F 切真实接口；F1 mock 阶段不依赖
-- **I 必须最后**——所有 B 和 F 合并到主分支后再做
+- **B and F are fully independent and parallelizable** — the user can run two Claude conversations simultaneously
+- **B4 is the contract task** and MUST complete before F switches to the real API; F1's mock phase has no dependency on B
+- **I MUST be last** — only after all B and F branches are merged to main
 
 ---
 
-## 7. 反模式清单（明确禁止）
+## 7. Anti-Pattern Checklist (Explicitly Prohibited)
 
-| 反模式 | 为什么不行 |
+| Anti-Pattern | Why It's Wrong |
 |---|---|
-| 在 A 项目里新加 C 风格的模块 | 结构混乱，新人懵 |
-| Controller 里写业务逻辑 | Controller 只做参数校验 + 调 Service |
-| Service 里直接 import 另一个业务模块的 DAO | 违反模块边界 |
-| 跨模块 import 不通过 Service 接口 | 同上，模块腐烂 |
-| 用拼音命名（`xinxi`、`yonghu`） | 阿里手册【强制】禁止 |
-| 一个类塞 500+ 行业务 | 拆分或下沉到 Manager |
-| 默认 `Executors.newFixedThreadPool` | 阿里手册【强制】禁止，用 `ThreadPoolExecutor` 显式参数 |
-| catch 块空处理 | 阿里手册【强制】禁止 |
-| `SELECT *` | 阿里手册【强制】禁止 |
-| 倒填 proposal 适配已写代码 | SDD 最大反模式 |
+| Adding a tier-C module to a tier-A project | Creates structural chaos; confusing for newcomers |
+| Writing business logic in a Controller | Controllers MUST only validate parameters and delegate to a Service |
+| Service directly importing another module's DAO | Violates module boundaries |
+| Cross-module imports that bypass the Service interface | Same issue — modules rot |
+| Pinyin identifiers (`xinxi`, `yonghu`) | Alibaba guide **[Mandatory]** prohibition |
+| Stuffing 500+ lines of business logic into one class | Decompose or push down to a Manager |
+| Using `Executors.newFixedThreadPool` as default | Alibaba guide **[Mandatory]** prohibition — use `ThreadPoolExecutor` with explicit parameters |
+| Empty catch blocks | Alibaba guide **[Mandatory]** prohibition |
+| `SELECT *` | Alibaba guide **[Mandatory]** prohibition |
+| Backfilling a proposal to match already-written code | The biggest anti-pattern in SDD |

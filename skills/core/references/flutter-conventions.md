@@ -1,107 +1,107 @@
 ---
-name: Flutter / Dart 工程化规范（国内向）
-scope: Dart 3 语言现代特性 + 国内 Flutter 真实生态（状态管理 / UI / 路由 / 混合栈 / 推送 / 镜像）+ 反模式
-note: 区别于国外 Riverpod/Bloc 主推，本文以国内项目真实占比为权重，GetX/Provider 作为现实主流坦诚列出，Riverpod/Bloc 作进阶推荐
-audience: 给国内独立开发者、中小团队、大厂混合栈接入方使用，不是给硅谷 SaaS 团队
+name: Flutter / Dart Engineering Conventions (China-Focused)
+scope: Dart 3 modern language features + real-world Chinese Flutter ecosystem (state management / UI / routing / hybrid stacks / push notifications / mirrors) + anti-patterns
+note: Unlike the Western norm of pushing Riverpod/Bloc, this document weights recommendations by actual adoption in Chinese projects — GetX/Provider are honestly listed as the dominant reality, while Riverpod/Bloc appear as advanced/recommended options
+audience: Intended for Chinese indie developers, small-to-medium teams, and large enterprise hybrid-stack integrations — not Silicon Valley SaaS teams
 ---
 
-# Flutter / Dart 工程化规范（国内向）
+# Flutter / Dart Engineering Conventions (China-Focused)
 
-## 0. 这份文档为什么不一样
+## 0. Why This Document Is Different
 
-国外 Flutter 教程（resocoder、Code With Andrea、官方 architecture guide）默认推 Riverpod / Bloc + Clean Architecture + feature-based 目录。**这套在国内中小团队真实落地率不到 20%**。国内现实是：
+Western Flutter tutorials (resocoder, Code With Andrea, the official architecture guide) default to recommending Riverpod / Bloc + Clean Architecture + feature-based directory layout. **This approach has a real-world adoption rate below 20% in Chinese small-to-medium teams.** The actual landscape in China is:
 
-- **GetX 是中文教程最多、新手第一选择**（虽然是反模式重灾区，但绕不开）
-- **Provider 是中文掘金 / B站 / Flutter 中文社区主推**，存量项目巨大
-- **目录按层平铺**（pages / widgets / services / models / utils）远多于 features/data/domain/presentation
-- **flutter_screenutil + dio + getx** 三件套是国内 80% 教程的起手配置
-- **大厂场景几乎都是混合栈**（FlutterBoost / 自研 hybrid），不是纯 Flutter App
-- **包依赖必须配镜像**（pub.flutter-io.cn），否则 `flutter pub get` 卡死
+- **GetX dominates Chinese tutorials and is the default starting point for beginners** (it's an anti-pattern minefield, but you can't ignore it)
+- **Provider is heavily promoted on Juejin, Bilibili, and the Flutter Chinese community**, with a massive installed base of existing projects
+- **Layer-based flat directory structures** (`pages / widgets / services / models / utils`) are far more common than `features/data/domain/presentation`
+- **flutter_screenutil + dio + getx** is the default starter kit in roughly 80% of Chinese tutorials
+- **Large enterprise projects are almost always hybrid stacks** (FlutterBoost / in-house hybrid), not pure Flutter apps
+- **Package dependencies MUST be configured with a mirror** (`pub.flutter-io.cn`); otherwise `flutter pub get` hangs indefinitely
 
-所以本文以"国内真实选型"为正文，**Riverpod 3 / Bloc / Clean Architecture 作为"国外推荐 / 进阶可选"列出**，不打压也不强推。每节附"国内频率"和"反模式信号"。
+This document therefore treats "Chinese real-world choices" as the primary content, with **Riverpod 3 / Bloc / Clean Architecture listed as "Western recommendations / advanced options"** — neither dismissed nor aggressively promoted. Each section includes a "domestic frequency" rating and "anti-pattern signals."
 
 ---
 
-## 1. 官方权威与中文资源
+## 1. Authoritative References and Chinese Resources
 
-| 资源 | 链接 | 用途 |
+| Resource | Link | Purpose |
 |---|---|---|
-| Effective Dart | https://dart.dev/effective-dart | 命名 / 文档 / 风格 |
-| Flutter 官方架构指南 | https://docs.flutter.dev/app-architecture/guide | 国外主流 |
-| Flutter 中文文档 | https://docs.flutter.cn | 镜像 + 翻译 |
-| Flutter 中文社区 | https://flutter-io.cn | 国内入门首选 |
-| 掘金 Flutter 专栏 | https://juejin.cn/tag/Flutter | 国内文章密度最高 |
-| 郭树煜 GSYTech | https://guoshuyu.cn | 国内最系统的 Flutter 中文博客 |
-| 闲鱼技术 | https://developer.aliyun.com/group/idlefish | 国内 Flutter 大厂实践 |
+| Effective Dart | https://dart.dev/effective-dart | Naming / documentation / style |
+| Flutter Official Architecture Guide | https://docs.flutter.dev/app-architecture/guide | Western mainstream |
+| Flutter Chinese Docs | https://docs.flutter.cn | Mirror + translation |
+| Flutter Chinese Community | https://flutter-io.cn | Best entry point for Chinese developers |
+| Juejin Flutter Tag | https://juejin.cn/tag/Flutter | Highest density of Chinese articles |
+| Guo Shuyu / GSYTech | https://guoshuyu.cn | Most comprehensive Chinese Flutter blog |
+| Xianyu Tech | https://developer.aliyun.com/group/idlefish | Large-scale Flutter production experience from Alibaba |
 
-**Effective Dart 速查**：
+**Effective Dart quick reference**:
 
-- 库 / 文件 `lowercase_with_underscores`（`user_profile.dart`），类 `PascalCase`，变量 / 方法 `camelCase`
-- **常量 `camelCase`**（Dart 特殊，不是 `UPPER_SNAKE`）
-- 类型推导优先 `var`，公开 API 显式标注
-- 优先 `final` 而非 `var`
-- 字符串拼接用插值 `'$name'` 不用 `+`
+- Files/libraries: `lowercase_with_underscores` (e.g., `user_profile.dart`); classes: `PascalCase`; variables/methods: `camelCase`
+- **Constants: `camelCase`** (Dart-specific — NOT `UPPER_SNAKE`)
+- Prefer type inference with `var`; annotate types explicitly on public APIs
+- Prefer `final` over `var`
+- Use string interpolation `'$name'` for string composition — NEVER use `+`
 
 ---
 
-## 2. 国内 Flutter 镜像配置（必做第一步）
+## 2. Mirror Configuration for China (Do This First)
 
-不配镜像装不上。**Flutter 中文社区官方镜像**：
+Without a mirror, packages simply won't install. **Official Flutter Chinese Community mirrors**:
 
 ```pwsh
-# Windows 用户级环境变量（pwsh）
+# Windows user-level environment variables (pwsh)
 [Environment]::SetEnvironmentVariable('PUB_HOSTED_URL', 'https://pub.flutter-io.cn', 'User')
 [Environment]::SetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL', 'https://storage.flutter-io.cn', 'User')
 ```
 
 ```bash
-# macOS / Linux ~/.zshrc 或 ~/.bashrc
+# macOS / Linux ~/.zshrc or ~/.bashrc
 export PUB_HOSTED_URL=https://pub.flutter-io.cn
 export FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
 ```
 
-**备用镜像**：
-- 清华 TUNA：`https://mirrors.tuna.tsinghua.edu.cn/flutter/`
-- 腾讯云：`https://mirrors.cloud.tencent.com/flutter/`
+**Backup mirrors**:
+- Tsinghua TUNA: `https://mirrors.tuna.tsinghua.edu.cn/flutter/`
+- Tencent Cloud: `https://mirrors.cloud.tencent.com/flutter/`
 
-**私有 pub 仓库**（团队内部）：JFrog Artifactory / Nexus 都支持 pub repo，企业项目避免依赖公共 pub 拉取。
+**Private pub repositories** (for internal teams): both JFrog Artifactory and Nexus support pub repos. Enterprise projects should avoid relying on public pub to pull dependencies.
 
-**CI 注意**：GitHub Actions / GitLab CI 在国内 runner 上也要在 workflow 里 `env:` 注入这两个变量。
+**CI note**: GitHub Actions / GitLab CI runners located in China also need these two variables injected via `env:` in the workflow file.
 
 ---
 
-## 3. 默认技术栈选型（2026 国内真实占比）
+## 3. Default Technology Stack (2026 China Real-World Adoption)
 
-| 维度 | 国内主流（占比） | 国外推荐 | 进阶 / 团队规范场景 |
+| Dimension | Chinese Mainstream (Share) | Western Recommendation | Advanced / Team Standard |
 |---|---|---|---|
-| Flutter 版本 | **3.41.x stable**（2026.05） | 同 | — |
-| Dart 版本 | **3.5+**（records / patterns / sealed） | 同 | — |
-| 状态管理 | **GetX**（≈40% 教程）/ **Provider**（≈30%）| Riverpod 3 | Riverpod 3 / Bloc |
-| 路由 | **GetX 内置**（与 GetX 状态绑死） / **fluro**（中大型）/ Navigator 2.0 自实现 | go_router | go_router / auto_route |
-| HTTP | **dio**（一致选择，国内国外都用） | dio | — |
-| UI 组件 | **flutter_screenutil**（适配必备）+ Material/Cupertino | 同 | TDesign Flutter（腾讯） |
+| Flutter version | **3.41.x stable** (2026.05) | Same | — |
+| Dart version | **3.5+** (records / patterns / sealed) | Same | — |
+| State management | **GetX** (≈40% of tutorials) / **Provider** (≈30%) | Riverpod 3 | Riverpod 3 / Bloc |
+| Routing | **GetX built-in** (tightly coupled to GetX state) / **fluro** (medium/large apps) / Navigator 2.0 custom | go_router | go_router / auto_route |
+| HTTP | **dio** (consistent choice, used everywhere) | dio | — |
+| UI components | **flutter_screenutil** (essential for adaptation) + Material/Cupertino | Same | TDesign Flutter (Tencent) |
 | Toast | **fluttertoast** / **bot_toast** | — | — |
-| DI | GetX 自带 `Get.put` / `Get.find`（混用）| get_it + injectable | get_it + injectable |
-| JSON | 手写 fromJson/toJson（多）/ json_serializable | freezed + json_serializable | freezed + json_serializable |
-| 推送 | **极光 JPush**（≈50%）/ **个推** / **友盟** / **华为 HMS Push** | FCM（国内不可用）| 极光 + 厂商通道 |
-| 混合栈 | **FlutterBoost**（阿里）/ 自研 | 不涉及 | FlutterBoost |
-| 测试 | flutter_test + mocktail | 同 | — |
+| DI | GetX built-in `Get.put` / `Get.find` (mixed usage) | get_it + injectable | get_it + injectable |
+| JSON | Hand-written fromJson/toJson (common) / json_serializable | freezed + json_serializable | freezed + json_serializable |
+| Push notifications | **JPush** (≈50%) / **GeTui** / **Umeng** / **Huawei HMS Push** | FCM (blocked in China) | JPush + OEM channels |
+| Hybrid stack | **FlutterBoost** (Alibaba) / in-house | N/A | FlutterBoost |
+| Testing | flutter_test + mocktail | Same | — |
 
-**国内真实最小可用栈（独立开发者 / 小项目首选）**：
+**Minimum viable stack for China (recommended for indie developers / small projects)**:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.4.0                 # 网络
-  get: ^4.6.6                 # 状态 + 路由 + DI 三合一（争议但好上手）
-  flutter_screenutil: ^5.9.0  # 屏幕适配
+  dio: ^5.4.0                 # networking
+  get: ^4.6.6                 # state + routing + DI in one (controversial but easy to learn)
+  flutter_screenutil: ^5.9.0  # screen adaptation
   fluttertoast: ^8.2.4        # toast
-  shared_preferences: ^2.2.2  # 本地 KV
-  cached_network_image: ^3.3.0  # 网络图片
+  shared_preferences: ^2.2.2  # local key-value storage
+  cached_network_image: ^3.3.0  # network image caching
 ```
 
-或者 **Provider 派**：
+Or the **Provider variant**:
 
 ```yaml
 dependencies:
@@ -112,39 +112,39 @@ dependencies:
   flutter_screenutil: ^5.9.0
   fluttertoast: ^8.2.4
   shared_preferences: ^2.2.2
-  go_router: ^14.0.0          # 比 fluro 现代
+  go_router: ^14.0.0          # more modern than fluro
 ```
 
 ---
 
-## 4. 状态管理：国内真实选型决策
+## 4. State Management: Real-World Decision Guide for China
 
-### 4.1 GetX（国内第一占比，争议最大）
+### 4.1 GetX (Top share in China, most controversial)
 
-**国内地位**：B 站 / 掘金 / CSDN 中文教程数量 GetX > Provider > Riverpod > Bloc。新手入门 90% 从 GetX 开始。
+**Status in China**: Chinese tutorial volume on Bilibili / Juejin / CSDN ranks as GetX > Provider > Riverpod > Bloc. Roughly 90% of beginners start with GetX.
 
-**优点（实事求是）**：
-- 上手极快，三行代码搞定状态 + 路由 + DI
-- 不需要 `BuildContext` 传递，`Get.to(Page())` / `Get.back()` 极简
-- 国内中文文档密集，问题 stackoverflow + 掘金都搜得到
-- 性能不错，响应式更新粒度细
+**Genuine advantages**:
+- Extremely fast to get started — three lines of code cover state + routing + DI
+- No need to thread `BuildContext` everywhere; `Get.to(Page())` / `Get.back()` are dead simple
+- Dense Chinese documentation; questions are searchable on both Stack Overflow and Juejin
+- Good performance; reactive updates are granular
 
-**缺点（必须知道）**：
-- **state + router + DI 三合一耦合**，单元测试地狱
-- 主仓库长期 single maintainer 风险，更新慢
-- 与 Flutter 官方架构哲学冲突（导航不走 Navigator 2.0 ，深链 / Web / Restoration 都吃亏）
-- 滥用 `Get.find` 当全局 service locator → 测试无法 mock
+**Drawbacks (you MUST know these)**:
+- **State + router + DI are tightly coupled**, making unit testing a nightmare
+- The main repository has a long-running single-maintainer risk; updates are slow
+- Conflicts with Flutter's official navigation philosophy (not built on Navigator 2.0, so deep links / Web / Restoration all suffer)
+- Overusing `Get.find` as a global service locator makes mocking in tests impossible
 
-**用 GetX 的最低自律**：
+**Minimum discipline when using GetX**:
 
 ```dart
-// ✅ Controller 只放状态和方法，不做 UI
+// ✅ Controller holds only state and methods — no UI logic
 class CounterController extends GetxController {
   final count = 0.obs;
   void increment() => count.value++;
 }
 
-// ✅ 用 GetView 绑定，强类型
+// ✅ Use GetView for strongly typed binding
 class CounterPage extends GetView<CounterController> {
   const CounterPage({super.key});
   @override
@@ -159,7 +159,7 @@ class CounterPage extends GetView<CounterController> {
   );
 }
 
-// ✅ Binding 集中注册依赖，可被覆盖（测试入口）
+// ✅ Centralize dependency registration in a Binding (overridable in tests)
 class CounterBinding extends Bindings {
   @override
   void dependencies() {
@@ -168,24 +168,24 @@ class CounterBinding extends Bindings {
 }
 ```
 
-**GetX 反模式（国内最常见，必须警惕）**：
+**GetX anti-patterns (most common in Chinese codebases — avoid these)**:
 
 ```dart
-// ❌ 反模式 1：Controller 里直接 Get.dialog / Get.snackbar，无法测试
+// ❌ Anti-pattern 1: Calling Get.dialog / Get.snackbar inside a Controller — untestable
 class BadController extends GetxController {
   Future<void> save() async {
-    Get.dialog(LoadingDialog());  // UI 副作用混进业务逻辑
+    Get.dialog(LoadingDialog());  // UI side-effects leaking into business logic
     await api.save();
     Get.back();
-    Get.snackbar('成功', '保存完成');
+    Get.snackbar('Success', 'Saved successfully');
   }
 }
 
-// ❌ 反模式 2：Get.find 当万能 service locator
-final user = Get.find<UserController>().user;  // 隐式依赖，无法 mock
-final api = Get.find<ApiService>();             // 测试要全局桩
+// ❌ Anti-pattern 2: Using Get.find as a universal service locator
+final user = Get.find<UserController>().user;  // implicit dependency, cannot be mocked
+final api = Get.find<ApiService>();             // requires global stubs in tests
 
-// ❌ 反模式 3：路由跳转穿插业务逻辑
+// ❌ Anti-pattern 3: Embedding navigation decisions inside business logic
 void onTap() {
   if (Get.find<AuthController>().isLogin) {
     Get.toNamed('/profile');
@@ -193,15 +193,15 @@ void onTap() {
     Get.toNamed('/login');
   }
 }
-// 这种判断应该在 router 的 middleware/redirect 层做
+// This kind of guard logic belongs in the router's middleware/redirect layer
 ```
 
-### 4.2 Provider（国内第二，存量大）
+### 4.2 Provider (Second in China, large installed base)
 
-**国内地位**：Flutter 中文社区、《Flutter 实战·第二版》（杜文）主推。存量项目仍多，新项目逐渐被 GetX 和 Riverpod 蚕食。
+**Status in China**: Recommended by the Flutter Chinese community and *Flutter in Action (2nd ed.)* by Du Wen. Still common in existing projects, though new projects are gradually shifting to GetX and Riverpod.
 
 ```dart
-// ✅ ChangeNotifier 模式
+// ✅ ChangeNotifier pattern
 class AuthModel extends ChangeNotifier {
   User? _user;
   User? get user => _user;
@@ -220,20 +220,20 @@ MultiProvider(
   child: const MyApp(),
 );
 
-// 用法
+// usage
 final user = context.watch<AuthModel>().user;
 context.read<AuthModel>().login(email, pwd);
 ```
 
-**优点**：官方背书、上手温和、与 Flutter 原生 InheritedWidget 无缝
-**缺点**：跨层级传值要手动 `Provider.of` / `Selector`，大型项目嵌套地狱
+**Advantages**: Official backing, gentle learning curve, seamless integration with Flutter's native `InheritedWidget`
+**Disadvantages**: Cross-widget-tree data access requires manual `Provider.of` / `Selector`; deep nesting becomes unwieldy in large projects
 
-### 4.3 Riverpod 3（国外主推，国内进阶）
+### 4.3 Riverpod 3 (Western mainstream, advanced choice in China)
 
-**何时选 Riverpod**：
-- 团队有 Flutter 老人，能接受英文文档
-- 需要严格类型安全、可测试性、不依赖 `BuildContext`
-- 中大型项目，跨 feature 状态共享多
+**When to choose Riverpod**:
+- The team has experienced Flutter developers comfortable with English documentation
+- Strict type safety, testability, and `BuildContext`-free state access are requirements
+- Medium-to-large projects with significant cross-feature state sharing
 
 ```dart
 // providers/auth_provider.dart
@@ -266,29 +266,29 @@ class HomePage extends ConsumerWidget {
 }
 ```
 
-### 4.4 Bloc / Cubit（国外金融 / 大团队选择，国内少）
+### 4.4 Bloc / Cubit (Western finance / large team choice, rare in China)
 
-国内只在严格 code review 团队（部分头部券商 / 银行 App）见过。Cubit 比 Bloc 简单，事件驱动适合审计场景。
+In China, Bloc appears almost exclusively in teams with rigorous code review (some top-tier securities firms and bank apps). Cubit is simpler than Bloc; the event-driven model is well-suited for audit-heavy contexts.
 
-### 4.5 Fish-Redux（闲鱼，已停维护）
+### 4.5 Fish-Redux (Xianyu / Alibaba — unmaintained)
 
-阿里闲鱼自研的 Redux 风格组件化框架，2020 年后基本停更。**仅遗留项目维护**，新项目禁用。已知遗留代码迁移路径：拆 Page Component → 切到 Riverpod / Provider。
+A Redux-style component framework originally built by Alibaba's Xianyu team. Development has been essentially stalled since 2020. **Use only for maintaining legacy projects; NEVER use for new ones.** Known migration path from legacy code: decompose Page Components and migrate to Riverpod / Provider.
 
-### 4.6 决策树
+### 4.6 Decision Tree
 
 ```
-独立开发者 / 上手快 / 中小项目     → GetX（守住 4.1 自律线）
-已有 Provider 存量 / 不想大改      → Provider 继续
-新项目 / 团队能学 / 要可测试性     → Riverpod 3
-金融 / 医疗 / 强审计               → Bloc
-混合栈大厂场景                     → 看公司规范（往往是自研）
+Indie developer / fast onboarding / small-to-medium project   → GetX (stay within the 4.1 discipline boundaries)
+Already on Provider / don't want a big rewrite                → Stick with Provider
+New project / team can learn / need testability               → Riverpod 3
+Finance / healthcare / strict audit requirements              → Bloc
+Large enterprise hybrid stack                                 → Follow company standards (often in-house)
 ```
 
 ---
 
-## 5. 屏幕适配：flutter_screenutil（国内必备）
+## 5. Screen Adaptation: flutter_screenutil (Essential in China)
 
-国内 UI 稿基本按 **iPhone 6（750×1334 @2x，逻辑 375×667）**或 **iPhone X（1125×2436 @3x，逻辑 375×812）**出。直接用物理像素会在 Android 各种尺寸上崩。
+Chinese UI designs are almost universally based on **iPhone 6 (750×1334 @2x, logical 375×667)** or **iPhone X (1125×2436 @3x, logical 375×812)**. Using physical pixels directly will break layouts across Android's wide range of screen sizes.
 
 ```dart
 // main.dart
@@ -298,7 +298,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) => ScreenUtilInit(
-    designSize: const Size(375, 812),   // iPhone X 逻辑尺寸
+    designSize: const Size(375, 812),   // iPhone X logical dimensions
     minTextAdapt: true,
     splitScreenMode: true,
     builder: (context, child) => MaterialApp(
@@ -308,48 +308,48 @@ class MyApp extends StatelessWidget {
   );
 }
 
-// 用法（扩展方法）
+// Usage (extension methods)
 Container(
-  width: 100.w,    // 按设计稿宽度比例
-  height: 50.h,    // 按设计稿高度比例
+  width: 100.w,    // scaled proportionally to design width
+  height: 50.h,    // scaled proportionally to design height
   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
   child: Text('Hello', style: TextStyle(fontSize: 14.sp)),
 )
 
-// 等价于 ScreenUtil().setWidth(100) 等
+// Equivalent to ScreenUtil().setWidth(100) etc.
 ```
 
-**注意点**：
+**Important caveats**:
 
-- `.sp`（字体）默认不跟系统字号缩放，无障碍用户体验差 → 关键文本用 `.sp` 但确保设置可调
-- 横竖屏切换要在 `MediaQuery.orientationOf` 变化时考虑
-- `.r`（半径）= min(.w, .h)，避免圆角变椭圆
-- 不要全局滥用 `.w/.h`：边框 1px、SafeArea、状态栏不需要适配
+- `.sp` (font size) does not follow the system font scale by default, which hurts accessibility — for critical text, use `.sp` but ensure font size settings remain adjustable
+- Account for orientation changes by observing `MediaQuery.orientationOf`
+- `.r` (radius) = min(.w, .h) — prevents border radii from becoming elliptical
+- NEVER apply `.w/.h` everywhere indiscriminately: 1px borders, `SafeArea`, and the status bar do not need adaptation
 
-**国内设计稿对接 SOP**：
+**Standard design handoff workflow**:
 
-1. 设计稿统一一种基准（iPhone X 375×812 或 iPhone 6 375×667），全队统一
-2. 标注用 Figma / 蓝湖 / MasterGo，单位用 `pt`（逻辑像素）
-3. icon 切 1x/2x/3x 三套，或 svg（推荐 flutter_svg）
+1. Agree on a single baseline design size across the team (iPhone X 375×812 or iPhone 6 375×667) — everyone MUST use the same
+2. Use Figma / Lanhu / MasterGo for annotation; use `pt` (logical pixels) as the unit
+3. Export icons at 1x/2x/3x, or use SVG (recommended: `flutter_svg`)
 
 ---
 
-## 6. 国内 UI 组件库选型
+## 6. UI Component Library Selection for China
 
-| 组件库 | 来源 | 国内频率 | 何时用 |
+| Library | Source | Domestic Frequency | When to Use |
 |---|---|---|---|
-| **Material + Cupertino** | 官方 | 最高 | 默认起手 |
-| **TDesign Flutter** | 腾讯 | 中 | 企业项目 / 想要统一设计语言 |
-| **flutter_screenutil** | OpenFlutter | 必备 | 屏幕适配 |
-| **fluttertoast** | 社区 | 高 | 简单 toast |
-| **bot_toast** | 社区 | 中 | 高级 toast / loading 弹层 |
-| **cached_network_image** | 社区 | 必备 | 网络图缓存 |
-| **flutter_svg** | 社区 | 高 | SVG 图标 |
-| **photo_view** | 社区 | 高 | 图片浏览缩放 |
-| **flutter_easyloading** | 社区 | 中 | 全局 loading |
-| **WeChat Assets Picker** | fluttercandies | 高 | 仿微信图片/视频选择 |
+| **Material + Cupertino** | Official | Highest | Default starting point |
+| **TDesign Flutter** | Tencent | Medium | Enterprise projects / unified design language |
+| **flutter_screenutil** | OpenFlutter | Essential | Screen adaptation |
+| **fluttertoast** | Community | High | Simple toasts |
+| **bot_toast** | Community | Medium | Advanced toasts / loading overlays |
+| **cached_network_image** | Community | Essential | Network image caching |
+| **flutter_svg** | Community | High | SVG icons |
+| **photo_view** | Community | High | Image browsing with zoom |
+| **flutter_easyloading** | Community | Medium | Global loading indicator |
+| **WeChat Assets Picker** | fluttercandies | High | WeChat-style image/video picker |
 
-**TDesign Flutter 速查**（腾讯出品，企业级）：
+**TDesign Flutter quick reference** (Tencent, enterprise-grade):
 
 ```yaml
 dependencies:
@@ -360,29 +360,29 @@ dependencies:
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 TDButton(
-  text: '确认',
+  text: 'Confirm',
   theme: TDButtonTheme.primary,
   onTap: () {},
 )
 ```
 
-对比国外 shadcn / Material You：国内更看重"和微信 / 支付宝视觉一致"，TDesign 在 B 端中后台和企业 App 有口碑。C 端 App 仍多自定义。
+Compared to Western alternatives like shadcn / Material You: Chinese projects care more about visual consistency with WeChat / Alipay. TDesign has a solid reputation in B-side back-office systems and enterprise apps. Consumer-facing apps still tend toward fully custom UI.
 
 ---
 
-## 7. 路由方案
+## 7. Routing
 
-### 7.1 国内常见方案对比
+### 7.1 Comparison of Common Approaches in China
 
-| 方案 | 国内频率 | 适用 |
+| Approach | Domestic Frequency | Best For |
 |---|---|---|
-| **GetX 路由**（`Get.toNamed`）| 高 | 用了 GetX 就跟着用 |
-| **fluro** | 中 | 中大型，命名路由 + 参数解析 |
-| **go_router** | 上升中 | 新项目、Web / 深链场景 |
-| **auto_route** | 低 | 喜欢 codegen 类型安全 |
-| Navigator 2.0 自实现 | 中 | 大厂自研 / 混合栈 |
+| **GetX routing** (`Get.toNamed`) | High | Projects already using GetX |
+| **fluro** | Medium | Medium/large apps, named routes + parameter parsing |
+| **go_router** | Growing | New projects, Web / deep link scenarios |
+| **auto_route** | Low | Teams who prefer codegen-based type safety |
+| Navigator 2.0 custom | Medium | Large enterprise / hybrid stacks |
 
-### 7.2 go_router 推荐（无 GetX 项目首选）
+### 7.2 go_router (Recommended for projects not using GetX)
 
 ```dart
 final router = GoRouter(
@@ -408,7 +408,7 @@ final router = GoRouter(
 );
 ```
 
-### 7.3 fluro（老牌中大型）
+### 7.3 fluro (Established choice for medium/large apps)
 
 ```dart
 final router = FluroRouter();
@@ -420,9 +420,9 @@ router.navigateTo(context, '/user/123', transition: TransitionType.fadeIn);
 
 ---
 
-## 8. 网络层：dio + 国内拦截器套路
+## 8. Networking: dio + Chinese Interceptor Patterns
 
-国内 App 网络层的"标准动作"：统一 token / 统一 loading / 统一 toast / 401 跳登录 / 验签 / 加密。**所有项目都自实现一遍**，国外 retrofit_dart + freezed 那一套在国内反而少用。
+The "standard playbook" for networking in Chinese apps: unified token injection, unified loading state, unified toast messages, 401 redirect to login, request signing, and encryption. **Every project reimplements this from scratch**. The Western pattern of retrofit_dart + freezed is rarely seen in China.
 
 ```dart
 // core/network/dio_client.dart
@@ -446,7 +446,7 @@ class DioClient {
   }
 }
 
-// 1. Token 拦截器：自动加 token，401 自动刷新
+// 1. Token interceptor: injects token automatically; refreshes on 401
 class _TokenInterceptor extends QueuedInterceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -460,11 +460,11 @@ class _TokenInterceptor extends QueuedInterceptor {
     if (err.response?.statusCode == 401) {
       final ok = await TokenStore.instance.refresh();
       if (ok) {
-        // 重发请求
+        // Retry the original request
         final response = await DioClient.dio.fetch(err.requestOptions);
         return handler.resolve(response);
       } else {
-        // 跳登录（用全局 navigatorKey，避免 context 依赖）
+        // Navigate to login (using global navigatorKey to avoid context dependency)
         AppRouter.navigatorKey.currentState?.pushNamedAndRemoveUntil(
           '/login', (_) => false,
         );
@@ -474,7 +474,7 @@ class _TokenInterceptor extends QueuedInterceptor {
   }
 }
 
-// 2. 全局 Loading
+// 2. Global loading indicator
 class _LoadingInterceptor extends Interceptor {
   int _count = 0;
   @override
@@ -503,7 +503,7 @@ class _LoadingInterceptor extends Interceptor {
   }
 }
 
-// 3. 统一响应解包 + toast
+// 3. Unified response unwrapping + toast
 class _ResponseInterceptor extends Interceptor {
   @override
   void onResponse(Response r, ResponseInterceptorHandler handler) {
@@ -513,7 +513,7 @@ class _ResponseInterceptor extends Interceptor {
       r.data = data['data'];
       handler.next(r);
     } else {
-      Fluttertoast.showToast(msg: data['msg'] ?? '请求失败');
+      Fluttertoast.showToast(msg: data['msg'] ?? 'Request failed');
       handler.reject(DioException(
         requestOptions: r.requestOptions,
         response: r,
@@ -524,7 +524,7 @@ class _ResponseInterceptor extends Interceptor {
 }
 ```
 
-**典型 API 调用**：
+**Typical API call**:
 
 ```dart
 class UserApi {
@@ -540,51 +540,51 @@ class UserApi {
 
 ---
 
-## 9. 项目目录结构
+## 9. Project Directory Structure
 
-### 9.1 按层平铺（国内主流，中小项目）
+### 9.1 Layer-Based Flat Layout (Chinese Mainstream, Small/Medium Projects)
 
 ```
 lib/
-├── api/                 ← 所有接口定义
+├── api/                 ← all API definitions
 │   ├── user_api.dart
 │   └── order_api.dart
-├── models/              ← 数据模型（手写 fromJson 或 json_serializable）
+├── models/              ← data models (hand-written fromJson or json_serializable)
 │   ├── user.dart
 │   └── order.dart
-├── pages/               ← 页面（路由级）
+├── pages/               ← pages (route-level)
 │   ├── home/
 │   │   ├── home_page.dart
 │   │   └── home_controller.dart   ← GetX / Provider model
 │   ├── login/
 │   └── profile/
-├── widgets/             ← 通用组件
+├── widgets/             ← shared components
 │   ├── app_button.dart
 │   └── loading_view.dart
-├── services/            ← 业务服务 / 本地存储 / 推送 / 埋点
+├── services/            ← business services / local storage / push / analytics
 │   ├── auth_service.dart
 │   ├── push_service.dart
 │   └── storage_service.dart
-├── routes/              ← 路由表
+├── routes/              ← route table
 │   └── app_routes.dart
-├── utils/               ← 工具函数（日期 / 字符串 / 校验）
+├── utils/               ← utility functions (date / string / validation)
 │   ├── date_util.dart
 │   └── validator.dart
-├── constants/           ← 常量（颜色 / 字体 / 尺寸 / 接口路径）
+├── constants/           ← constants (colors / fonts / dimensions / API paths)
 │   ├── app_colors.dart
 │   └── api_paths.dart
-├── core/                ← 核心（网络 / 主题 / 配置）
+├── core/                ← core infrastructure (networking / theme / config)
 │   ├── network/
 │   ├── theme/
 │   └── env.dart
 └── main.dart
 ```
 
-**适用**：< 30 个页面、1-3 人团队、需求迭代快、招新人成本要低。**国内 80% 项目长这样**。
+**Best for**: fewer than 30 pages, 1–3 person teams, fast-moving requirements, low onboarding cost. **80% of Chinese projects look like this.**
 
-### 9.2 Feature-based + Clean Architecture（国外主流，大项目）
+### 9.2 Feature-Based + Clean Architecture (Western Mainstream, Large Projects)
 
-3 个以上独立业务域、团队有架构师、长期项目（≥ 2 年）才上这套：
+Only adopt this when there are 3 or more independent business domains, an architect on the team, and a long-term project horizon (2+ years):
 
 ```
 lib/
@@ -593,13 +593,13 @@ lib/
 │   ├── network/      ← dio client / interceptors
 │   ├── theme/
 │   ├── utils/
-│   └── di.dart       ← get_it 注册
-├── features/         ← ★ 按业务功能拆
+│   └── di.dart       ← get_it registrations
+├── features/         ← ★ split by business domain
 │   └── auth/
 │       ├── data/
-│       │   ├── datasources/    远程 / 本地
-│       │   ├── models/         JSON DTO（freezed）
-│       │   └── repositories/   Repository 实现
+│       │   ├── datasources/    remote / local
+│       │   ├── models/         JSON DTOs (freezed)
+│       │   └── repositories/   Repository implementations
 │       ├── domain/
 │       │   ├── entities/
 │       │   ├── repositories/   abstract
@@ -608,25 +608,25 @@ lib/
 │           ├── pages/
 │           ├── widgets/
 │           └── viewmodels/     ViewModel / Bloc / Cubit
-├── shared/           ← 跨 feature 组件
+├── shared/           ← cross-feature components
 └── main.dart
 ```
 
-**单向依赖**：`presentation → domain ← data`（domain 是核心，不依赖外层）
+**Unidirectional dependency**: `presentation → domain ← data` (domain is the core and MUST NOT depend on outer layers)
 
-### 9.3 怎么选
+### 9.3 How to Choose
 
-- 单人 / 双人 / MVP 阶段 → 9.1 按层平铺
-- 团队规范要求、需求稳定、有架构 review → 9.2
-- 大厂混合栈 → 看公司规范
+- Solo / two-person / MVP stage → 9.1 flat layout
+- Team standards required, stable requirements, architecture review in place → 9.2
+- Large enterprise hybrid stack → follow company standards
 
-**反模式**：MVP 阶段强上 Clean Architecture，三个月就被 PM 改需求拆烂；或者项目做大了还在 `pages/` 里堆 50 个文件，互相引用乱成一团。
+**Anti-patterns**: forcing Clean Architecture at MVP stage, only to have PM churn requirements and leave everything broken within three months; or letting a grown project accumulate 50+ files in `pages/` with tangled cross-references.
 
 ---
 
-## 10. 混合栈：FlutterBoost（阿里大厂场景）
+## 10. Hybrid Stacks: FlutterBoost (Large Enterprise Scenarios)
 
-国内大厂（阿里、字节、美团、京东、腾讯）几乎没有纯 Flutter App，**主流是 Native 主体 + Flutter 页面嵌入**。原生的 `FlutterEngine.add` API 性能差、内存涨快、生命周期乱，所以阿里闲鱼开源了 **FlutterBoost**。
+Major Chinese tech companies (Alibaba, ByteDance, Meituan, JD, Tencent) almost never ship pure Flutter apps. **The dominant pattern is a Native host app with embedded Flutter pages.** The native `FlutterEngine.add` API suffers from poor performance, rapid memory growth, and chaotic lifecycle management — which is why Alibaba's Xianyu team open-sourced **FlutterBoost**.
 
 ```yaml
 dependencies:
@@ -636,10 +636,10 @@ dependencies:
       ref: master
 ```
 
-**核心概念**：
-- **共享 Engine**：所有 Flutter 页面共用一个 `FlutterEngine`，内存可控
-- **混合栈**：Native 和 Flutter 页面在同一个原生栈里互相 push / pop
-- **生命周期统一**：原生 / Flutter 都走 `PageVisibilityObserver`
+**Core concepts**:
+- **Shared Engine**: all Flutter pages share a single `FlutterEngine`, keeping memory under control
+- **Hybrid stack**: Native and Flutter pages push and pop within the same native navigation stack
+- **Unified lifecycle**: both Native and Flutter go through `PageVisibilityObserver`
 
 ```dart
 // main.dart
@@ -664,38 +664,38 @@ Route<dynamic>? routeFactory(RouteSettings settings, String? uniqueId) {
   return null;
 }
 
-// 跳原生页面
+// Navigate to a native page
 BoostNavigator.instance.push('nativePage', arguments: {'id': 1});
 
-// 跳 Flutter 页面
+// Navigate to a Flutter page
 BoostNavigator.instance.push('flutterPage1');
 ```
 
-**陷阱**：
+**Pitfalls**:
 
-- 与 GetX 路由冲突（FlutterBoost 必须接管路由）→ 接入混合栈就**不要用 GetX 路由**
-- 资源 / 字体 / 主题需要在 Native 和 Flutter 两边各配一份
-- Flutter 升级风险大，FlutterBoost 跟 Flutter 主版本节奏有滞后
+- Conflicts with GetX routing (FlutterBoost MUST take ownership of routing) → NEVER use GetX routing when integrating a hybrid stack
+- Resources / fonts / themes must be configured separately on both the Native and Flutter sides
+- Flutter upgrades carry significant risk; FlutterBoost tends to lag behind Flutter's release cadence
 
-**字节自研 hybrid stack**：飞书、抖音、TikTok 国际版用自研方案，不开源。如果你在字节系做 Flutter，按内部规约走。
+**ByteDance in-house hybrid stack**: Feishu, Douyin, and TikTok use proprietary solutions that are not open-sourced. If you're doing Flutter work within ByteDance, follow internal standards.
 
-**纯 Flutter App 场景**（独立开发者 / 工具类 App）不需要 FlutterBoost，按 9.1 / 9.2 走就好。
+**Pure Flutter app scenarios** (indie developers / utility apps) do not need FlutterBoost — just follow 9.1 or 9.2.
 
 ---
 
-## 11. 推送：极光 / 个推 / 友盟 / 厂商通道
+## 11. Push Notifications: JPush / GeTui / Umeng / OEM Channels
 
-**国内推送的特殊性**：FCM 在国内被墙，必须用国产推送服务。**且必须接厂商通道**（华为 / 小米 / OPPO / VIVO / 魅族 / 荣耀），否则后台杀进程后收不到推送。
+**What makes Chinese push notifications unique**: FCM is blocked in China, so domestic push services are mandatory. You MUST also integrate OEM push channels (Huawei / Xiaomi / OPPO / VIVO / Meizu / Honor) — without them, push notifications will not arrive after the app is killed in the background.
 
-| 服务 | 特点 | 国内频率 |
+| Service | Characteristics | Domestic Frequency |
 |---|---|---|
-| **极光 JPush** | 文档全、Flutter 插件官方维护、社区活跃 | 最高 |
-| **个推 GeTui** | 老牌、稳定、企业方案 | 高 |
-| **友盟 UPush** | 阿里系、配合统计一起用 | 中 |
-| **华为 HMS Push** | 华为机型必须 | 必备厂商通道 |
-| **小米 MiPush** | 小米机型 | 必备厂商通道 |
+| **JPush (Aurora)** | Comprehensive docs, official Flutter plugin, active community | Highest |
+| **GeTui** | Established, stable, enterprise-grade | High |
+| **Umeng UPush** | Alibaba ecosystem, often used alongside Umeng analytics | Medium |
+| **Huawei HMS Push** | Required for Huawei devices | Essential OEM channel |
+| **Xiaomi MiPush** | Required for Xiaomi devices | Essential OEM channel |
 
-**极光集成示例**：
+**JPush integration example**:
 
 ```yaml
 dependencies:
@@ -716,10 +716,10 @@ class PushService {
 
     jpush.addEventHandler(
       onReceiveNotification: (msg) async {
-        // 收到通知
+        // Notification received
       },
       onOpenNotification: (msg) async {
-        // 用户点击通知 → 跳对应页
+        // User tapped notification → navigate to the relevant page
         final pageRoute = msg['extras']?['cn.jpush.android.EXTRA']?['route'];
         if (pageRoute != null) AppRouter.go(pageRoute);
       },
@@ -734,11 +734,11 @@ class PushService {
 }
 ```
 
-**厂商通道集成**：极光 / 个推都提供"厂商通道一键打包"，需要在各厂商开发者后台申请 AppKey，配进 `AndroidManifest.xml` 的 `manifestPlaceholders`。**这一步特别折腾**，预留 1-2 天调试。
+**OEM channel integration**: JPush and GeTui both offer "one-click OEM channel packaging." You need to register an AppKey from each OEM's developer portal and add it to `manifestPlaceholders` in `AndroidManifest.xml`. **This step is notoriously tedious** — budget 1–2 days for debugging.
 
 ---
 
-## 12. Dart 3 现代特性（一定要用）
+## 12. Dart 3 Modern Features (You MUST Use These)
 
 ### 12.1 Records
 
@@ -753,7 +753,7 @@ final user = getUser();
 print(user.name);
 ```
 
-### 12.2 Pattern matching + sealed
+### 12.2 Pattern Matching + sealed
 
 ```dart
 sealed class Result<T> {}
@@ -766,7 +766,7 @@ String render(Result<User> r) => switch (r) {
 };
 ```
 
-### 12.3 Null safety
+### 12.3 Null Safety
 
 ```dart
 String? maybeName;
@@ -777,16 +777,16 @@ late final String token;
 
 ---
 
-## 13. 应用更新检测（国内必备，无 Google Play）
+## 13. In-App Update Checks (Essential in China — No Google Play)
 
-国内 App 走应用商店各种渠道分发（华为 / 小米 / 应用宝 / OPPO / 自有官网下载），**Google Play 内更新不可用**，必须自实现更新检测。
+Chinese apps are distributed through a fragmented set of app stores (Huawei / Xiaomi / Tencent MyApp / OPPO / official website downloads). **Google Play in-app updates are unavailable**, so update detection MUST be implemented manually.
 
 ```dart
 class UpdateService {
   static Future<void> checkUpdate(BuildContext context) async {
     final r = await DioClient.dio.get('/app/version', queryParameters: {
       'platform': Platform.isAndroid ? 'android' : 'ios',
-      'channel': await _getChannel(),  // 商店渠道
+      'channel': await _getChannel(),  // app store channel
       'version': await _getCurrentVersion(),
     });
     final info = AppVersionInfo.fromJson(r.data);
@@ -798,33 +798,33 @@ class UpdateService {
 }
 ```
 
-注意：iOS 不允许 App 内直接下载 ipa，只能跳 App Store；Android 可以走渠道接口或直接下载 apk（需要 `INSTALL_PACKAGES` 权限、Android 8.0+ 弹安装许可）。
+Note: iOS does not allow apps to directly download an ipa — you MUST redirect to the App Store. Android can use a channel-specific download URL or direct apk download (requires the `INSTALL_PACKAGES` permission, plus Android 8.0+ install permission dialog).
 
 ---
 
-## 14. Flutter vs 小程序：国内开发者经常纠结
+## 14. Flutter vs Mini Programs: A Common Dilemma for Chinese Developers
 
-| 维度 | Flutter | 微信小程序 / uni-app |
+| Dimension | Flutter | WeChat Mini Program / uni-app |
 |---|---|---|
-| 渠道 | 自有 App，商店分发 | 微信内打开，零安装 |
-| 性能 | 接近原生 | WebView 渲染，差一档 |
-| 包大小 | 起步 5-10MB | < 2MB（主包） |
-| 上线 | 商店审核（应用宝几天 / iOS 1-7 天） | 微信审核（1-3 天） |
-| 流量 | 自有用户 | 借微信生态拉新 |
-| 复杂度 | 高（原生交互 / 推送 / 离线） | 中（受微信 API 限制） |
-| 团队 | Dart 一门语言全栈 | JS / Vue 友好 |
+| Distribution | Own app, app store | Opened inside WeChat, zero installation |
+| Performance | Near-native | WebView rendering, one tier slower |
+| Package size | 5–10 MB baseline | < 2 MB (main package) |
+| Release | App store review (Tencent MyApp: days / iOS: 1–7 days) | WeChat review (1–3 days) |
+| Traffic | Own user base | Leverages WeChat ecosystem for acquisition |
+| Complexity | High (native integrations / push / offline) | Medium (constrained by WeChat APIs) |
+| Team | Single language (Dart) end-to-end | JS / Vue friendly |
 
-**国内典型选型**：
-- C 端轻量功能（活动 / 小工具 / 营销页）→ 小程序
-- C 端长尾用户、需要推送 / 离线 / 复杂交互 → Flutter
-- B 端企业内部应用 → Flutter（不依赖微信生态）
-- 两者并存：Flutter App + 小程序矩阵（流量场景互补）
+**Typical Chinese project decisions**:
+- Lightweight consumer features (campaigns / micro-tools / marketing pages) → Mini Program
+- Consumer app with long-tail users, push notifications, offline support, or complex interactions → Flutter
+- B-side enterprise internal apps → Flutter (no dependency on WeChat ecosystem)
+- Both in parallel: Flutter App + Mini Program portfolio (complementary traffic channels)
 
-不要在 MVP 阶段做 Flutter，先做小程序验证；功能稳定再做 Flutter App。
+Do not start with Flutter at MVP stage — validate with a Mini Program first, then build the Flutter app once the feature set has stabilized.
 
 ---
 
-## 15. analysis_options.yaml 推荐
+## 15. Recommended analysis_options.yaml
 
 ```yaml
 include: package:flutter_lints/flutter.yaml
@@ -842,7 +842,7 @@ linter:
 
 analyzer:
   errors:
-    invalid_annotation_target: ignore  # freezed 兼容
+    invalid_annotation_target: ignore  # freezed compatibility
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
@@ -851,19 +851,19 @@ analyzer:
 
 ---
 
-## 16. Widget 组合与性能
+## 16. Widget Composition and Performance
 
 ```dart
-// ❌ build 方法臃肿
+// ❌ Bloated build method
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(/* 50 行 */),
-    body: Column(children: [/* 100 行 */]),
+    appBar: AppBar(/* 50 lines */),
+    body: Column(children: [/* 100 lines */]),
   );
 }
 
-// ✅ 拆小 widget
+// ✅ Extract into small widgets
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
   @override
@@ -874,7 +874,7 @@ class HomePage extends StatelessWidget {
 }
 ```
 
-**const 必须用**：
+**`const` MUST be used wherever possible**:
 
 ```dart
 Column(children: const [
@@ -883,11 +883,11 @@ Column(children: const [
 ])
 ```
 
-**ListView 优化**：长列表强制 `ListView.builder`，不要 `ListView(children: [...])`；图片用 `cached_network_image`；高度固定时给 `itemExtent`。
+**`ListView` optimization**: for long lists, ALWAYS use `ListView.builder` — NEVER `ListView(children: [...])`. Cache network images with `cached_network_image`. Provide `itemExtent` when item height is fixed.
 
 ---
 
-## 17. 测试
+## 17. Testing
 
 ```dart
 testWidgets('Login button triggers auth flow', (tester) async {
@@ -895,7 +895,7 @@ testWidgets('Login button triggers auth flow', (tester) async {
   when(() => authRepo.login(any(), any())).thenAnswer((_) async => testUser);
 
   await tester.pumpWidget(MaterialApp(
-    home: LoginPage(repo: authRepo),  // 依赖注入，不要 Get.find
+    home: LoginPage(repo: authRepo),  // dependency injection — avoid Get.find
   ));
 
   await tester.enterText(find.byKey(const Key('email')), 'a@b.com');
@@ -907,46 +907,46 @@ testWidgets('Login button triggers auth flow', (tester) async {
 });
 ```
 
-工具：**mocktail**（无 codegen）；GetX 项目用 `Get.testMode = true` + `Get.put` 覆盖依赖。
+Tools: **mocktail** (no codegen required); for GetX projects, use `Get.testMode = true` + `Get.put` to override dependencies.
 
 ---
 
-## 18. 反模式清单（按国内频率排序）
+## 18. Anti-Pattern Reference (Ranked by Domestic Frequency)
 
-| 反模式 | 国内频率 | 后果 |
+| Anti-Pattern | Domestic Frequency | Consequence |
 |---|---|---|
-| **GetX 三合一滥用**（state + router + Get.find DI 全用）| 极高 | 单元测试地狱，重构高成本 |
-| **Controller 里写 `Get.dialog` / `Get.snackbar`** | 极高 | UI 副作用混进业务逻辑，无法测试 |
-| **没配镜像导致 `pub get` 失败** | 高 | 新人入坑第一天劝退 |
-| **不用 `flutter_screenutil`，硬编码 px** | 高 | Android 各种屏幕崩 |
-| **build() 方法超 50 行** | 高 | 难维护，性能差 |
-| **不加 `const` constructor** | 高 | rebuild 全树，性能损失 |
-| **手写 fromJson/toJson 几百行 model** | 高 | 字段加减易错，应用 json_serializable / freezed |
-| **dio 拦截器每个项目重写一遍**（不复用）| 高 | 团队多项目维护成本叠加 |
-| **混合栈接入还坚持用 GetX 路由** | 中 | 路由两套系统打架 |
-| **`StatefulWidget` 滥用**（能 stateless 就别 stateful）| 中 | 不必要 rebuild |
-| **widget 内直调网络/DB** | 中 | 必须经 Repository / Service |
-| **没分层（model / api / page 混一起）**| 中 | 项目做大后重构地狱 |
-| **不接厂商推送通道，只接极光主通道** | 中 | 后台杀进程收不到推送 |
-| **iOS / Android 各种权限不在 manifest / Info.plist 声明** | 中 | 上架被拒 |
-| **用 dynamic 代替具体类型** | 低 | 失去类型检查 |
-| **Dart 3+ 不用 records / sealed** | 低 | 错过类型安全工具 |
-| **不用 `analysis_options.yaml` 严格 lint** | 低 | 坏味道堆积 |
+| **GetX all-in-one overuse** (state + router + Get.find DI all together) | Very high | Unit testing nightmare, high refactoring cost |
+| **Calling `Get.dialog` / `Get.snackbar` inside a Controller** | Very high | UI side-effects leak into business logic; untestable |
+| **Skipping mirror configuration, causing `pub get` failures** | High | Day-one blocker that drives away new team members |
+| **Not using `flutter_screenutil`, hardcoding px values** | High | Broken layouts on Android's diverse screen sizes |
+| **`build()` method exceeding 50 lines** | High | Hard to maintain; poor performance |
+| **Missing `const` constructors** | High | Unnecessary full-tree rebuilds; performance loss |
+| **Hand-writing hundreds of lines of fromJson/toJson on models** | High | Error-prone when fields change; use json_serializable / freezed instead |
+| **Rewriting dio interceptors per project** (no reuse) | High | Compounding maintenance cost across multi-project teams |
+| **Using GetX routing after integrating a hybrid stack** | Medium | Two routing systems conflict |
+| **Overusing `StatefulWidget`** (use stateless whenever possible) | Medium | Unnecessary rebuilds |
+| **Calling networking/DB directly from widgets** | Medium | MUST go through a Repository / Service layer |
+| **No layering (model / api / page all mixed together)** | Medium | Refactoring hell as the project scales |
+| **Not integrating OEM push channels, relying only on the JPush main channel** | Medium | Push not received after background process kill |
+| **Not declaring iOS / Android permissions in manifest / Info.plist** | Medium | App store rejection |
+| **Using `dynamic` instead of concrete types** | Low | Loss of type checking |
+| **Not using records / sealed in Dart 3+** | Low | Missing out on type-safe tools |
+| **Not enforcing strict lint with `analysis_options.yaml`** | Low | Code smell accumulates |
 
 ---
 
-## 19. 国内 Flutter 项目最小可用启动模板
+## 19. Minimum Viable Project Template for China
 
 ```
 lib/
 ├── api/                  ← UserApi / OrderApi
-├── models/               ← User / Order（json_serializable）
+├── models/               ← User / Order (json_serializable)
 ├── pages/                ← home / login / profile
 ├── widgets/              ← AppButton / LoadingView
 ├── services/             ← AuthService / PushService
 ├── routes/app_routes.dart
 ├── core/
-│   ├── network/dio_client.dart    ← Token / Loading / Response 三拦截器
+│   ├── network/dio_client.dart    ← Token / Loading / Response interceptors
 │   ├── theme/app_theme.dart
 │   └── env.dart
 ├── constants/
@@ -956,22 +956,22 @@ lib/
 └── main.dart
 ```
 
-**`pubspec.yaml` 起手清单**：
+**Starter `pubspec.yaml` checklist**:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   dio: ^5.4.0
-  get: ^4.6.6                   # 或 provider / flutter_riverpod
+  get: ^4.6.6                   # or provider / flutter_riverpod
   flutter_screenutil: ^5.9.0
   fluttertoast: ^8.2.4
   flutter_easyloading: ^3.0.5
   cached_network_image: ^3.3.0
   shared_preferences: ^2.2.2
   flutter_svg: ^2.0.10
-  jpush_flutter: ^3.4.4         # 推送
-  package_info_plus: ^5.0.1     # 版本号
+  jpush_flutter: ^3.4.4         # push notifications
+  package_info_plus: ^5.0.1     # version number
   device_info_plus: ^9.1.2
 
 dev_dependencies:
@@ -983,26 +983,26 @@ dev_dependencies:
 
 ---
 
-## 20. 信息源
+## 20. Information Sources
 
-**国内**：
-- [Flutter 中文文档](https://docs.flutter.cn)
-- [Flutter 中文社区 flutter-io.cn](https://flutter-io.cn)
-- [郭树煜 GSYTech 博客](https://guoshuyu.cn)
-- [闲鱼技术 - 阿里云开发者](https://developer.aliyun.com/group/idlefish)
-- [掘金 Flutter 标签](https://juejin.cn/tag/Flutter)
-- [清华 TUNA Flutter 镜像](https://mirrors.tuna.tsinghua.edu.cn/help/flutter/)
+**China-based**:
+- [Flutter Chinese Docs](https://docs.flutter.cn)
+- [Flutter Chinese Community flutter-io.cn](https://flutter-io.cn)
+- [Guo Shuyu / GSYTech Blog](https://guoshuyu.cn)
+- [Xianyu Tech - Alibaba Cloud Developer](https://developer.aliyun.com/group/idlefish)
+- [Juejin Flutter Tag](https://juejin.cn/tag/Flutter)
+- [Tsinghua TUNA Flutter Mirror](https://mirrors.tuna.tsinghua.edu.cn/help/flutter/)
 
-**框架官方**：
+**Framework official**:
 - [GetX](https://pub.dev/packages/get) / [Provider](https://pub.dev/packages/provider) / [Riverpod](https://riverpod.dev/) / [Bloc](https://bloclibrary.dev/)
 - [flutter_screenutil](https://pub.dev/packages/flutter_screenutil)
 - [TDesign Flutter](https://tdesign.tencent.com/flutter/getting-started)
 - [FlutterBoost](https://github.com/alibaba/flutter_boost)
-- [极光 JPush](https://github.com/jpush/jpush-flutter-plugin)
+- [JPush](https://github.com/jpush/jpush-flutter-plugin)
 - [go_router](https://pub.dev/packages/go_router) / [fluro](https://pub.dev/packages/fluro)
 - [dio](https://pub.dev/packages/dio)
 
-**Effective Dart / 官方架构**：
+**Effective Dart / Official Architecture**:
 - [Effective Dart](https://dart.dev/effective-dart)
 - [Flutter App Architecture Guide](https://docs.flutter.dev/app-architecture/guide)
 - [Flutter Samples](https://github.com/flutter/samples)

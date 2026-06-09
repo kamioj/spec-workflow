@@ -1,41 +1,41 @@
 ---
-description: 技术设计梳理。按需触发——架构复杂、接口 >3 个、需要序列图 / 数据流图、决策深度论证 >300 字时调。产出 design.md
+description: Technical design elaboration. Trigger on demand — use when the architecture is complex, there are more than 3 interfaces, sequence/data-flow diagrams are needed, or a decision requires more than 300 words of deep argumentation. Produces design.md.
 allowed-tools: Read, Write, Edit, Glob
 ---
 
 # /spec:design
 
-聚焦：$ARGUMENTS
+Focus: $ARGUMENTS
 
-## 何时使用
+## When to use
 
-满足任一才调：
-- **跨前后端**（同时改 UI 和服务端，含接口契约）← **此场景下 design 不是可选，是必须**
-- 接口数 >3 个
-- 需要架构图 / 数据流图 / 序列图（mermaid / ASCII）
-- 决策深度论证 >300 字（benchmark / 限制对比 / 性能模型）
-- 涉及跨服务 / 跨进程协议设计
+Trigger if any one of the following applies:
+- **Cross-cutting frontend + backend** (touching both UI and server side, including interface contracts) ← **in this scenario design is MANDATORY, not optional**
+- More than 3 interfaces
+- Architecture diagram / data-flow diagram / sequence diagram needed (mermaid / ASCII)
+- Deep decision argumentation exceeding 300 words (benchmarks / limit comparisons / performance models)
+- Cross-service / cross-process protocol design
 
-**纯前端 / 纯后端的简单任务**：直接 research → propose，不要为开 design 而开。
+**Pure frontend or pure backend simple tasks**: go directly research → propose; do not open a design for the sake of opening one.
 
-**跨前后端任务必须开 design** 的理由：
-- 接口契约是前后端**并行实施的唯一协调介质**
-- 没有契约 → 前后端只能串行（后端先做出来前端再对接），浪费 50% 时间
-- 契约写在 design.md `## Interfaces`，固化后 `/spec:apply` 才能派两个 agent 并发
+**Why cross-cutting frontend + backend tasks MUST have a design**:
+- The interface contract is the **only coordination medium that lets frontend and backend implement in parallel**
+- No contract → frontend and backend must serialize (backend finishes first, frontend integrates after), wasting 50% of the time
+- The contract lives in design.md `## Interfaces`; only once it is finalized can `/spec:apply` dispatch two agents concurrently
 
-## 流程
+## Process
 
-1. Read `spec/changes/<name>/research.md` 拿调研结果
-2. Read `spec/changes/<name>/design.md`（若已存在则在原基础修订）
-3. 写 / 更新 `spec/changes/<name>/design.md`
+1. Read `spec/changes/<name>/research.md` to get research findings
+2. Read `spec/changes/<name>/design.md` (if it already exists, revise in place)
+3. Write / update `spec/changes/<name>/design.md`
 
-**详细格式 + 段约束 + 边界规则 + 反模式** → [`skills/core/references/design-spec.md`](../skills/core/references/design-spec.md)
+**Detailed format + section constraints + boundary rules + anti-patterns** → [`skills/core/references/design-spec.md`](../skills/core/references/design-spec.md)
 
-## 反模式（概要）
+## Anti-patterns (summary)
 
-- ❌ 为复杂而复杂：proposal 数句即可说明者，强行写入 design
-- ❌ 把 proposal 的 How 段全文搬过来（design 装"为什么"的深度论证，不是结论复制）
-- ❌ 凭空画架构图：没读 research.md / 没扫项目代码就画
-- ❌ 决策不分争议、全部展开（应仅展开 1-2 个争议决策，其余指向 research DEC-N；见 SKILL「阶段职责矩阵」+ design-spec）
+- ❌ Complexity for its own sake: writing into design what a few sentences in proposal would cover fine
+- ❌ Copy-pasting the proposal's How section verbatim (design holds the deep "why" argumentation, not a copy of conclusions)
+- ❌ Drawing architecture diagrams from thin air: doing so without reading research.md or scanning the project code
+- ❌ Expanding every decision regardless of how contested it is (only 1–2 genuinely contested decisions get full treatment; the rest point to research DEC-N entries; see SKILL "Stage Responsibility Matrix" + design-spec)
 
-完整反模式清单见 [`design-spec.md`](../skills/core/references/design-spec.md)。
+Full anti-pattern list: [`design-spec.md`](../skills/core/references/design-spec.md).

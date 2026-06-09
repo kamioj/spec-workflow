@@ -2,103 +2,103 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 这个仓库是什么
+## What this repo is
 
-这是一个 **Claude Code plugin marketplace**，里面装着 `sdd`（spec-driven development）插件。**没有应用代码、没有编译/构建/测试运行器**——"源码"就是 markdown 命令、JSON 清单、PowerShell hook 脚本。修改即生效，"测试"靠加载插件并实跑命令。
+This is a **Claude Code plugin marketplace** housing the `sdd` (spec-driven development) plugin. **There is no application code, no compile/build/test runner** — the "source" is markdown commands, JSON manifests, and PowerShell hook scripts. Edits take effect immediately; "testing" means loading the plugin and actually running the commands.
 
-清单结构：`.claude-plugin/` 下同时放 `marketplace.json`（`source: "./"` 自指仓库根）和 `plugin.json`（plugin 自身）——这是 source 自指的单插件布局，仓库根即 plugin 根。改插件元数据时**两个 manifest 都要同步**（name / version / description）。
+Manifest layout: `.claude-plugin/` holds both `marketplace.json` (`source: "./"`, pointing back at the repo root) and `plugin.json` (the plugin itself) — this is the source-self-referencing single-plugin layout, where the repo root is the plugin root. When changing plugin metadata, **keep both manifests in sync** (name / version / description).
 
-## 开发循环（无 build/test，靠加载实跑）
+## Dev loop (no build/test — load and run for real)
 
 ```pwsh
-# 本地开发：直接加载源码副本，优先级高于 marketplace cache，改了立刻能测
+# Local development: load the source copy directly, which wins over the marketplace cache, so edits are testable immediately
 claude --plugin-dir .
 
-# 发布循环：push 后同步 cache
+# Release loop: sync the cache after pushing
 git add . ; git commit -m "..." ; git push
 claude plugin marketplace update spec-workflow
 ```
 
-**关键：改了 `hooks/` 下任何东西（hooks.json 或 .ps1）必须重启 Claude 才生效**——commands / skills / agents 是热加载，hook 不是。这是最容易踩的坑：改完 hook 不重启，测出来的是旧行为。
+**Key: changing anything under `hooks/` (hooks.json or .ps1) requires restarting Claude to take effect** — commands / skills / agents hot-reload, hooks don't. This is the easiest trap: edit a hook without restarting and you're testing the old behavior.
 
-校验所有 JSON 清单（CI 没有，手动跑）：
+Validate all JSON manifests (no CI — run it by hand):
 ```pwsh
 Get-ChildItem -Recurse -Filter *.json | ForEach-Object { Get-Content $_.FullName -Raw | ConvertFrom-Json | Out-Null; "OK: $($_.Name)" }
 ```
 
-单独测一个 hook（hook 从 stdin 读 JSON，exit 2 = 阻断，exit 0 = 放行）：
+Test a single hook in isolation (a hook reads JSON from stdin, exit 2 = block, exit 0 = allow):
 ```pwsh
 '{"user_prompt":"/spec:apply","cwd":"D:\\path\\to\\test-project"}' | pwsh -NoProfile -File hooks/check-gate.ps1 ; "exit=$LASTEXITCODE"
 ```
 
-## 平台约束
+## Platform constraints
 
-**Windows-only**：hook 用 pwsh（PowerShell 7）写。**永远用 `pwsh` 不用 `powershell`**——PS 5.1 默认 GBK 编码会把中文管道弄乱码。hook 脚本头部已显式设 UTF-8 stdin/stdout，跨平台需要等价的 bash/sh 重写（README "Limitations" 标了这是已知局限）。
+**Windows-only**: hooks are written in pwsh (PowerShell 7). **Always use `pwsh`, never `powershell`** — PS 5.1 defaults to GBK encoding, which corrupts Chinese in pipelines. The hook scripts explicitly set UTF-8 stdin/stdout in their headers; cross-platform support needs an equivalent bash/sh rewrite (the README "Limitations" notes this as a known gap).
 
-## 架构大图：软约束 vs 硬约束
+## Big picture: soft vs hard constraints
 
-整个 sdd 的设计核心是「**该停的地方真停下来**」，靠两层：
+The whole design of sdd centers on "**stopping for real where you have to stop**", via two layers:
 
-1. **软约束**（命令 / agent 的 markdown prompt 里写"必须做 X"）——模型可能违反。
-2. **硬约束**（`hooks/*.ps1` shell 脚本拦截）——违反率 0。
+1. **Soft constraints** (the command / agent markdown prompts saying "you must do X") — the model can violate them.
+2. **Hard constraints** (`hooks/*.ps1` shell scripts that intercept) — a 0% violation rate.
 
-两个 hook 都挂在 `UserPromptSubmit` 事件（见 `hooks/hooks.json`），靠 **正则匹配用户输入里的命令名** 决定是否介入：
+Both hooks are attached to the `UserPromptSubmit` event (see `hooks/hooks.json`) and decide whether to intervene by **regex-matching the command name in the user input**:
 
-| Hook | 匹配 | 拦什么 | 不满足时 |
+| Hook | Matches | Blocks | When unsatisfied |
 |---|---|---|---|
-| `check-tbd.ps1` | `/spec:propose` | research.md 的 `## Open [TBD]` 段还有 `[TBD-N]` | `exit 2`，提示走 `/spec:ask` |
-| `check-gate.ps1` | `/spec:apply` | proposal.md 缺 `<!-- APPROVED: ... -->` 标记 | `exit 2`，提示先过 HARD GATE |
+| `check-tbd.ps1` | `/spec:propose` | research.md's `## Open [TBD]` section still has `[TBD-N]` | `exit 2`, points to `/spec:ask` |
+| `check-gate.ps1` | `/spec:apply` | proposal.md lacks the `<!-- APPROVED: ... -->` marker | `exit 2`, points to passing the HARD GATE first |
 
-hook 约定（改 hook 时必须守）：
-- stdin JSON 的字段名是 **`user_prompt`**（不是 `prompt`）+ `cwd`。这点踩过坑，README 里专门记了证据。
-- **fail-open**：hook 自身报错走 catch → `exit 0` 放行。hook 的 bug 绝不能阻断用户正常流程。
-- `check-gate.ps1` 的 APPROVED 正则只认 `<!-- APPROVED:` 注释形式（apply 写入的就是它；裸文本 / 标题一律不认，避免 proposal 正文提到该字样被误判放行）。改标记格式时正则要一起改。
-- **多活跃 change**：两个 hook 在 `spec/changes/` 下有 >1 个非 archive 目录时都 `exit 2`，要求先归档至单 change（本工作流假设单活跃 change，否则草稿 change 会交叉阻断已批准 change）。
+Hook conventions (must hold when editing hooks):
+- The stdin JSON field is named **`user_prompt`** (not `prompt`) + `cwd`. This was a trap we hit; the README records the evidence specifically.
+- **fail-open**: a hook erroring out goes to catch → `exit 0` (allow). A bug in a hook must never block the user's normal flow.
+- `check-gate.ps1`'s APPROVED regex recognizes only the `<!-- APPROVED:` comment form (which is exactly what apply writes; bare text / headings are not recognized, to avoid the body text mentioning the word being misread as approval). When changing the marker format, change the regex together with it.
+- **Multiple active changes**: both hooks `exit 2` when there is >1 non-archive directory under `spec/changes/`, requiring you to archive down to a single change first (this workflow assumes a single active change, otherwise a draft change cross-blocks an approved one).
 
-## 架构大图：命令 + agent + 产物
+## Big picture: commands + agent + artifacts
 
-**11 个独立 slash 命令**（`commands/*.md`），每个可单独触发、可重入、可单点重做——这是相对 OpenSpec（4 命令一把梭）/ superpowers（9 步硬流程）的定位差异。典型流：
-`research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`。`/spec:workflow` 是全流程一把梭，`/spec:status` 报告当前在哪一步。
+**11 independent slash commands** (`commands/*.md`), each independently triggerable, re-entrant, and re-runnable on its own — this is the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (a rigid 9-step flow). The typical flow:
+`research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`. `/spec:workflow` runs the whole flow end-to-end, `/spec:status` reports which step you're on.
 
-**HARD GATE 机制**（贯穿 propose/revise/apply）：
-- propose/revise 写完 proposal **必须输出固定的 `<HARD-GATE>` 收尾块**，然后停手等用户。
-- `<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 在执行前自动追加**（视"用户主动调 apply"为批准动作）——**不是** propose 追加，**不需要**用户回"go"。这是近期重构掉的冗余（见 git log `fix: 简化 HARD GATE`），改这块逻辑时注意别把"回复 go"加回来。
-- HARD GATE 输出后**绝不写项目源码**，等下一条命令。
+**The HARD GATE mechanism** (runs through propose/revise/apply):
+- propose/revise, after writing the proposal, **must emit the fixed `<HARD-GATE>` closing block**, then stop and wait for the user.
+- The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended by `/spec:apply` before it runs** (treating "the user deliberately invoking apply" as the act of approval) — **not** appended by propose, and **no** "reply go" from the user is needed. This is a redundancy recently refactored out (see git log `fix: simplify HARD GATE`); when changing this logic, take care not to add "reply go" back.
+- After emitting the HARD GATE, **NEVER write project source**; wait for the next command.
 
-**1 个开发 agent**（`agents/spec-dev.md`），在 `/spec:apply` 阶段按 scope 派遣（跨前后端 = 一条消息并发派两个：frontend + backend scope）：
-- 按 proposal `## What` 涉及的代码类型分派（前端 UI/路由/组件 vs 后端 API/数据模型/迁移）。
-- **跨前后端 = 契约先行 + 并行**：接口契约先固化在 `design.md ## Interfaces`，然后**同一条消息并发派两个 agent**（不串行——串行浪费 50% 时间）。agent frontmatter 用 `model: inherit`。
+**1 development agent** (`agents/spec-dev.md`), dispatched by scope in the `/spec:apply` stage (cross-stack = dispatch two concurrently in one message: frontend + backend scope):
+- Dispatched by the type of code the proposal `## What` involves (frontend UI/routing/components vs backend API/data-model/migration).
+- **Cross-stack = contract first + parallel**: the interface contract is pinned down in `design.md ## Interfaces` first, then **two agents are dispatched concurrently in one message** (not serial — serial wastes 50% of the time). The agent frontmatter uses `model: inherit`.
 
-**opt-in 增强 flag**（`/spec:apply design solid verify`，空格分隔可组合）：默认**不**加载额外 reference 保持轻量，避免在工具型 UI/内部页/后端业务里过度保守。flag 命中才让 agent 读对应 reference：`design`→frontend-aesthetics（反 AI slop）、`solid`→agent-principles §一（反偷懒）、`verify`→agent-principles §二（反幻觉）。
+**opt-in enhancement flags** (`/spec:apply design solid verify`, space-separated, combinable): by default **no** extra reference is loaded, to stay lean and avoid over-caution on tool-type UIs / internal pages / backend business. A flag has to hit before the agent reads the corresponding reference: `design`→frontend-aesthetics (anti-AI-slop), `solid`→agent-principles §1 (anti-laziness), `verify`→agent-principles §2 (anti-hallucination).
 
-## 产物模型（在使用者项目里生成，不在本仓库）
+## Artifact model (generated in the user's project, not in this repo)
 
-跑 sdd 时在**目标项目**产生：
+Running sdd produces, in the **target project**:
 ```
 <target-project>/spec/
-├── changes/<change-name>/     活跃工作区
-│   ├── research.md  必有       当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
-│   ├── research/    可选       调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
-│   ├── design.md    可选       架构 / 接口契约 / 数据模型
-│   ├── proposal.md  必有       方案终态（四段 + APPROVED 标记）
-│   └── tasks.md     可选       多执行体协作清单（owner + deps）
-└── archive/<YYYY-MM-DD-name>/  已归档 change
+├── changes/<change-name>/     active workspace
+│   ├── research.md  required  current research (Practices + Constraints + Open[TBD] + Decided, single file)
+│   ├── research/    optional  discarded-draft pile of research directions (research.md snapshots of abandoned directions, no markers/links, revivable)
+│   ├── design.md    optional  architecture / interface contract / data model
+│   ├── proposal.md  required  the final solution (four sections + APPROVED marker)
+│   └── tasks.md     optional  multi-executor collaboration list (owner + deps)
+└── archive/<YYYY-MM-DD-name>/  archived change
 ```
-hook 据此判断状态：扫 `spec/changes/` 下非 `archive` 的目录当作"活跃 change"（归档目标是 `spec/archive/` 兄弟目录；hook 里 `-ne 'archive'` 仅防御"曾归档进 `spec/changes/archive/`"的旧布局，当前布局下不触发）。
+The hooks judge state from this: they scan the non-`archive` directories under `spec/changes/` as "active changes" (the archive target is the sibling `spec/archive/` directory; the `-ne 'archive'` in the hooks is only defending against the old "once archived into `spec/changes/archive/`" layout, which the current layout doesn't trigger).
 
-**产物固定为这四件 + 废稿堆**；各产物"写什么 / 不写什么"与软预算见 SKILL「阶段职责矩阵」（跨产物去重的真相源）——模型自增计划外文件（app-current / decisions / migration-inventory 等）须经用户显式批准，是文档膨胀的常见来源。
+**The artifact set is fixed at these four + the discarded-draft pile**; what each artifact "writes / doesn't write" and its soft budget live in SKILL § Phase Responsibility Matrix (the source of truth for cross-artifact de-duplication) — the model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) requires explicit user approval and is a common source of document bloat.
 
-## 写作约定（改 command/agent/reference 时守）
+## Writing conventions (follow when editing command/agent/reference)
 
-- **语言分工**：人读内容（命令说明、proposal/research 正文、commit）用**中文**；**段标题用英文**（`## Why / ## What / ## How / ## Risk`）——便于 hook 正则识别和 `/spec:revise <section>` 参数化。这是对全局"人读字段中文"协议的刻意折衷。
-- **proposal.md 四段缺一不可**：Why / What / How / Risk。
-- **command frontmatter**：`description` + `allowed-tools`。**agent frontmatter**：`name` / `description` / `model: inherit` / `color` / `capabilities`。
-- **路径变量**：hook 与 agent 里引用插件内文件用 `${CLAUDE_PLUGIN_ROOT}/...`，别写死绝对路径。
-- **references/ 按需读**：agent 检测项目栈（读 `package.json` / `pubspec.yaml` / `manifest.json`）后只读相关栈的 reference，不全读——避免污染 token。
-- **同一套规则散落多处要同步**：HARD GATE 文案、卡死自检模板、反作弊条款同时出现在 `SKILL.md`、对应 `commands/*.md`、`references/*-spec.md`。改其一要扫齐其余，否则三处不一致。`references/*-spec.md`（proposal/design/tasks-spec）是产物格式的**单一真相源**，命令文件用相对链接指过去。research 格式简单，直接写在 `commands/research.md` 里，不单开 spec 文件。
+- **Language**: all plugin content — command docs, the prose in references, agents, SKILL — is written in **native, idiomatic English**. This plugin is built to be shared broadly, so English is the product language. Section headers stay English (`## Why / ## What / ## How / ## Risk`) so hooks can regex-detect them and `/spec:revise <section>` can target them by name. The one maintained Chinese artifact is `README_cn.md`, a courtesy mirror of `README.md` kept in sync.
+- **proposal.md needs all four sections**: Why / What / How / Risk.
+- **command frontmatter**: `description` + `allowed-tools`. **agent frontmatter**: `name` / `description` / `model: inherit` / `color` / `tools`.
+- **Path variables**: hooks and agents reference in-plugin files via `${CLAUDE_PLUGIN_ROOT}/...`, never a hardcoded absolute path.
+- **references/ read on demand**: the agent detects the project stack (reading `package.json` / `pubspec.yaml` / `manifest.json`) and reads only the relevant stack's reference, not all of them — to avoid polluting the token budget.
+- **One rule scattered across multiple places must stay in sync**: the HARD GATE wording, the stuck-self-check template, and the anti-cheating clauses appear simultaneously in `SKILL.md`, the corresponding `commands/*.md`, and `references/*-spec.md`. When changing one, sweep the rest, otherwise the three fall out of sync. `references/*-spec.md` (proposal/design/tasks-spec) is the **single source of truth** for artifact format; command files point there with relative links. The research format is simple and lives directly in `commands/research.md`, with no separate spec file.
 
-## 共享精神（agent 默认遵守，无需 opt-in，见 SKILL.md「共享精神」）
+## Shared Principles (agents follow them by default, no opt-in needed — see SKILL.md § Shared Principles)
 
-- **反作弊**：未实跑通的命令/PoC 不许报"成功"；mock 假响应/改 assert/patch 返回 true 必须明说"绕过，真因未解"；硬编码（偏移/hash）必在注释 + tasks.md 标"仅适用本场景"。
-- **卡死保护**：同方向连续 3 次修复失败 → 停下输出"卡死自检"块，等用户决策，禁止无限 patch。
-- **任务不可行叫停**：发现前提就错（矛盾/范围外/工具不兼容）→ 立即停下汇报。
+- **Anti-Cheating**: a command/PoC that hasn't actually run must not be reported as "success"; mocking a fake response / changing an assert / patching a return of true must be stated plainly as "bypass, root cause unresolved"; hardcoding (offsets/hashes) must be flagged in a comment + a "applies to this case only" note in tasks.md.
+- **Stuck Protection**: 3 consecutive failed fixes in the same direction → stop and emit the "Stuck Self-Check" block, wait for the user's decision, no endless patching.
+- **Halt on infeasible task**: finding the premise itself is wrong (contradiction / out of scope / tool incompatible) → stop and report immediately.

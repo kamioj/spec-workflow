@@ -1,185 +1,185 @@
 ---
 name: core
-description: Spec-driven development 工作流总览。当用户说"先 spec / 先出方案 / 先设计 / 提案"或任务规模 >150 行 / 跨 3+ 文件 / 引入新依赖 / 涉及架构选择时，加载此 skill 了解 sdd plugin 的 11 个命令、产物地图、共享精神（HARD GATE / 拷问 / 卡死保护 / 反作弊）
+description: Spec-driven development workflow overview. Load this skill when the user says "spec this first / draft a proposal / design first / write a proposal", or when a task is >150 lines / spans 3+ files / introduces a new dependency / involves an architecture choice — to learn the sdd plugin's 11 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
 ---
 
-# SDD Plugin 总览
+# SDD Plugin Overview
 
-Spec-driven development 工作流：调研 → 拷问 → 提案 → HARD GATE → 实施 → 验证 → 归档。多命令 plugin 形态，每阶段独立触发。
+Spec-driven development workflow: research → interrogate → propose → HARD GATE → implement → verify → archive. A multi-command plugin where every stage fires independently.
 
-## 何时使用
+## When to use
 
-**激活**（满足任一）：
-- 改动预计 >150 行
-- 跨 3+ 文件
-- 引入新依赖
-- 架构选择（多方案权衡）
-- 用户主动说 "先 spec | 提案 | 先设计 | 先出方案"
+**Activate** (any one is enough):
+- The change is expected to exceed 150 lines
+- It spans 3+ files
+- It introduces a new dependency
+- It involves an architecture choice (weighing multiple options)
+- The user explicitly says "spec this first | proposal | design first | draft a solution"
 
-**不激活**：
-- trivial（typo / log / 样式）
-- small（<30 行单文件）
-- medium（30-150 行 / 2-3 文件 / 不跨模块）
+**Do NOT activate**:
+- trivial (typo / log / styling)
+- small (<30 lines, single file)
+- medium (30–150 lines / 2–3 files / no cross-module impact)
 
-→ 直接改，**绝不激活本流程**。误激活重流程是本 plugin 最大失败模式。
+→ Just make the change; **NEVER activate this workflow**. Spinning up the heavy process by mistake is this plugin's single biggest failure mode.
 
-## 命令索引
+## Command index
 
-| 类别 | 命令 | 职责 |
+| Category | Command | Responsibility |
 |---|---|---|
-| 入口 | `/spec:workflow <任务>` | 全流程一把梭，兼容旧 /sdd |
-|  | `/spec:status` | 报告当前阶段 |
-| 信息收集 | `/spec:research <方向>` | 调研业界做法 + 关键约束 |
-|  | `/spec:ask` | 拷问消化 [TBD] |
-|  | `/spec:chat` | 讨论模式，不动文档 |
-| 设计 & 方案 | `/spec:design` | 技术设计梳理（按需） |
-|  | `/spec:propose [--codex]` | 写 proposal.md；--codex 让 codex 挑刺方案 |
-|  | `/spec:revise [section]` | 局部改 proposal（why/what/how/risk） |
-| 执行 & 验证 | `/spec:apply` | 实施代码 |
-|  | `/spec:verify [--codex] [--fix]` | 自审三维；--codex 加 codex 他审，--fix 让 codex 改 |
-| 收尾 | `/spec:archive` | 归档 |
+| Entry | `/spec:workflow <task>` | run the whole flow end-to-end; back-compatible with the old /sdd |
+|  | `/spec:status` | report the current stage |
+| Gather | `/spec:research <direction>` | survey industry practice + key constraints |
+|  | `/spec:ask` | interrogate and resolve `[TBD]` items |
+|  | `/spec:chat` | discussion mode, touches no file |
+| Design & propose | `/spec:design` | technical design pass (on demand) |
+|  | `/spec:propose [--codex]` | write proposal.md; `--codex` lets codex poke holes in the solution |
+|  | `/spec:revise [section]` | edit a single proposal section (why/what/how/risk) |
+| Execute & verify | `/spec:apply` | implement the code |
+|  | `/spec:verify [--codex] [--fix]` | self-review on three axes; `--codex` adds codex as a second reviewer, `--fix` lets codex edit |
+| Wrap up | `/spec:archive` | archive the change |
 
-## 产物地图
+## Artifact map
 
 ```
 spec/
-├── changes/                          活跃 change 工作区
+├── changes/                          active change workspace
 │   └── <change-name>/
-│       ├── research.md   必有        当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
-│       ├── research/     可选        调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
-│       ├── design.md     可选        技术设计（架构 / 接口 / 数据模型）
-│       ├── proposal.md   必有        方案终态（含 HARD GATE 批准标记）
-│       └── tasks.md      可选        多执行体协作的任务清单
+│       ├── research.md   required    current research (Practices + Constraints + Open[TBD] + Decided, single file)
+│       ├── research/     optional    discarded-draft pile of research directions (research.md snapshots of abandoned directions, no markers/links, revivable)
+│       ├── design.md     optional    technical design (architecture / interfaces / data model)
+│       ├── proposal.md   required    the final solution (carries the HARD GATE approval marker)
+│       └── tasks.md      optional    task list for multi-executor collaboration
 │
-└── archive/                          归档目录
-    └── YYYY-MM-DD-<name>/            归档后的整个 change 目录
+└── archive/                          archive directory
+    └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
-**产物固定为这四件 + 废稿堆**。模型自行增设计划外文件（如 app-current / decisions / migration-inventory）是文档过多的直接来源——新增第五类文件须经**用户显式批准**，否则相关内容并入四件之一。
+**The artifact set is fixed at these four + the discarded-draft pile.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
-## 阶段职责矩阵（各产物各司其职，越界即臃肿之源）
+## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
-大改动文档臃肿的主要成因是**阶段越界**：调研内容混入 design、代码与 DDL 误置于 design、同一决策在 research 与 design 重复记述。**原则：每项内容只在其唯一真相源完整写明，他处仅引用、不重述。**
+The main cause of bloated docs on large changes is **phase boundary violations**: research content leaking into design, code and DDL misplaced in design, the same decision narrated in both research and design. **Principle: each piece of content is written in full only at its single source of truth; everywhere else references it, never restates it.**
 
-| 产物 | **只写**（唯一真相源） | **不写**（挪到哪） | 软预算 |
+| Artifact | **Writes only** (single source of truth) | **Does not write** (moves to) | Soft budget |
 |---|---|---|---|
-| research.md | 外部信息：Practices / Constraints / Open[TBD] / Decided（DEC-N 结论 + 一句理由） | 架构·接口·schema→design ｜ 变更文件→proposal What ｜ 原始检索过程→废稿堆 | 每条一行 |
-| design.md | 内部技术构造：架构图（结构，无字段）/ 接口契约（精确 schema）/ 数据模型 / **仅争议决策**深度论证 | 业务动机→proposal Why ｜ 风险·回滚→proposal Risk ｜ 完整代码·DDL→apply ｜ 复制 DEC-N 结论（只引不抄）｜ 展开非争议决策 | **叙述/论证 ≤150 行**（契约不计入、按需精确）；图 >20 节点拆；展开决策 1-2 个、每个 ≤12 行 |
-| proposal.md | 决策书：Why / What / How（结论 + 指针）/ Risk | 深论证→design ｜ schema→design ｜ 重述 design 决策 | 每段 ≤5 行 |
-| tasks.md | 协作清单：owner / deps / 验收 | 重述方案 → 指回 proposal/design | 每任务一行 |
+| research.md | External information: Practices / Constraints / Open[TBD] / Decided (DEC-N conclusion + one-line reason) | architecture·interfaces·schema→design ｜ changed files→proposal What ｜ raw search process→discarded-draft pile | one line each |
+| design.md | Internal technical structure: architecture diagram (structure, no fields) / interface contract (precise schema) / data model / **deep argument for contested decisions only** | business motivation→proposal Why ｜ risk·rollback→proposal Risk ｜ full code·DDL→apply ｜ copying DEC-N conclusions (reference, don't transcribe) ｜ expanding non-contested decisions | **narrative/argument ≤150 lines** (contracts excluded, as precise as needed); split diagrams >20 nodes; expand 1–2 decisions, ≤12 lines each |
+| proposal.md | Decision record: Why / What / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section |
+| tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
 
-**软预算只约束"叙述/论证"、不约束"契约"**：`## Interfaces` / `## Data Model` 契约按需充分精确、**不计入预算**——契约不够精确，才是真正的交代不清。design 的具体行数与"契约过大则拆 change"等细则见 `references/design-spec.md`「段约束」（数值以那里为准）——**此处只立原则、不重抄**。
+**The soft budget governs "narrative/argument" only, not "contracts":** `## Interfaces` / `## Data Model` contracts are as precise as they need to be and **do not count toward the budget** — an imprecise contract is the real failure to specify. The exact line counts for design and rules like "split the change if the contract is too large" live in `references/design-spec.md` § Section Constraints (those numbers are authoritative) — **this matrix sets the principle only and does not restate them**.
 
-**去重去除的是"深度论证"（仅保留一处），而非"结论"。** 结论须**前递**至执行者实际会读的文档——`/spec:apply` **只读 proposal + design，不读 research**，二者合并须能独立交代清任务。以下三项最易重复记述，真相源固定如下：
-- **决策**：research `## Decided`（DEC-N）是**决策登记**（结论 + 一句理由），**不是深度论证的真相源**；**结论 + 理由前递至 proposal `## How`**（如"选型 X，理由一句"），**不得仅以"见 DEC-N"指代、致 apply 无从着手**。**深度论证**（benchmark / 多方案权衡）的真相源是 design `## Key Decisions`，且仅就 1-2 个**争议**决策展开。
-- **动机** = proposal `## Why`。design 不写 Context 业务叙述。
-- **风险** = proposal `## Risk`。design 不单列 Risks 段（决策的"代价"一句并入该决策，不另起清单）。
+**De-duplication removes the "deep argument" (kept in one place only), not the "conclusion."** Conclusions MUST be **forwarded** to the documents the executor actually reads — `/spec:apply` **reads only proposal + design, not research**, so those two combined must specify the task on their own. The three items most prone to duplication, with their fixed sources of truth:
+- **Decisions**: research `## Decided` (DEC-N) is the **decision registry** (conclusion + one-line reason), **not the source of truth for deep argument**; the **conclusion + reason are forwarded to proposal `## How`** (e.g. "chose X, one-line reason"), and MUST NOT be referenced merely as "see DEC-N", which would leave apply with nothing to act on. The **deep argument** (benchmarks / multi-option trade-offs) lives at design `## Key Decisions`, expanded for the 1–2 **contested** decisions only.
+- **Motivation** = proposal `## Why`. design writes no business-Context narrative.
+- **Risk** = proposal `## Risk`. design has no separate Risks section (a decision's "cost" goes in one line under that decision, not in a separate list).
 
-## 共享精神
+## Shared Principles
 
-### HARD GATE 流程
+### HARD GATE flow
 
-`/spec:propose` / `/spec:revise` 写完 proposal 必须输出固定收尾：
+`/spec:propose` / `/spec:revise` MUST emit this fixed closing block once the proposal is written:
 
 ```
 <HARD-GATE>
-=== 提案就绪 ===
-路径：spec/changes/<name>/proposal.md
-（若同步生成 tasks.md → 加一行：+ tasks.md（<N> 阶段任务分解 + deps + owner））
+=== Proposal ready ===
+Path: spec/changes/<name>/proposal.md
+(if tasks.md was generated too → add a line: + tasks.md (<N>-phase breakdown + deps + owner))
 
-变化点：<关键决策逐点写实质，每点一句"定了什么 + 为什么"，让用户一眼判断是否批准>
+Changes: <list each key decision in substance, one line of "what was decided + why" per point, so the user can judge approval at a glance>
 
-下一步：
-  ✅ 满意 → 调 /spec:apply 进入实施
-     apply 会自动在 proposal.md 末尾追加 <!-- APPROVED: ... --> 标记
-  🔧 局部改某段 → /spec:revise [why | what | how | risk]
-  💭 方向想再聊 → /spec:chat
-  🔄 调研要重做 → /spec:research "<新方向>"
+Next:
+  ✅ Looks good → run /spec:apply to start implementing
+     apply will automatically append the <!-- APPROVED: ... --> marker to the end of proposal.md
+  🔧 Tweak one section → /spec:revise [why | what | how | risk]
+  💭 Want to talk the direction over → /spec:chat
+  🔄 Research needs redoing → /spec:research "<new direction>"
 </HARD-GATE>
 ```
 
-`/spec:revise` 的 HARD GATE 同结构，标题改为 `=== 提案修订（<section>）===` + 写明"旧 APPROVED 标记已移除"。
+`/spec:revise` uses the same structure, with the title changed to `=== Proposal revised (<section>) ===` and a note that "the old APPROVED marker has been removed".
 
-`<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 执行前自动追加**（视用户主动调用为批准动作）——propose / revise **不追加**（详见 proposal-spec.md）。
+The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by `/spec:apply` before it runs** (treating the user's deliberate invocation as the act of approval) — propose / revise **do not append it** (see proposal-spec.md).
 
-hook `check-gate.ps1` 在 `/spec:apply` 执行前检查此标记。**无标记 → 拒绝执行**。
+The `check-gate.ps1` hook checks for this marker before `/spec:apply` runs. **No marker → execution refused.**
 
-### 拷问规则（继承 grill-me 精神）
+### Interrogation rules (in the spirit of grill-me)
 
-- **提示自包含**（最重要，适用于一切"向用户提问 / 给出建议"之处——ask 的选项、HARD GATE 变化点、status 下一步）：所给内容 = ① 决策 / 动作一句 + ② 理由（影响什么 / 不做的后果）+ ③ 每个选项"选择它将导致什么（具体场景 / 后果）"。**判据：用户无需反问即可据以决策**。空泛内容（仅罗列"A / B / C"、或仅给命令名而无后果 / 理由）是首要失败模式。
-- **主张自审（四问过滤）**（提示自包含的姊妹：前者约束"向用户提的问题"，本条约束"产出的内容"）：每项主张落笔前先过四问——① **为什么**（缺它无法解决什么问题）② **何时有利**（锚定具体场景，而非抽象的"更优雅"）③ **隐患**（任何方案皆有代价，说不出代价即未想透）④ **能否删减**（删除后无影响者**不写**）。**严谨在于精准，不在篇幅**：四问是**思考**动作、每项主张皆须经过；但**落成文字的仅为第④问的结论**（删减后的保留项）——②③的深度论证默认**内化**，仅 1-2 个**确有争议 / 高风险**的决策展开记述（展开内容置于 design `## Key Decisions`，不并入 research / proposal）。判据：用户以四问反诘已问不出新内容，**且文档无一句可删而无损**。
-- 偏好型决策点**必须**用 AskUserQuestion 问用户
-- 2-4 个选项 / 推荐项放第一并标"(推荐)" + 一句为什么推荐
-- 选项 >4 → 拆"多级窄化"
-- 拿不准是事实型还是偏好型 → 当偏好型问
-- 一次最多 4 问
+- **Self-contained prompts** (most important; applies everywhere you "ask the user / give a recommendation" — ask's options, HARD GATE change points, status's next steps): what you present = ① the decision / action in one line + ② the reason (what it affects / the cost of not doing it) + ③ for each option, "what choosing it leads to (concrete scenario / consequence)". **Test: the user can decide on it without asking a follow-up.** Vague content (just listing "A / B / C", or just naming a command with no consequence / reason) is the primary failure mode.
+- **Claim Self-Review (four-question filter)** (the sibling of self-contained prompts: that one governs "questions put to the user", this one governs "content produced"): before committing any claim, run it through four questions — ① **Why** (what problem can't be solved without it) ② **When is it favorable** (anchor a concrete scenario, not an abstract "more elegant") ③ **Cost** (every option has a price; if you can't name the cost, you haven't thought it through) ④ **Can it be cut** (if removing it changes nothing, **don't write it**). **Rigor is precision, not length**: the four questions are a **thinking** act, applied to every claim; but **only the conclusion of question ④ becomes text** (what survives the cut) — the deep argument of ② and ③ is **internalized** by default, expanded in writing only for the 1–2 decisions that are **genuinely contested / high-risk** (the expansion goes in design `## Key Decisions`, not folded into research / proposal). Test: the user can't extract anything new by pressing with the four questions, **and not a single sentence can be cut without loss**.
+- Preference-type decisions **MUST** be put to the user via AskUserQuestion
+- 2–4 options / put the recommended one first, mark it "(recommended)" + one line on why
+- More than 4 options → split into "multi-level narrowing"
+- Unsure whether it's fact-type or preference-type → treat it as preference-type
+- At most 4 questions at a time
 
-### 卡死保护
+### Stuck Protection
 
-任一命令执行中**连续 3 次**修复同方向失败 → 立即停下汇报。
+**3 consecutive** failed fixes in the same direction during any command → stop immediately and report.
 
-一次尝试 = 新假设 + 改码 + 验证；重跑同样代码 / 修 typo / 调日志**不算**。
-
-```
-=== 卡死自检 ===
-现象：<一句话>
-已试三个假设：
-  1. <假设> → <结果>
-  2. <假设> → <结果>
-  3. <假设> → <结果>
-推断真因：<能推断写真因，否则"未知">
-建议换方向：<有则写，否则"等用户指示">
-```
-
-等用户决策，禁止无限 patch。
-
-### 反作弊（继承 explore skill 精神）
-
-1. **不伪造结果**：未实际跑通的命令 / PoC / 输出**不许汇报为"成功"**
-2. **不把绕过当解决**：mock 假响应 / 改 assert / patch 检查函数返回 true，必须明说"绕过，真因未解"
-3. **硬编码必标注**：偏移量 / 固定 hash / 一次性参数，在代码注释 + tasks.md 标"仅适用本场景"
-
-### 任务不可行时叫停
-
-发现前提就错了（题目矛盾 / 资产在范围外 / 工具不兼容到无法继续 / 漏洞被修了）→ 立刻停下汇报：
+One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **does not count**.
 
 ```
-=== 任务不可行 ===
-发现：<前提哪里错 / 哪里矛盾>
-证据：<具体观察 / 报错 / 引用>
-建议：<改范围 / 换工具 / 联系出题方 / 放弃>
+=== Stuck Self-Check ===
+Symptom: <one line>
+Three hypotheses tried:
+  1. <hypothesis> → <result>
+  2. <hypothesis> → <result>
+  3. <hypothesis> → <result>
+Inferred root cause: <write it if you can infer one, otherwise "unknown">
+Suggested new direction: <write it if you have one, otherwise "awaiting user guidance">
 ```
 
-## hook 机制（硬约束加固）
+Wait for the user's decision; no endless patching.
 
-| Hook 脚本 | 触发命令 | 作用 |
+### Anti-Cheating (in the spirit of the explore skill)
+
+1. **No faking results**: a command / PoC / output that hasn't actually run **MUST NOT be reported as "success"**
+2. **No passing off a bypass as a fix**: mocking a fake response / changing an assert / patching a check function to return true MUST be stated plainly as "bypass, root cause unresolved"
+3. **Hardcoding must be flagged**: offsets / fixed hashes / one-off parameters get a code comment + a "applies to this case only" note in tasks.md
+
+### Halt on infeasible task
+
+When you find the premise itself is wrong (a contradictory task / an asset out of scope / a tool too incompatible to continue / a vulnerability already patched) → stop immediately and report:
+
+```
+=== Task infeasible ===
+Finding: <where the premise is wrong / contradictory>
+Evidence: <concrete observation / error / citation>
+Suggestion: <change scope / switch tools / contact the task owner / abandon>
+```
+
+## Hook mechanism (hard-constraint reinforcement)
+
+| Hook script | Trigger command | Effect |
 |---|---|---|
-| `hooks/check-tbd.ps1` | `/spec:propose` 前 | research.md 含 `[TBD]` 则拒绝执行，提示走 `/spec:ask` |
-| `hooks/check-gate.ps1` | `/spec:apply` 前 | proposal.md 缺 `APPROVED` 标记则拒绝执行 |
+| `hooks/check-tbd.ps1` | before `/spec:propose` | refuses to run if research.md still contains `[TBD]`, points to `/spec:ask` |
+| `hooks/check-gate.ps1` | before `/spec:apply` | refuses to run if proposal.md lacks the `APPROVED` marker |
 
-两个 hook 还会在 `spec/changes/` 下存在 **>1 个活跃 change** 时 `exit 2`（本工作流假设单活跃 change，先归档其余再继续）。
+Both hooks also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive the rest before continuing).
 
-**软约束 vs 硬约束**：
-- 软约束（prompt）：模型可能违反，违反率取决于模型水平
-- 硬约束（hook）：shell 脚本拦截，违反率 0
+**Soft vs hard constraints:**
+- Soft constraint (prompt): the model may violate it; the violation rate depends on the model's quality
+- Hard constraint (hook): a shell script blocks it; a 0% violation rate
 
-`hooks/` 下的 PowerShell 脚本由 `hooks/hooks.json` 注册到 `UserPromptSubmit` 事件。
+The PowerShell scripts under `hooks/` are registered to the `UserPromptSubmit` event by `hooks/hooks.json`.
 
-## references 加载策略
+## references loading strategy
 
-按需读，**不强制**：
+Read on demand, **not mandatory**:
 - `skills/core/references/alibaba-java.md` + `java-conventions.md` — Java + Spring
-- `skills/core/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` — Vue（uni-app 加 `uniapp-miniprogram.md`）
+- `skills/core/references/vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` — Vue (uni-app adds `uniapp-miniprogram.md`)
 - `skills/core/references/bulletproof-react.md` + `react-patterns.md` — React
-- `skills/core/references/google-ts-style.md` + `ts-conventions.md` — TS（叠加于 Vue/React/Node 之上）
+- `skills/core/references/google-ts-style.md` + `ts-conventions.md` — TS (layered on top of Vue/React/Node)
 - `skills/core/references/python-conventions.md` — Python
 - `skills/core/references/php-conventions.md` — PHP
 - `skills/core/references/flutter-conventions.md` — Flutter / Dart
 
-只在写到具体技术决策时按需 Read，避免污染 token。
+Read on demand only when writing a concrete technical decision, to avoid polluting the token budget.
 
-## 与全局协议交互
+## Interaction with the global protocol
 
-- **中文**：proposal / research 内容用中文，段标题英文（按 CLAUDE.md「人读字段中文」折衷——段标题英文便于工具识别、参数化）
-- **子代理委派**：WebSearch 派 `@researcher`、跨文件搜索派 `@code-explorer`
-- **并发**：多个独立操作同时发起
+- **Language**: proposal / research prose follows your working language; section headers stay English (per the CLAUDE.md compromise — English headers make them tool-detectable and parameterizable)
+- **Subagent delegation**: WebSearch goes to `@researcher`, cross-file search to `@code-explorer`
+- **Concurrency**: independent operations are dispatched at once

@@ -241,7 +241,7 @@ claude --plugin-dir .
 
 与全局 CLAUDE.md 协议的协作约定：
 
-- **中文**：proposal / research 内容中文；段标题英文（## Why / ## What / ## How / ## Risk）便于工具识别和 revise 参数化
+- **语言**：proposal / research 内容跟随你的工作语言；段标题英文（## Why / ## What / ## How / ## Risk）便于工具识别和 revise 参数化
 - **子代理委派**：research 阶段派全局 `@researcher`、apply 阶段派 plugin 内 `spec-dev`（按 scope）
 - **并发**：互不依赖的任务一次性并发派单
 
@@ -262,7 +262,7 @@ claude --plugin-dir .
 
 ## Changelog
 
-- **0.1.0** — 首版：11 命令 + 2 hook + 2 agent，从 skill 形态迁移而来
+- **0.1.0** — 首版：11 命令 + 2 hook + 1 agent，从 skill 形态迁移而来
 
 ---
 

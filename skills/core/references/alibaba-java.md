@@ -1,153 +1,154 @@
 ---
-name: Java 编码规约要点（自有提炼）
+name: Java Coding Conventions — Key Extracts (custom)
 source: https://github.com/alibaba/p3c
-note: 关键规约自有提炼，非原文复制；原手册版权归阿里巴巴，完整内容见官方发布渠道。
+note: Key rules extracted and distilled in-house, not copied verbatim from the original. Full guide copyright belongs to Alibaba; see official channels for the complete text.
 companion: java-conventions.md
 ---
 
-# Java 编码规约要点
+# Java Coding Conventions — Key Extracts
 
-本文聚焦**编码层规约**（命名、常量、OOP、集合、并发、异常日志、SQL）。
-包结构、分层职责、设计模式应用见 `java-conventions.md`，两者互补不重复。
+This document focuses on **code-level conventions** (naming, constants, OOP, collections, concurrency, exception handling, logging, SQL).
 
----
-
-## 1. 命名规约
-
-**类与接口**
-- 类名用 UpperCamelCase；测试类加 `Test` 后缀（`UserServiceTest`）。
-- 接口名不加 `I` 前缀（`UserService` 优于 `IUserService`）；实现类加 `Impl`。
-- 抽象类建议加 `Abstract` 前缀，异常类加 `Exception` 后缀。
-
-**方法与变量**
-- 方法名、变量名用 lowerCamelCase。
-- 布尔字段不加 `is` 前缀（如 `enabled` 而非 `isEnabled`），否则部分框架序列化/getter 会歧义。
-- 禁止用拼音命名（`xinxi`、`yonghu`），也禁止中英混拼。
-- 临时变量禁止用 `a1 b2` 之类无意义名称；单字母变量只允许在极短作用域循环计数（`i j k`）中出现。
-
-**包名**
-- 全小写，用点分隔；不允许有大写或下划线。例：`com.company.app.user.controller`。
-
-**常量**
-- 全大写下划线分隔：`MAX_RETRY_COUNT`。
+Package structure, layer responsibilities, and design pattern usage are covered in `java-conventions.md`. The two files complement each other without overlapping.
 
 ---
 
-## 2. 常量定义
+## 1. Naming Conventions
 
-- 常量必须放独立常量类（或枚举），禁止在代码里出现魔法数字/魔法字符串。
-- 跨业务公用的常量放 `common/constants`；只在一个模块内用的常量放该模块内部。
-- 枚举比常量类更适合表达"有限集合"语义（状态码、类型标识），优先用枚举。
-- Long 型字面量加 `L`，不用小写 `l`（易与数字 1 混淆）。
+**Classes and Interfaces**
+- Class names MUST use UpperCamelCase. Test classes MUST carry a `Test` suffix (e.g., `UserServiceTest`).
+- Interface names MUST NOT use an `I` prefix (`UserService` over `IUserService`). Implementation classes use an `Impl` suffix.
+- Abstract classes should carry an `Abstract` prefix; exception classes MUST carry an `Exception` suffix.
 
----
+**Methods and Variables**
+- Method names and variable names MUST use lowerCamelCase.
+- Boolean fields MUST NOT use an `is` prefix (use `enabled`, not `isEnabled`) — some frameworks generate ambiguous getters or break serialization.
+- NEVER use Pinyin identifiers (`xinxi`, `yonghu`) or mixed Pinyin/English names.
+- NEVER use meaningless names like `a1`, `b2` for temporary variables. Single-letter names are only acceptable as loop counters (`i`, `j`, `k`) in very short scopes.
 
-## 3. OOP 规约
+**Package Names**
+- All lowercase, dot-separated. Uppercase letters and underscores are NEVER allowed. Example: `com.company.app.user.controller`.
 
-**访问控制**
-- 字段一律 `private`，通过方法暴露；不要为了方便直接用 `public` 字段。
-- 工具类不需要实例化的，构造器设为 `private`。
-
-**覆写与接口**
-- 覆写方法必须加 `@Override`，既防拼写错误又自文档化。
-- 接口里不要定义常量——接口的职责是描述行为，不是存储配置。
-
-**对象比较**
-- 字符串、包装类型比较用 `.equals()`，不用 `==`；常量/字面量放左侧（`"OK".equals(status)`）防空指针。
-- 枚举比较可以用 `==`。
-
-**基本类型与包装类型**
-- POJO 字段用包装类型（`Integer` 而非 `int`），可以区分"有值"与"未传"。
-- 局部变量、方法参数用基本类型减少装箱开销。
-- 包装类型做运算前先判空，防止自动拆箱 NPE。
-
-**对象构造**
-- 超过 4 个参数的对象用 Builder 模式（Lombok `@Builder`）。
-- 不要在构造器里做复杂业务逻辑，构造器只做参数赋值。
+**Constants**
+- SCREAMING_SNAKE_CASE: `MAX_RETRY_COUNT`.
 
 ---
 
-## 4. 集合处理
+## 2. Constant Definitions
 
-**初始化容量**
-- `HashMap` 初始化时估算大小并指定容量，公式：`预期元素数 / 0.75 + 1`，避免频繁扩容。
-- `ArrayList` 已知大小时同样指定初始容量。
-
-**工具类创建**
-- `Collections.emptyList()` / `emptyMap()` 返回不可变空集合；不要返回 `null` 来表示"没有数据"。
-- `Arrays.asList()` 生成的列表不支持 `add/remove`，要可变列表用 `new ArrayList<>(Arrays.asList(...))`。
-
-**遍历与修改**
-- 遍历集合时不允许用 `for-each` 内部直接 `remove`，用 `Iterator.remove()` 或 `removeIf()`。
-- `subList()` 返回的是原列表的视图，修改视图会影响原列表，谨慎使用。
-
-**null 处理**
-- 集合参数传入前判空；返回集合时返回空集合而非 `null`，调用方不需要额外判空。
+- Constants MUST live in a dedicated constant class or enum. Magic numbers and magic strings directly in code are NEVER acceptable.
+- Constants shared across multiple modules belong in `common/constants`. Constants used only within one module belong inside that module.
+- Prefer enums over constant classes for values that represent a finite set (status codes, type identifiers) — enums carry stronger semantics.
+- `Long` literals MUST use an uppercase `L` suffix, never lowercase `l` (too easily confused with the digit `1`).
 
 ---
 
-## 5. 并发处理
+## 3. OOP Conventions
 
-**线程池**
-- 禁止用 `Executors.newFixedThreadPool` 等工厂方法（队列无界，可能 OOM）。
-- 必须用 `ThreadPoolExecutor` 显式指定：核心线程数、最大线程数、队列容量、拒绝策略。
-- 线程池要有有意义的线程名前缀，便于排查线程 dump（用 `ThreadFactory`）。
+**Access Control**
+- Fields MUST be `private` and exposed through methods. NEVER use `public` fields for convenience.
+- Utility classes that are not meant to be instantiated MUST have a `private` constructor.
 
-**同步与可见性**
-- 单例的可变状态用 `volatile` 保证可见性；需要原子操作用 `AtomicXxx`。
-- 锁的粒度尽量小，只锁临界区，不在锁内做 IO 或远程调用。
-- 避免在多处对同一对象加锁的顺序不一致（死锁根因）。
+**Overrides and Interfaces**
+- Overridden methods MUST be annotated with `@Override` — this catches typos and serves as self-documentation.
+- NEVER define constants inside an interface. An interface's responsibility is to describe behavior, not store configuration.
 
-**线程安全集合**
-- 多线程读写用 `ConcurrentHashMap` / `CopyOnWriteArrayList`，不用 `Collections.synchronizedXxx`（整体加锁，并发性差）。
-- `ThreadLocal` 使用后必须在 finally 中 `remove()`，防止线程池复用时的数据泄漏。
+**Object Comparison**
+- Compare `String` and wrapper types with `.equals()`, never `==`. Place the constant or literal on the left side (`"OK".equals(status)`) to guard against NullPointerExceptions.
+- Enum comparison may use `==`.
 
-**任务与结果**
-- 异步任务用 `CompletableFuture`，用 `exceptionally` 或 `handle` 处理异常，不要让异常静默吞掉。
+**Primitives vs. Wrapper Types**
+- POJO fields should use wrapper types (`Integer` rather than `int`) to distinguish between "has a value" and "was not provided."
+- Local variables and method parameters should use primitives to avoid unnecessary boxing overhead.
+- Always null-check wrapper types before using them in arithmetic to prevent unboxing NPEs.
 
----
-
-## 6. 异常与日志
-
-**异常处理**
-- 捕获异常后不允许空 catch 块；至少要 log 记录，或抛出包装后的业务异常。
-- 区分受检异常（I/O、网络）和业务异常；业务异常用自定义 `BizException`（非受检）。
-- 不要用异常做流程控制（如用 `try-catch` 判断某个值存不存在）——性能差且语义混乱。
-- finally 块里不要有 `return`，会吃掉 try 里的 return 值。
-
-**自定义异常**
-- 错误码 + 错误消息二元组放在异常对象里，不要散落在调用层。
-- 层间传递时，底层异常包装为上层语义异常再抛，保留原始 cause。
-
-**日志规范**
-- 使用 SLF4J 接口（`LoggerFactory.getLogger`），不直接用 Log4j/Logback 的具体类。
-- 用占位符 `log.info("user: {}", userId)` 而非字符串拼接（未开启 info 级别时避免无效拼接）。
-- 生产环境日志级别 INFO，不要在循环体里打 DEBUG 日志（高频日志会打满磁盘）。
-- 异常日志必须把 exception 对象作为最后一个参数传入，输出完整堆栈：`log.error("操作失败", e)`。
-- 不允许用 `System.out.println` 输出生产日志。
+**Object Construction**
+- Objects with more than 4 parameters should use the Builder pattern (Lombok `@Builder`).
+- NEVER put complex business logic in a constructor. Constructors MUST only assign parameters.
 
 ---
 
-## 7. MySQL / SQL 规约
+## 4. Collection Handling
 
-**表结构**
-- 每张表必须有主键（推荐自增 bigint 或分布式 ID），必须有 `create_time` / `update_time`。
-- 使用软删除（`is_deleted` 或 `deleted_at`），不要物理删除业务数据。
-- 字段设计 `NOT NULL`，给默认值；`NULL` 字段会使索引统计和比较复杂化。
-- 金额用 `decimal`，不用 `float/double`（浮点精度问题）。
+**Initial Capacity**
+- When initializing a `HashMap`, estimate the size and set the capacity using the formula: `expected element count / 0.75 + 1`, to avoid repeated resizing.
+- When the size of an `ArrayList` is known upfront, specify the initial capacity as well.
 
-**索引**
-- 业务查询字段必须建索引；组合索引遵循最左前缀原则，把区分度高的字段放左侧。
-- 不要在低区分度字段上建单列索引（如 `gender`、`status` 只有几种值）。
-- 索引字段不要做函数运算（`DATE(create_time) = ?`），会导致索引失效；改为范围查询。
+**Factory Methods**
+- Use `Collections.emptyList()` / `emptyMap()` to return immutable empty collections. NEVER return `null` to indicate "no data."
+- Lists created by `Arrays.asList()` do not support `add`/`remove`. When a mutable list is needed, use `new ArrayList<>(Arrays.asList(...))`.
 
-**SQL 写法**
-- 禁止 `SELECT *`，显式列出需要的字段，减少传输量、防止字段变更引发隐患。
-- 分页查询大偏移（`LIMIT 100000, 10`）性能极差；用游标分页（`WHERE id > last_id LIMIT 10`）替代。
-- 批量插入/更新用单条 SQL 多值，不要在循环里逐条执行。
-- 事务内不做远程调用（HTTP / MQ），事务要尽量短。
+**Iteration and Modification**
+- NEVER call `remove` directly inside a `for-each` loop while iterating over a collection. Use `Iterator.remove()` or `removeIf()` instead.
+- The list returned by `subList()` is a view of the original list — modifications to the view affect the original. Use with care.
 
-**ORM 使用**
-- MyBatis 中结果集字段用 `resultMap` 显式映射，不依赖字段名自动映射（脆弱）。
-- 动态 SQL 里的 `<where>/<set>` 标签防止裸 AND/逗号问题，不要手拼 SQL 字符串。
-- 禁止在 mapper 里处理业务逻辑；mapper 只做数据存取。
+**Null Handling**
+- Validate that collection parameters are non-null before using them. When returning a collection, return an empty collection rather than `null` so callers do not need to add a null check.
+
+---
+
+## 5. Concurrency
+
+**Thread Pools**
+- NEVER use `Executors.newFixedThreadPool` or similar factory methods — their queues are unbounded, which can cause OOM.
+- MUST use `ThreadPoolExecutor` with explicit parameters: core thread count, maximum thread count, queue capacity, and rejection policy.
+- Thread pools MUST have a meaningful thread name prefix (via `ThreadFactory`) to make thread dumps interpretable.
+
+**Synchronization and Visibility**
+- Mutable state in singletons should use `volatile` for visibility; use `AtomicXxx` when atomic compound operations are needed.
+- Keep lock granularity as narrow as possible — lock only the critical section. NEVER perform I/O or remote calls while holding a lock.
+- Avoid acquiring locks on the same objects in inconsistent orders across different code paths (this is the root cause of deadlocks).
+
+**Thread-Safe Collections**
+- For multi-threaded reads and writes, use `ConcurrentHashMap` / `CopyOnWriteArrayList` rather than `Collections.synchronizedXxx` wrappers — the wrappers lock the entire collection and have poor concurrency.
+- `ThreadLocal` values MUST be removed in a `finally` block after use to prevent data leaks when threads are reused from a pool.
+
+**Async Tasks and Results**
+- Use `CompletableFuture` for async tasks. Handle exceptions with `exceptionally` or `handle` — NEVER let exceptions be silently swallowed.
+
+---
+
+## 6. Exceptions and Logging
+
+**Exception Handling**
+- Empty catch blocks are NEVER acceptable after catching an exception. At minimum, log it — or re-throw it wrapped as a business exception.
+- Distinguish between checked exceptions (I/O, network) and business exceptions. Business exceptions should use a custom `BizException` (unchecked).
+- NEVER use exceptions for flow control (e.g., using `try-catch` to check whether a value exists) — it is both slow and semantically wrong.
+- NEVER put a `return` statement in a `finally` block. It silently discards the return value from the `try` block.
+
+**Custom Exceptions**
+- Pack the error code and error message together into the exception object. Do not scatter them across the call stack.
+- When passing exceptions across layers, wrap the lower-level exception in a higher-level semantic exception and re-throw it, preserving the original `cause`.
+
+**Logging Standards**
+- Use the SLF4J interface (`LoggerFactory.getLogger`) — NEVER log directly through Log4j/Logback concrete classes.
+- Use placeholders: `log.info("user: {}", userId)` rather than string concatenation (avoids a useless concatenation when the log level is disabled).
+- Production log level is INFO. NEVER log at DEBUG inside a tight loop — high-frequency logs can fill disks.
+- Exception log statements MUST pass the exception object as the last argument to capture the full stack trace: `log.error("operation failed", e)`.
+- NEVER use `System.out.println` for production logging.
+
+---
+
+## 7. MySQL / SQL Conventions
+
+**Table Design**
+- Every table MUST have a primary key (recommended: auto-increment `bigint` or a distributed ID). Every table MUST have `create_time` and `update_time` columns.
+- Use soft deletes (`is_deleted` or `deleted_at`) — NEVER physically delete business data.
+- Column definitions should be `NOT NULL` with a default value. `NULL` columns complicate index statistics and comparisons.
+- Monetary amounts MUST use `decimal` — NEVER `float` or `double` (floating-point precision is unacceptable for money).
+
+**Indexes**
+- Columns used in business queries MUST be indexed. For composite indexes, follow the leftmost prefix rule and put the most selective columns on the left.
+- NEVER create single-column indexes on low-cardinality columns (e.g., `gender` or `status` with only a few distinct values).
+- NEVER apply a function to an indexed column in a `WHERE` clause (e.g., `DATE(create_time) = ?`) — it defeats the index. Use range queries instead.
+
+**SQL Style**
+- `SELECT *` is NEVER acceptable. Always list the columns you need explicitly to reduce data transfer and protect against schema changes.
+- Large-offset pagination (`LIMIT 100000, 10`) performs very poorly. Use cursor-based pagination instead (`WHERE id > last_id LIMIT 10`).
+- Batch inserts and updates MUST use a single SQL statement with multiple value sets — NEVER loop with individual statements.
+- NEVER make remote calls (HTTP, MQ) inside a database transaction. Transactions MUST be as short as possible.
+
+**ORM Usage**
+- In MyBatis, use explicit `resultMap` mappings for result sets. NEVER rely on automatic field name mapping — it is fragile.
+- Use `<where>` and `<set>` tags in dynamic SQL to avoid trailing `AND` or trailing comma issues. NEVER concatenate SQL strings by hand.
+- NEVER put business logic inside a mapper. Mappers MUST only perform data access.

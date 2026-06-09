@@ -1,83 +1,83 @@
-# 前端反 AI slop 原则（opt-in，默认不加载）
+# Frontend Anti-AI-Slop Principles (opt-in, not loaded by default)
 
-> ⚠️ **重要**：本文件**默认不被 spec-dev（frontend scope）自动加载**——日常前端实施大头是工具型 UI / 后台 / 调试页，反 slop 反而违和。
+> ⚠️ **Important**: This file is **not auto-loaded by spec-dev (frontend scope)** — the bulk of everyday frontend work involves tooling UIs, admin panels, and debug pages where anti-slop would feel out of place.
 >
-> 启用方式：用户在 `/spec:apply` 后加 `design` flag。
+> How to enable: add the `design` flag after `/spec:apply`.
 >
 > ```
-> /spec:apply design          # 仅启用反 AI slop
-> /spec:apply design verify  # 同时启用反幻觉
+> /spec:apply design          # enable anti-AI-slop only
+> /spec:apply design verify  # enable both anti-AI-slop and anti-hallucination
 > ```
 >
-> 主对话识别到 `design` flag 后在派遣 prompt 里追加"启用 anti-ai-slop"，spec-dev（frontend scope）据此读本文件。
+> When the main loop detects the `design` flag, it appends "enable anti-ai-slop" to the dispatch prompt; spec-dev (frontend scope) reads this file accordingly.
 >
-> **为什么是 opt-in**：你日常项目（公司同步工具 / 内部仪表盘 / 调试面板）属于"工作驱动"——可读性、一致性、可预测性压倒"独特"。强制反 slop 会让 agent 在不该折腾的地方折腾。
+> **Why opt-in**: Most projects (internal sync tools / dashboards / debug panels) are work-driven — readability, consistency, and predictability outrank "distinctiveness". Forcing anti-slop makes the agent fuss over things that should not be fussed over.
 
 ---
 
-## 反 AI slop 核心原则
+## Core Anti-AI-Slop Principles
 
-> 综合业界前端设计共识整理。AI 倾向收敛到"泛而平庸"的输出，前端上即所谓 "AI slop"——反其道，做有辨识度、令人眼前一亮的界面。
+> Distilled from broad frontend design consensus. AI outputs tend to converge on generic, mediocre results — in frontend terms, this is "AI slop." Push back against it: build interfaces that are distinctive and genuinely striking.
 
-四个着力点：
+Four levers to pull:
 
-- **字体**：选有美感、独特的字体，避开 Arial / Inter 这类泛用字体
-- **配色**：定一套统一美学，用 CSS variables 保持一致；**主色突出 + 利落强调色** 胜过平均分布的怯懦配色，可从 IDE 主题、文化美学取灵感
-- **动效**：用动画做微交互，HTML 优先纯 CSS、React 用 Motion 库；**火力集中在高影响时刻**——一次精心编排的载入动画（错峰 reveal）比满屏零散微交互更出彩
-- **背景**：营造氛围和层次，别默认纯色——叠 CSS 渐变、几何图案、或贴合主题的情境效果
+- **Typography**: Choose typefaces with character and personality; avoid catch-all fonts like Arial or Inter
+- **Color**: Define a cohesive aesthetic system using CSS variables for consistency; **a strong primary color with a crisp accent** beats timid, evenly distributed palettes — draw inspiration from IDE themes or cultural aesthetics
+- **Motion**: Use animation for micro-interactions; prefer pure CSS in HTML projects, Motion library in React; **concentrate the best effects on high-impact moments** — one carefully orchestrated loading sequence (staggered reveals) lands harder than scattered micro-animations everywhere
+- **Background**: Create atmosphere and depth; resist the default solid color — layer CSS gradients, geometric patterns, or thematic contextual effects
 
-避开 AI 默认审美：
-- 泛滥字体（Inter / Roboto / Arial / system fonts）
-- 陈词滥调配色（尤其白底紫渐变）
-- 可预测的布局和组件套路
-- 缺乏情境特征的千篇一律设计
+Avoid AI default aesthetics:
+- Overused typefaces (Inter / Roboto / Arial / system fonts)
+- Clichéd palettes (especially purple gradients on white)
+- Predictable layouts and component patterns
+- Generic, context-free designs that look like they could belong anywhere
 
-诀窍：在明暗主题、不同字体、不同美学间主动变化，别又收敛到"安全选择"（如 Space Grotesk）——跳出框框。
+The trick: actively vary between light and dark themes, different typefaces, different aesthetics — do not converge back to the "safe choice" (like Space Grotesk). Break out of the pattern.
 
 ---
 
-## 在 sdd 上下文里的含义
+## What this means in an sdd context
 
-### 1. 类型分流——不是所有前端都要反 slop
+### 1. Classify the UI — anti-slop does not apply everywhere
 
-| UI 类型 | 反 slop 强度 |
+| UI type | Anti-slop intensity |
 |---|---|
-| 营销页 / Landing page / 作品集 | 🔴 全力反 slop——独特字体、深色主题、几何背景、动画 |
-| 用户端产品（App / 消费类 Web） | 🟡 适度——主色调要有性格但可读性优先 |
-| **企业内部工具 / 后台仪表盘 / 配置面板** | 🟢 **反 slop 退场**——可读性、一致性、可预测性压倒"独特" |
-| 调试面板 / 临时工具 | 🟢 完全不需要——能用就行 |
+| Marketing / Landing page / Portfolio | 🔴 Full force — distinctive typefaces, dark theme, geometric backgrounds, animation |
+| Consumer-facing product (App / Consumer Web) | 🟡 Moderate — color palette should have personality but readability comes first |
+| **Internal enterprise tools / Admin dashboards / Config panels** | 🟢 **Anti-slop stands down** — readability, consistency, and predictability win |
+| Debug panels / Throwaway tools | 🟢 Not needed at all — functional is enough |
 
-**判据**：用户是审美驱动来选用还是工作驱动来使用？审美驱动 → 反 slop。工作驱动 → 别折腾。
+**Decision rule**: is the user coming for aesthetic experience or to get work done? Aesthetic-driven → anti-slop. Work-driven → leave it alone.
 
-### 2. 跟项目品牌规范的优先级
+### 2. Priority relative to project brand guidelines
 
-如果项目有 `brand-guidelines` / 设计 system / UI 规范 → **品牌规范优先**。
+If the project has `brand-guidelines` / a design system / a UI spec → **brand guidelines take precedence**.
 
-反 slop 是"无规范时的默认良品率"，不是"凌驾于规范之上的美学要求"。
+Anti-slop is the "quality floor in the absence of a spec," not an aesthetic requirement that overrides the spec.
 
-### 3. 跟同目录 vue-style.md 等约束的关系
+### 3. Relationship to other references (e.g., vue-style.md in the same directory)
 
-reference 里的代码规范（变量命名、组件结构、CSS 命名）是**硬约束**，反 slop 是**视觉美学**——两者不冲突：
-- reference 管"代码长什么样"
-- 反 slop 管"渲染出来看起来什么样"
+Code-style references (variable naming, component structure, CSS naming) are **hard constraints**; anti-slop is about **visual aesthetics** — they do not conflict:
+- The code references govern what the code looks like
+- Anti-slop governs what the rendered result looks like
 
-### 4. 实施时的自检三问
+### 4. Three self-check questions before shipping
 
-写完一个组件 / 页面前问自己：
+Before finishing a component or page, ask yourself:
 
-1. **字体是 Inter / Roboto / system-ui 吗？** 是 → 想想能不能换（除非工具型 UI）
-2. **背景是纯色吗？** 是 → 想想能不能加渐变 / 几何图案 / 微纹理（适用场景下）
-3. **配色是"紫色渐变 on 白底"或类似的 AI 默认调色板吗？** 是 → 重选
+1. **Is the font Inter / Roboto / system-ui?** If yes → consider switching (unless it is a tooling UI)
+2. **Is the background a flat solid color?** If yes → consider adding a gradient / geometric pattern / subtle texture (where appropriate)
+3. **Is the color palette "purple gradient on white" or a similar AI-default palette?** If yes → reselect
 
-任一答"是"且任务**不是工具型 UI** → 改之。
+If any answer is "yes" and the task is **not a tooling UI** → change it.
 
 ---
 
-## 跟 agent-principles.md 的关系
+## Relationship to agent-principles.md
 
-`agent-principles.md` 管**功能正确性**（不偷懒、不幻觉、不绕过）。
-本文件管**视觉非平庸**。
+`agent-principles.md` governs **functional correctness** (no laziness, no hallucination, no bypasses).
+This file governs **visual non-mediocrity**.
 
-两者层次不同，**都必须遵守**：
-- 视觉再独特，功能错了也是失败
-- 功能再对，视觉是 AI slop 也是失败（适用场景下）
+They operate at different levels, and **both MUST be followed**:
+- No matter how visually distinctive, a broken feature is a failure
+- No matter how functionally correct, AI-slop visuals are a failure (in applicable scenarios)
