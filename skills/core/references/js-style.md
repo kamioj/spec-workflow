@@ -1,20 +1,20 @@
 ---
-name: "JavaScript / ES6+ 编码要点（自有提炼）"
+name: "JavaScript / ES6+ Coding Guidelines (curated)"
 source: https://github.com/airbnb/javascript
-note: 关键要点自有提炼，覆盖现代 ES6+ 日常开发中最高频的风格决策；完整规范及历史背景见官方
-audience: dev agent，聚焦 JS/ES6+，TypeScript 专项见 ts-conventions.md / google-ts-style.md
+note: Key points curated in-house, covering the most frequently encountered style decisions in modern ES6+ day-to-day development. For the complete ruleset and historical rationale, see the official guide.
+audience: dev agent, focused on JS/ES6+. For TypeScript-specific guidance see ts-conventions.md / google-ts-style.md.
 ---
 
-# JavaScript / ES6+ 编码要点（自有提炼）
+# JavaScript / ES6+ Coding Guidelines (curated)
 
 ---
 
-## 1. 变量与引用
+## 1. Variables and References
 
-- 声明不会被重新赋值的变量一律用 `const`；需要重新赋值才用 `let`；**禁用 `var`**
-  - `var` 有函数作用域提升，在块内声明的变量会泄漏到块外，是长期来源的 bug 根源
-  - `const` 不代表不可变（对象属性仍可修改），仅保证绑定不变
-- 每个声明独占一行，不用逗号批量声明（阅读和 diff 都更清晰）
+- Use `const` for any binding that will not be reassigned; use `let` only when reassignment is needed; **NEVER use `var`**.
+  - `var` is function-scoped and hoisted, so variables declared inside a block leak out — a persistent source of bugs.
+  - `const` does not mean immutable (object properties can still be mutated); it only guarantees the binding itself won't change.
+- Declare each variable on its own line — avoid comma-separated batch declarations. This makes code easier to read and produces cleaner diffs.
 
 ```js
 // ✅
@@ -27,11 +27,11 @@ var a = 1, b = 2
 
 ---
 
-## 2. 对象
+## 2. Objects
 
-- 用字面量 `{}` 创建对象，不用 `new Object()`
-- 属性名与变量同名时用**简写属性**；函数属性用**方法简写**
-- 动态属性名用**计算属性**，在字面量内直接写，不要先创建再赋值
+- Use object literals `{}` to create objects — NEVER `new Object()`.
+- Use **shorthand properties** when a property name matches the variable name; use **method shorthand** for function properties.
+- Use **computed property names** for dynamic keys — write them directly inside the literal instead of assigning after the fact.
 
 ```js
 const name = 'Jay'
@@ -39,9 +39,9 @@ const key = 'role'
 
 // ✅
 const user = {
-  name,                    // 简写属性
-  greet() { return 'hi' }, // 方法简写
-  [key]: 'admin',          // 计算属性
+  name,                    // shorthand property
+  greet() { return 'hi' }, // method shorthand
+  [key]: 'admin',          // computed property
 }
 
 // ❌
@@ -49,32 +49,32 @@ const user = { name: name }
 user[key] = 'admin'
 ```
 
-- 合并/扩展对象优先用展开运算符 `...`，不要用 `Object.assign` 直接改第一个入参（会产生副作用）
+- Prefer the spread operator `...` for merging or extending objects. avoid `Object.assign` with the target as the first argument — that mutates the original and produces side effects.
 
 ```js
 // ✅
 const merged = { ...defaults, ...overrides }
 
-// ❌（修改了 defaults）
+// ❌ (mutates defaults)
 const merged = Object.assign(defaults, overrides)
 ```
 
 ---
 
-## 3. 数组
+## 3. Arrays
 
-- 用字面量 `[]` 创建数组，不用 `new Array()`
-- 追加元素用 `push`，不要直接写 `arr[arr.length] = x`
-- 复制数组用展开 `[...arr]`，不用 `.slice()`
-- 类数组转真数组用 `Array.from()` 或 `[...iterable]`
+- Use array literals `[]` — NEVER `new Array()`.
+- Use `push` to append items — NEVER write `arr[arr.length] = x` directly.
+- Copy arrays with spread `[...arr]` rather than `.slice()`.
+- Convert array-like objects or iterables to real arrays using `Array.from()` or `[...iterable]`.
 
 ---
 
-## 4. 解构
+## 4. Destructuring
 
-解构能减少中间变量，提高可读性，优先使用。
+Destructuring reduces intermediate variables and improves readability — prefer it consistently.
 
-- 访问对象多个属性时，用**对象解构**而非反复点属性
+- When accessing multiple properties on an object, use **object destructuring** rather than chaining dot notation repeatedly.
 
 ```js
 // ✅
@@ -85,27 +85,27 @@ const name = user.name
 const age = user.age
 ```
 
-- 函数参数是对象时，直接在参数位置解构并写默认值
+- When a function parameter is an object, destructure it directly in the parameter list and set defaults there.
 
 ```js
 // ✅
 function render({ title = 'Untitled', visible = true } = {}) { ... }
 ```
 
-- 访问数组固定位置元素时，用**数组解构**
+- Use **array destructuring** when accessing elements at fixed positions.
 
 ```js
 const [first, , third] = items
 ```
 
-- 函数需要返回多个值时，优先返回对象解构（而非数组），好处是调用方按名取值、顺序无关
+- When a function needs to return multiple values, prefer returning an object (destructured by the caller) over an array. The caller can then pull values by name, making order irrelevant.
 
 ---
 
-## 5. 字符串
+## 5. Strings
 
-- 字符串字面量用单引号 `'...'`（保持一致，HTML 属性值一般用双引号，JS 里用单引号易区分）
-- **禁止字符串拼接** `+`，超过变量插值场景用**模板字符串** `` ` ``
+- Use single quotes `'...'` for string literals (HTML attribute values typically use double quotes, so single quotes in JS make the two easy to distinguish).
+- **NEVER concatenate strings with `+`**. Use **template literals** `` ` `` whenever variable interpolation is involved.
 
 ```js
 // ✅
@@ -115,59 +115,59 @@ const msg = `Hello, ${name}! You have ${count} messages.`
 const msg = 'Hello, ' + name + '! You have ' + count + ' messages.'
 ```
 
-- 超长字符串不要用 `\` 续行（不同平台行尾符行为不一致），用模板字符串多行即可
+- avoid line-continuation with `\` for long strings — line-ending behavior varies across platforms. Use a multi-line template literal instead.
 
 ---
 
-## 6. 函数
+## 6. Functions
 
-- **普通具名函数**优先用函数声明（有提升，调试栈可见名字），而非赋给变量的匿名函数表达式
-- **回调、高阶函数参数**优先用**箭头函数**：语法简洁、不绑定自己的 `this`，避免老式 `var self = this` 技巧
+- For **regular named functions**, prefer function declarations (they are hoisted and show their name in stack traces) over anonymous function expressions assigned to a variable.
+- For **callbacks and higher-order function arguments**, prefer **arrow functions**: the syntax is concise and they do not bind their own `this`, eliminating the old `var self = this` workaround.
 
 ```js
-// ✅ 回调用箭头函数
+// ✅ arrow function for callback
 const doubled = nums.map(n => n * 2)
 
-// ❌ 不必要的具名 function 表达式
+// ❌ unnecessary named function expression
 const doubled = nums.map(function(n) { return n * 2 })
 ```
 
-- 箭头函数体只有一个表达式时，省略花括号和 `return`（隐式返回）
-- 参数默认值写在函数签名里，不要在函数体第一行做 `if (x === undefined) x = default`
+- When an arrow function body is a single expression, omit the braces and `return` (implicit return).
+- Write parameter defaults in the function signature — NEVER check `if (x === undefined) x = default` at the top of the body.
 
 ```js
 // ✅
 function request(url, timeout = 5000) { ... }
 ```
 
-- **禁用 `arguments` 对象**，用剩余参数 `...args` 替代（是真正的数组，有完整数组方法）
-- 修改函数入参会产生难以追踪的副作用：**不要重新赋值参数变量**，不要直接修改对象入参的属性（需要修改就先复制）
+- **NEVER use the `arguments` object** — use rest parameters `...args` instead (a real array with all array methods available).
+- Mutating function parameters creates hard-to-trace side effects: **NEVER reassign a parameter variable**, and NEVER mutate properties on an object argument directly — copy it first if you need to modify it.
 
 ---
 
-## 7. 箭头函数细则
+## 7. Arrow Functions: specifics
 
-- 只有一个参数时可省略括号：`n => n * 2`（参数为零个或多个则必须有括号）
-- 函数体是单个对象字面量时，用括号包裹以避免被解析成块：`n => ({ id: n })`
-- 箭头函数不适合作为对象方法（`this` 会指向外层，而非对象本身）
-
----
-
-## 8. Class
-
-- 用 `class` 语法，不用手写原型链（`Foo.prototype.method = ...`）
-- 继承用 `extends`，调父类方法用 `super()`
-- 实例方法不要用箭头函数赋给属性（除非明确需要绑定 `this`），会导致每个实例独立持有函数副本，无法共享原型
+- You may omit parentheses around a single parameter: `n => n * 2`. Zero or multiple parameters always require parentheses.
+- When the function body is a single object literal, wrap it in parentheses to prevent the parser from treating the braces as a block: `n => ({ id: n })`.
+- Arrow functions are not appropriate as object methods — `this` will refer to the enclosing scope, not the object itself.
 
 ---
 
-## 9. 模块（import / export）
+## 8. Classes
 
-- 用 ES Module（`import` / `export`），不用 CommonJS `require`（新项目）
-- 每个文件只有一个默认导出时，用 `export default`；有多个具名导出时用具名 `export`
-- **import 路径不要省略扩展名**（打包工具外的纯 ESM 运行时需要）；引入的模块不要修改它的导出对象（副作用不可追踪）
-- 所有 `import` 放文件顶部，不要在条件分支或函数体里动态用 `import()`（除非确实需要懒加载）
-- 每个来源只 `import` 一次，不要多行分散引入同一模块
+- Use `class` syntax — NEVER write prototype chains manually (`Foo.prototype.method = ...`).
+- Use `extends` for inheritance and `super()` to invoke parent methods.
+- MUST NOT assign arrow functions to instance properties as methods (unless you explicitly need a bound `this`) — doing so gives every instance its own copy of the function, breaking prototype sharing.
+
+---
+
+## 9. Modules (import / export)
+
+- Use ES Modules (`import` / `export`) — NEVER CommonJS `require` in new projects.
+- Use `export default` when a file has a single default export; use named `export` when there are multiple exports.
+- **MUST NOT omit file extensions in import paths** (required by pure ESM runtimes outside of bundlers). NEVER mutate the exported objects of an imported module — side effects become untraceable.
+- Place all `import` statements at the top of the file. NEVER use `import()` inside conditionals or function bodies unless you genuinely need lazy loading.
+- Import from each source only once — NEVER split imports from the same module across multiple lines.
 
 ```js
 // ✅
@@ -180,51 +180,50 @@ import { b } from './utils'
 
 ---
 
-## 10. 命名约定
+## 10. Naming Conventions
 
-| 类型 | 约定 | 示例 |
+| Type | Convention | Example |
 |---|---|---|
-| 变量 / 函数 | `camelCase` | `getUserName` |
-| 类 / 构造函数 / 组件 | `PascalCase` | `UserProfile` |
-| 常量（模块级不变量）| `UPPER_SNAKE_CASE` | `MAX_RETRY` |
-| 私有（约定）| 下划线前缀 `_` | `_internalCache` |
-| 布尔变量 | `is` / `has` / `can` 前缀 | `isLoading` |
-| 文件名 | 与主导出一致，组件用 PascalCase，工具函数用 kebab-case | `UserCard.vue` / `date-utils.js` |
+| Variables / functions | `camelCase` | `getUserName` |
+| Classes / constructors / components | `PascalCase` | `UserProfile` |
+| Module-level constants | `UPPER_SNAKE_CASE` | `MAX_RETRY` |
+| Private (by convention) | underscore prefix `_` | `_internalCache` |
+| Boolean variables | `is` / `has` / `can` prefix | `isLoading` |
+| File names | Match the primary export; PascalCase for components, kebab-case for utilities | `UserCard.vue` / `date-utils.js` |
 
-- 名字要有描述性，**不用单字母变量**（循环计数器 `i` 可以，其他尽量避免）
-- 缩写除非极度通用（`url`、`id`、`dom`），否则写全称
+- Names MUST be descriptive. **NEVER use single-letter variable names** (loop counters like `i` are acceptable; everything else should be spelled out).
+- Spell out abbreviations in full unless they are universally understood (`url`, `id`, `dom`).
 
 ---
 
-## 11. 常见陷阱
+## 11. Common Pitfalls
 
 ### == vs ===
 
-**始终用 `===` 和 `!==`**，禁用 `==`。
-`==` 会做类型转换，结果常出乎意料：`'' == false`、`0 == null` 均为 `true`（不合直觉）。
-例外：检查 `null` / `undefined` 时，`x == null` 是唯一可读的简写（同时判断两者）。
+**Always use `===` and `!==`**. NEVER use `==`.
+`==` performs type coercion and produces surprising results: `'' == false` and `0 == null` both evaluate to `true`.
+Exception: checking for `null` / `undefined` — `x == null` is the one readable shorthand that catches both simultaneously.
 
-### 真值判断
+### Truthy / falsy evaluation
 
-JS 中以下值均为假值（falsy）：`false`、`0`、`''`、`null`、`undefined`、`NaN`。
-- 不要用 `arr.length > 0` 来判断数组非空，用 `arr.length` 即可
-- **注意 `0` 和空字符串**：`if (count)` 在 `count = 0` 时为假，可能是 bug
+The following are all falsy in JS: `false`, `0`, `''`, `null`, `undefined`, `NaN`.
+- You don't need `arr.length > 0` to check for a non-empty array — `arr.length` is sufficient.
+- **Watch out for `0` and empty strings**: `if (count)` is `false` when `count === 0`, which may be a bug.
 
-### var 提升
+### `var` hoisting
 
-`var` 声明会提升到函数顶部，赋值留在原处；在声明前访问不报错，值为 `undefined`。
-用 `const` / `let` 替代可彻底避免此类问题（访问暂时性死区会抛 ReferenceError，更早暴露错误）。
+`var` declarations are hoisted to the top of their enclosing function; only the declaration is hoisted, not the assignment. Accessing the variable before its declaration doesn't throw — it just returns `undefined`.
+Using `const` / `let` eliminates this entirely: accessing them before declaration throws a `ReferenceError` inside the temporal dead zone, surfacing bugs earlier.
 
-### this 绑定
+### `this` binding
 
-普通函数的 `this` 取决于调用方式（严格模式 / 非严格模式 / 对象方法 / 构造函数），容易丢失。
-回调传入第三方库时，`this` 几乎必然变化。
-**解决**：回调用箭头函数（继承外层 `this`），或在必要时 `.bind(this)`。
+A regular function's `this` depends on how it is called (strict mode, object method, constructor, etc.) and is easy to lose. When a callback is passed to a third-party library, `this` will almost certainly change.
+**Solution**: use arrow functions for callbacks (they inherit `this` from the enclosing scope), or explicitly `.bind(this)` where necessary.
 
 ---
 
-## 12. 权威信息源
+## 12. Authoritative Sources
 
-- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) — 完整规范及讨论背景
-- [MDN JavaScript 参考](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript) — 语言特性权威文档
-- [ECMAScript 规范](https://tc39.es/ecma262/) — 语言标准，疑难语义的最终裁定
+- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) — complete ruleset with discussion and rationale
+- [MDN JavaScript Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript) — authoritative documentation for language features
+- [ECMAScript Specification](https://tc39.es/ecma262/) — the language standard; the final word on ambiguous semantics

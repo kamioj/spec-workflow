@@ -1,5 +1,5 @@
 {
-  "description": "SDD 硬约束 hooks：propose 前扫 [TBD] 必须清空、apply 前查 APPROVED 标记必须存在",
+  "description": "SDD hard-constraint hooks: before propose, scan that [TBD] is cleared; before apply, check that the APPROVED marker exists",
   "hooks": {
     "UserPromptSubmit": [
       {

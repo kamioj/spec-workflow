@@ -1,68 +1,68 @@
 ---
-name: uni-app & 微信小程序 Conventions (自写)
-note: 官方编码规范缺失（uniapp）/ 偏设计层（小程序），本文件覆盖跨端陷阱、性能、目录结构、反模式。
+name: uni-app & WeChat Mini Program Conventions (original)
+note: The official uni-app coding guidelines are sparse, and the WeChat mini-program documentation skews toward design. This file covers cross-platform pitfalls, performance, directory structure, and anti-patterns.
 ---
 
-# uni-app 与微信小程序规范
+# uni-app & WeChat Mini-Program Conventions
 
-uni-app 项目编译到多端（H5/小程序/App），核心约束是**跨端兼容**与**性能优化**。
+uni-app projects compile to multiple targets (H5, mini-programs, and App). The two core constraints are **cross-platform compatibility** and **performance**.
 
 ---
 
-## 1. 项目结构
+## 1. Project Structure
 
 ```
-src/                       (uni-app 标准结构)
-├── pages/                 ← 页面（pages.json 注册）
+src/                       (standard uni-app layout)
+├── pages/                 ← Pages (registered in pages.json)
 │   ├── index/
 │   │   ├── index.vue
 │   │   └── index.scss
 │   └── user/
-├── components/            ← 自定义组件（easycom 自动注册）
+├── components/            ← Custom components (auto-registered via easycom)
 │   └── uni-xxx/
-├── static/                ← 静态资源（不参与编译，路径 /static/）
+├── static/                ← Static assets (not processed by the compiler; served at /static/)
 │   ├── images/
 │   └── icons/
-├── api/                   ← 接口封装
+├── api/                   ← API wrappers
 ├── store/                 ← Pinia store
-├── utils/                 ← 工具函数
-├── composables/           ← 组合式逻辑（Vue 3）
-├── styles/                ← 全局样式
-├── App.vue                ← 应用入口
-├── main.ts                ← Vue 入口
-├── manifest.json          ← uni-app 配置（appid、各端配置）
-├── pages.json             ← 路由 + 全局窗口
-└── uni.scss               ← 全局 SCSS 变量
+├── utils/                 ← Utility functions
+├── composables/           ← Composable logic (Vue 3)
+├── styles/                ← Global styles
+├── App.vue                ← Application entry point
+├── main.ts                ← Vue entry point
+├── manifest.json          ← uni-app config (appid, per-platform settings)
+├── pages.json             ← Routes + global window config
+└── uni.scss               ← Global SCSS variables
 ```
 
-### 关键路径约定
+### Key Path Conventions
 
-- **`static/`** 是 uni-app 特殊目录，资源不编译直接复制；路径必须 `/static/img.png`（相对路径有跨端坑）
-- **`components/uni-xxx/uni-xxx.vue`** 的命名让 easycom 自动注册无需 import
-- **页面必须在 `pages.json` 注册**，否则编译报错
+- **`static/`** is a special uni-app directory: assets are copied as-is without any compilation. Paths MUST use the absolute form `/static/img.png` — relative paths have cross-platform issues.
+- **`components/uni-xxx/uni-xxx.vue`** naming convention enables easycom auto-registration without explicit imports.
+- **Every page MUST be registered in `pages.json`**, or the build will fail.
 
 ---
 
-## 2. 条件编译（核心陷阱区）
+## 2. Conditional Compilation (The Primary Pitfall Zone)
 
-uni-app 通过 `#ifdef` / `#ifndef` / `#endif` 处理跨端差异：
+uni-app handles cross-platform differences via `#ifdef` / `#ifndef` / `#endif` directives:
 
 ```js
 // JS
 // #ifdef MP-WEIXIN
-console.log('仅微信小程序执行')
+console.log('runs on WeChat mini-program only')
 // #endif
 
 // #ifndef H5
-// 非 H5 端执行（包括小程序、App）
+// runs on all platforms except H5 (includes mini-programs and App)
 // #endif
 ```
 
 ```vue
 <template>
-  <!-- 模板 -->
+  <!-- template -->
   <!-- #ifdef MP-WEIXIN -->
-  <view>微信小程序专属</view>
+  <view>WeChat mini-program exclusive content</view>
   <!-- #endif -->
 </template>
 
@@ -86,181 +86,181 @@ console.log('仅微信小程序执行')
 }
 ```
 
-### 平台标识
+### Platform Identifiers
 
-| 标识 | 含义 |
+| Identifier | Platform |
 |---|---|
-| `H5` | H5 端 |
-| `MP-WEIXIN` | 微信小程序 |
-| `MP-ALIPAY` | 支付宝小程序 |
-| `MP-BAIDU` | 百度小程序 |
-| `MP-TOUTIAO` | 字节小程序 |
-| `MP-QQ` | QQ 小程序 |
-| `MP` | 所有小程序通用 |
-| `APP-PLUS` | App（plus 环境）|
-| `APP-NVUE` | App nvue 页面 |
+| `H5` | H5 (web) |
+| `MP-WEIXIN` | WeChat mini-program |
+| `MP-ALIPAY` | Alipay mini-program |
+| `MP-BAIDU` | Baidu mini-program |
+| `MP-TOUTIAO` | ByteDance mini-program |
+| `MP-QQ` | QQ mini-program |
+| `MP` | All mini-programs |
+| `APP-PLUS` | App (plus environment) |
+| `APP-NVUE` | App nvue pages |
 
-### 条件编译陷阱
+### Conditional Compilation Pitfalls
 
-1. **条件块前后文件必须语法合法**：
+1. **The file MUST remain syntactically valid on both sides of a conditional block**:
    ```json
    {
      "pages": [
        {"path": "a"},
        // #ifdef MP-WEIXIN
-       {"path": "b"},        // ⚠️ 末尾逗号 + #endif 后无内容 → JSON 解析失败
+       {"path": "b"},        // ⚠️ trailing comma before #endif with nothing after it → JSON parse error
        // #endif
      ]
    }
    ```
-   正确写法：把整个对象包在条件内，**逗号也在条件内**
+   The correct approach: wrap the entire object in the conditional block so **the comma is also inside the block**.
 
-2. **变量必须在条件块内定义**：
+2. **Variables defined inside a conditional block MUST NOT be used outside it**:
    ```js
    // #ifdef H5
    const x = 1
    // #endif
-   console.log(x)   // ❌ 在小程序端 x 未定义
+   console.log(x)   // ❌ x is undefined on mini-programs
    ```
 
-3. **pages.json 写错导致白屏**：条件编译破坏 JSON 结构 → 编译报错或运行白屏。改完必须各端跑一遍
+3. **Malformed `pages.json` causes a blank screen**: If conditional compilation breaks the JSON structure, the build either errors out or produces a white screen at runtime. After any edit to `pages.json`, verify the app on every target platform.
 
-4. **`<style scoped>` 在不同小程序兼容性**：部分小程序对 scoped CSS 编译有差异，避免依赖
+4. **`<style scoped>` has inconsistent behavior across mini-programs**: Some mini-program runtimes handle scoped CSS compilation differently. Avoid relying on it for cross-platform components.
 
 ---
 
-## 3. 微信小程序性能（官方三件套）
+## 3. WeChat Mini-Program Performance (The Official Three Pillars)
 
-### 3.1 setData 优化
+### 3.1 setData Optimization
 
-`setData` 是小程序最大性能点：
+`setData` is the single biggest performance bottleneck in mini-programs:
 
-| 做 / 不做 | 详情 |
+| Do / Avoid | Details |
 |---|---|
-| ✅ 减少调用频次 | 多次合并成一次，避免循环里 setData |
-| ✅ 减少单次数据量 | 只 setData 变化的字段；用路径 `'list[0].name'` 不要整 list 重设 |
-| ✅ 避免大对象 | data 中不放计算属性能算的、不放视图不需要的 |
-| ❌ 高频 setData | 滚动/输入事件里 setData → 必须防抖（throttle 100ms 起）|
+| ✅ Reduce call frequency | Batch multiple updates into one call; never call setData inside a loop |
+| ✅ Minimize payload per call | Only set changed fields; use path syntax (`'list[0].name'`) instead of resetting the entire list |
+| ✅ Keep data lean | Do not store computed values or view-irrelevant data in `data` |
+| ❌ High-frequency setData | Calling setData in scroll or input events causes jank — MUST debounce/throttle (100ms minimum) |
 
-uniapp 自动做 diff，比手写 setData 友好，但仍要避开高频调用。
+uni-app performs automatic diffing, which is more forgiving than raw setData — but high-frequency calls are still a problem.
 
-### 3.2 分包
+### 3.2 Sub-Packages
 
 ```json
 // pages.json
 {
   "pages": [
-    {"path": "pages/index/index"}     // 主包
+    {"path": "pages/index/index"}     // main package
   ],
   "subPackages": [
     {
       "root": "subpkg-user",
       "pages": [
-        {"path": "profile/profile"}    // 路径: /subpkg-user/profile/profile
+        {"path": "profile/profile"}    // full path: /subpkg-user/profile/profile
       ]
     }
   ],
   "preloadRule": {
     "pages/index/index": {
       "network": "all",
-      "packages": ["subpkg-user"]      // 主包加载完预加载分包
+      "packages": ["subpkg-user"]      // preload sub-package once main package is ready
     }
   }
 }
 ```
 
-| 限制 | 值 |
+| Limit | Value |
 |---|---|
-| 主包 | ≤ 2MB |
-| 单分包 | ≤ 4MB |
-| 整体 | ≤ 20MB |
-| 独立分包 | 不依赖主包，可直接打开（启动快）|
+| Main package | ≤ 2MB |
+| Single sub-package | ≤ 4MB |
+| Total | ≤ 20MB |
+| Independent sub-package | Can launch directly without the main package (faster cold start) |
 
-**策略**：首页 + 公共组件入主包；业务模块各成分包；不常用功能（如设置）入独立分包。
+**Strategy**: Put the home page and shared components in the main package. Organize business modules as separate sub-packages. Rarely used features (e.g., settings) should be independent sub-packages.
 
-### 3.3 骨架屏 / 首屏优化
+### 3.3 Skeleton Screens & First-Screen Performance
 
-- 数据未就绪用骨架屏替代白屏（微信开发者工具有自动生成功能）
-- `onLoad` 异步请求，不阻塞渲染
-- 图片用 CDN + WebP + 懒加载
-- 首屏数据预取（onAppLaunch 预加载）
+- Replace blank white screens with skeleton screens while data is loading (WeChat DevTools can auto-generate these).
+- Fire async requests in `onLoad` — do not block rendering.
+- Serve images via CDN, use WebP format, and enable lazy loading.
+- Pre-fetch first-screen data in `onAppLaunch`.
 
-### 3.4 渲染层约束
+### 3.4 Render Layer Limits
 
-| 约束 | 值 |
+| Constraint | Limit |
 |---|---|
-| WXML 节点数 | < 1000 |
-| 节点嵌套深度 | < 30 |
-| 单 setData 数据量 | < 100KB |
+| WXML node count | < 1000 |
+| Node nesting depth | < 30 |
+| Single setData payload | < 100KB |
 
-超过会卡顿甚至崩。长列表用虚拟列表或分页加载。
+Exceeding these limits causes stuttering and potential crashes. Use virtual lists or pagination for long lists.
 
 ---
 
-## 4. 跨端 API 兼容
+## 4. Cross-Platform API Compatibility
 
-不是所有 `uni.*` API 都全端支持。开发时**先查文档兼容性表**。
+Not all `uni.*` APIs are supported on every platform. **Always check the compatibility table in the documentation** before using an API.
 
-### 高频踩坑 API
+### Commonly Problematic APIs
 
-| API | 兼容性问题 |
+| API | Compatibility Issue |
 |---|---|
-| `uni.request` | 全端 OK，但 H5 跨域要后端配 CORS |
-| `uni.uploadFile` | App 和小程序对 multipart 处理不同 |
-| `uni.getStorage` | 异步 / `uni.getStorageSync` 同步，存储上限各端不同（小程序 10MB）|
-| `uni.navigateTo` | 不能跳 tabBar 页面（必须用 `switchTab`）|
-| `uni.showModal` | 小程序内 `cancelText` 长度限制 4 个字 |
-| `uni.canvasToTempFilePath` | 各端实现差异大，离屏 canvas 部分端不支持 |
-| `uni.getLocation` | 小程序要在 `app.json` 声明 `requiredPrivateInfos` |
+| `uni.request` | Works everywhere, but H5 requires the backend to configure CORS |
+| `uni.uploadFile` | App and mini-programs handle multipart differently |
+| `uni.getStorage` | Async; `uni.getStorageSync` is sync. Storage limits vary by platform (mini-programs: 10MB) |
+| `uni.navigateTo` | Cannot navigate to a tabBar page — use `switchTab` instead |
+| `uni.showModal` | `cancelText` is limited to 4 characters on mini-programs |
+| `uni.canvasToTempFilePath` | Varies significantly by platform; off-screen canvas is not supported everywhere |
+| `uni.getLocation` | Mini-programs require `requiredPrivateInfos` declared in `app.json` |
 
-### 推荐做法
+### Recommended Approach
 
-- 包装一层 `utils/platform.ts` 处理差异
-- 关键 API 写 fallback 链：先试 A，失败试 B
-- 使用前用 `uni.canIUse('xxx')` 判断
+- Wrap platform differences behind a `utils/platform.ts` abstraction layer.
+- For critical APIs, implement a fallback chain: try A first, fall back to B on failure.
+- Use `uni.canIUse('xxx')` to check support before calling unfamiliar APIs.
 
 ---
 
-## 5. 样式注意
+## 5. Styling Notes
 
-### rpx 单位（响应式像素）
+### rpx Units (Responsive Pixels)
 
 ```css
-/* uni-app 推荐 rpx，自动按屏幕宽度缩放 */
+/* uni-app recommends rpx, which scales automatically with screen width */
 .title {
-  font-size: 28rpx;   /* 750rpx = 屏幕宽度 */
+  font-size: 28rpx;   /* 750rpx = full screen width */
   padding: 20rpx 30rpx;
 }
 ```
 
-**换算**：iPhone6 设计稿 750px 宽 → 1px = 1rpx；其他设备按比例。
+**Conversion**: On a 750px-wide iPhone 6 design mockup, 1px = 1rpx. Other devices scale proportionally.
 
-### 跨端 CSS 差异
+### Cross-Platform CSS Differences
 
-| 端 | 注意 |
+| Platform | Notes |
 |---|---|
-| H5 | 标准 CSS，无特殊 |
-| 微信小程序 | 不支持部分 CSS3（如 `:has()`）；`<view>` 而非 `<div>` |
-| App-vue | 接近 H5 |
-| App-nvue | 仅支持 flex 布局，**不能用 grid** |
+| H5 | Standard CSS, no special restrictions |
+| WeChat mini-program | Some CSS3 features unsupported (e.g., `:has()`); use `<view>` instead of `<div>` |
+| App-vue | Close to H5 |
+| App-nvue | Flex layout only — **grid is not supported** |
 
-新写跨端组件**禁用 Grid、Container Queries** 等新特性，除非确认仅跑 H5。
+When writing cross-platform components, NEVER use Grid, Container Queries, or other modern CSS features unless you have confirmed the component will only run on H5.
 
 ---
 
-## 6. 反模式清单
+## 6. Anti-Pattern Checklist
 
-| 反模式 | 后果 |
+| Anti-Pattern | Consequence |
 |---|---|
-| 静态资源用相对路径 `../static/x.png` | 分包后路径失效 |
-| 没看兼容性表直接用 uni.* API | 部分端运行时报错 |
-| 主包塞业务模块 | 首屏慢，超 2MB 上架失败 |
-| 频繁 setData（滚动事件里）| 卡顿、掉帧 |
-| 一个 data 字段 100KB 整设 | 渲染层崩溃 |
-| 跨端组件用 grid 布局 | nvue 端不支持 |
-| 条件编译块尾巴的逗号 / 分号 | JSON 解析报错、白屏 |
-| 条件内定义变量条件外用 | 部分端 undefined |
-| 直接用 px 不用 rpx | 不同屏幕不适配 |
-| 小程序里大量 console.log | 影响性能（特别是循环里）|
-| 重要业务逻辑写在 onLoad 同步执行 | 阻塞首屏，骨架屏延迟 |
-| `cancelText` 写"取消操作" | 小程序限制 4 字，截断 |
+| Referencing static assets with relative paths (`../static/x.png`) | Paths break after sub-package splitting |
+| Using `uni.*` APIs without checking the compatibility table | Runtime errors on certain platforms |
+| Stuffing business modules into the main package | Slow first screen; the 2MB limit causes app store submission failures |
+| Frequent setData in scroll event handlers | Jank and dropped frames |
+| Setting a 100KB data field all at once | Render layer crash |
+| Using grid layout in cross-platform components | Not supported in nvue |
+| Trailing comma/semicolon inside conditional compilation blocks | JSON parse error, white screen |
+| Using variables outside the conditional block where they were defined | `undefined` on some platforms |
+| Using `px` instead of `rpx` | Does not adapt to different screen sizes |
+| Excessive `console.log` in mini-programs (especially in loops) | Degrades performance |
+| Running critical business logic synchronously in `onLoad` | Blocks first-screen rendering, delays skeleton screen |
+| `cancelText` longer than 4 characters | Truncated silently by mini-program runtime |

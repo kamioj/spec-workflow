@@ -1,68 +1,68 @@
 ---
-description: 局部修改 proposal.md 某一段（why / what / how / risk）。整体重写走 /spec:propose。改完必须重新 HARD GATE
+description: Edit a single proposal.md section (why / what / how / risk). A full rewrite goes through /spec:propose. After editing, the HARD GATE must run again
 allowed-tools: Read, Edit
 ---
 
 # /spec:revise
 
-目标段：$ARGUMENTS
+Target section: $ARGUMENTS
 
-## 流程
+## Flow
 
-1. 解析参数：
+1. Parse the parameter:
 
-| 参数 | 改的段 |
+| Parameter | Section edited |
 |---|---|
 | `why` | `## Why` |
 | `what` | `## What` |
 | `how` | `## How` |
 | `risk` | `## Risk` |
-| 无 | 询问用户改哪段（用 AskUserQuestion） |
+| none | ask the user which section to edit (via AskUserQuestion) |
 
-2. Read `spec/changes/<name>/proposal.md`，定位目标段
-3. **移除旧的 `<!-- APPROVED: ... -->` 批准标记**（任何修订作废旧批准）
-4. Edit 目标段，**保留其他段不动**
-5. **重新输出 HARD GATE**
+2. Read `spec/changes/<name>/proposal.md`, locate the target section
+3. **Remove the old `<!-- APPROVED: ... -->` approval marker** (any revision invalidates the old approval)
+4. Edit the target section, **leaving the other sections untouched**
+5. **Re-emit the HARD GATE**
 
-## HARD GATE 重新输出
+## HARD GATE re-emission
 
-任何修订必须重过 HARD GATE：
+Any revision must pass through the HARD GATE again:
 
 ```
 <HARD-GATE>
-=== 提案修订（<section>）===
-路径：spec/changes/<name>/proposal.md
-变化点：<改了什么>
-（旧 APPROVED 标记已移除）
+=== Proposal revised (<section>) ===
+Path: spec/changes/<name>/proposal.md
+Changes: <what changed>
+(the old APPROVED marker has been removed)
 
-下一步：
-  ✅ 满意 → 调 /spec:apply 进入实施
-     apply 会自动追加新的 <!-- APPROVED: ... --> 标记
-  🔧 还要再改某段 → /spec:revise [why | what | how | risk]
-  💭 想再讨论 → /spec:chat
-  🔄 方向变了，重做调研 → /spec:research "<新方向>"
+Next:
+  ✅ Looks good → run /spec:apply to start implementing
+     apply will automatically append the new <!-- APPROVED: ... --> marker
+  🔧 Edit another section → /spec:revise [why | what | how | risk]
+  💭 Want to discuss more → /spec:chat
+  🔄 Direction changed, redo research → /spec:research "<new direction>"
 </HARD-GATE>
 ```
 
-**禁止沿用旧批准状态**。
+**NEVER carry over the old approval state.**
 
-## 适用场景
+## When to use
 
-- HARD GATE 等批准时用户说"How 段把 Caffeine 改成 Redis" → `/spec:revise how`
-- 实施中发现 Risk 漏了一项 → `/spec:revise risk` 补
-- `/spec:chat` 头脑风暴完决定改 Why → `/spec:revise why`
+- During the HARD GATE wait the user says "in How, change Caffeine to Redis" → `/spec:revise how`
+- Mid-implementation you find Risk missed an item → `/spec:revise risk` to add it
+- After brainstorming in `/spec:chat` you decide to change Why → `/spec:revise why`
 
-## 跟其他命令的边界
+## Boundary with other commands
 
-| 场景 | 用什么 |
+| Scenario | Use |
 |---|---|
-| 目标变了，需要重新调研 | `/spec:research <新方向>` |
-| 只想聊不动文档 | `/spec:chat` |
-| 整体重写 proposal | `/spec:propose`（revise 只改单段；propose 有 hook 守 TBD / 单-change，revise 无 hook） |
-| 局部改 proposal 某段 | `/spec:revise [section]` |
+| Goal changed, needs fresh research | `/spec:research <new direction>` |
+| Just want to talk, touch no file | `/spec:chat` |
+| Full rewrite of the proposal | `/spec:propose` (revise edits a single section only; propose has hooks guarding TBD / single-change, revise has no hook) |
+| Local edit of one proposal section | `/spec:revise [section]` |
 
-## 反模式
+## Anti-patterns
 
-- ❌ 改了某段没重过 HARD GATE 就继续推进
-- ❌ 没移除旧 APPROVED 标记（让 `/spec:apply` hook 误以为已批准）
-- ❌ 改了一段顺手"清理"其他段（用户没说就别动）
+- ❌ Editing a section without re-running the HARD GATE before continuing
+- ❌ Not removing the old APPROVED marker (letting the `/spec:apply` hook think it's approved)
+- ❌ "Tidying up" other sections while editing one (don't touch what the user didn't ask for)

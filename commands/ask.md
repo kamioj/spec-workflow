@@ -1,61 +1,61 @@
 ---
-description: 拷问偏好型决策点。用 AskUserQuestion 逐个消化 research.md 的 [TBD]，回答后移到 ## Decided。可多次触发，过程中可新增 [TBD]
+description: Interrogates preference-driven decision points. Uses AskUserQuestion to work through each [TBD] in research.md one by one; answered items are moved to ## Decided. Can be triggered multiple times; new [TBD]s may surface during the process.
 allowed-tools: Read, Edit, AskUserQuestion
 ---
 
 # /spec:ask
 
-## 流程
+## Process
 
-1. Read `spec/changes/<name>/research.md`，列出 `## Open [TBD]` 全部条目
-2. 对每个 [TBD] 判断性质：
-   - **事实型**（读代码 / 查文档能定死的）→ Claude 自己定，标"按现状定：X"移到 Decided
-   - **偏好型**（多选项都成立，取决于用户取舍）→ 用 AskUserQuestion 问
-   - **拿不准 → 当偏好型问**（不许跳过）
-3. **偏好型问法**（继承全局《提问方式》+ SKILL「提示自包含」）：
-   - **每题自包含（第一位）**：① 一句决策 + ② 为何须确定它（影响什么 / 不确定则在何处出问题）+ ③ 每个选项"选择它将导致什么（具体场景 / 后果）"。**用户无需反问即可作答**。
-   - 单选（架构 A/B/C）或多选（边界 case scope）；2-4 个选项；推荐项放第一标"(推荐)" + 一句为什么推荐
-   - **「先不做 / 最小方案」常备选项**（SKILL 主张自审第④问在 ask 的落点）：偏好型问题默认含一个"先不做（代价 = X）"或"最小可行（代价 = Y）"候选，以促使确认"此事是否必须做"——除非该决策确无"不做"的退路（上方缓存示例的"先不做"即为范本）。不应使所有选项均为"做哪一种"。
-   - 选项 >4 → 拆"多级窄化"：先问大类，再窄化
-   - 相互依赖的决策点一次一问，按答案展开下一问（不预先列死）；相互独立的可一次批量（最多 4 问）
+1. Read `spec/changes/<name>/research.md` and list every entry in `## Open [TBD]`
+2. For each [TBD], determine its nature:
+   - **Factual** (determinable by reading code / docs) → Claude decides, marks "decided from status quo: X", moves to Decided
+   - **Preference-driven** (multiple valid options, depends on user trade-offs) → ask via AskUserQuestion
+   - **Uncertain → treat as preference-driven** (never skip)
+3. **How to ask preference-driven questions** (inherits global *Asking Style* + SKILL "Self-Contained Prompts"):
+   - **Every question must be self-contained (top priority)**: ① one-sentence decision statement + ② why it must be settled now (what it affects / what breaks if left open) + ③ for each option, "choosing this leads to what — specific scenario / consequence". **The user must be able to answer without asking a follow-up**.
+   - Single-select (architecture A/B/C) or multi-select (which edge cases are in scope); 2–4 options; recommended option goes first, labeled "(recommended)" with a one-line reason
+   - **Always include a "skip / minimal" option** (SKILL Claim Self-Audit fourth question applied at the ask stage): preference-driven questions MUST include a "don't do it yet (cost = X)" or "minimal viable (cost = Y)" candidate, to force the question "is this even necessary?" — unless there is genuinely no "skip" path for this decision (the cache example below is the canonical model). Not every option should be a variant of "which way to do it".
+   - More than 4 options → use progressive narrowing: ask the broad category first, then narrow
+   - Mutually dependent decision points: one question at a time, expand the next question based on the answer (don't pre-enumerate); mutually independent points: batch up to 4 questions at once
 
-   **反例 → 正例**（同一 [TBD]：缓存选型）：
-   - ❌ 空问题（会被反问"影响啥 / 为什么推荐"）：`缓存用哪个？ Redis(推荐) / Caffeine / 都不用`
-   - ✅ 自包含：
-     > 缓存选型 —— 影响多实例部署会不会读到脏数据：
-     > • Redis(推荐)：跨实例共享一份、多机强一致；代价 = 多依赖 + 每读走网络
-     > • Caffeine：进程内最快、零依赖；代价 = 每实例各存一份，**多机数据不一致**
-     > • 先不做：省事；代价 = 高频读直接压库，到量再回来加
-4. 第一问前一句声明：
+   **Anti-example → Correct example** (same [TBD]: cache library selection):
+   - ❌ Empty question (will get follow-ups like "what does it affect / why recommend"): `Which cache? Redis(recommended) / Caffeine / Neither`
+   - ✅ Self-contained:
+     > Cache library selection — affects whether multiple instances read stale data:
+     > • Redis (recommended): shared across instances, strongly consistent across machines; cost = extra dependency + network round-trip per read
+     > • Caffeine: fastest in-process, zero dependencies; cost = each instance holds its own copy, **data inconsistent across machines**
+     > • Skip for now: simplest; cost = high-frequency reads hit the DB directly, revisit when load demands it
+4. Before the first question, one-line declaration:
    ```
-   看到 N 个分歧，逐个问；不保证全，漏了你说。
+   Found N open decisions — working through them one by one. This may not be exhaustive; flag anything I miss.
    ```
-5. **用户答完 → 写回 research.md**：
-   - 从 `## Open [TBD]` 删除该条
-   - 在 `## Decided` 追加：
+5. **After the user answers → write back to research.md**:
+   - Remove the entry from `## Open [TBD]`
+   - Append to `## Decided`:
      ```
-     [DEC-N] <决策> | 来源 [TBD-N] | 理由：<用户回答提炼>
+     [DEC-N] <decision> | source [TBD-N] | rationale: <distilled from user's answer>
      ```
-6. **过程中浮现新 [TBD]** → 主动追加到 `## Open`，告知"新发现 M 个 TBD"，继续问
+6. **New [TBD]s surface during the process** → proactively append them to `## Open`, announce "found M new TBDs", continue asking
 
-## 停止条件
+## Stopping conditions
 
-| 情况 | 处理 |
+| Situation | Action |
 |---|---|
-| Open [TBD] 清空 | 停，提示"可以 /spec:propose 了" |
-| 用户说"别问了" / "够了" | 停，剩余条目留 Open（/spec:propose 前 hook 会拒绝执行） |
-| 拷问发散收不拢 | 停，汇报"已收集 N 条，剩余 M 条建议下次再谈" |
+| Open [TBD] cleared | Stop; prompt "ready for /spec:propose" |
+| User says "stop asking" / "that's enough" | Stop; leave remaining items Open (the pre-/spec:propose hook will block execution) |
+| Interrogation diverges and can't be resolved | Stop; report "collected N decisions, M items remain — suggest revisiting later" |
 
-## 反模式
+## Anti-patterns
 
-- ❌ 默改 [TBD] 为已知答案（必须问用户）
-- ❌ 把偏好型当事实型跳过
-- ❌ 一次向用户抛出 5+ 个问题（违反 2-4 个选项 + 一次 4 问上限）
-- ❌ 罗列"决策树" artifact（制造虚假的覆盖感）
-- ❌ 空问题：只列"A / B / C"不说为什么重要、不给每个选项的后果（逼用户反问 = 头号失败）
-- ❌ 选项默认全为"做哪一种"、从不提供"先不做 / 删去"的退路（剥夺第④问，用户无法质疑"此事是否必须做"）
+- ❌ Silently deciding a [TBD] based on assumed knowledge (MUST ask the user)
+- ❌ Treating a preference-driven point as factual and skipping it
+- ❌ Throwing 5+ questions at the user at once (violates the 2–4 options + max-4-questions-per-round rule)
+- ❌ Producing a "decision tree" artifact (creates a false sense of completeness)
+- ❌ Empty questions: listing "A / B / C" without saying why it matters and what each option leads to (forcing the user to ask back = the number-one failure mode)
+- ❌ Every option being a variant of "which way to do it" — never offering a "skip / remove" escape hatch (strips away the fourth self-check question; user cannot challenge "is this even necessary?")
 
-## 不做的事
+## What this command does NOT do
 
-- 不写 proposal.md（那是 /spec:propose 的事）
-- 不动 `research/` 下的废稿；只在 research.md 上把 Open 消化进 Decided
+- Does not write proposal.md (that is `/spec:propose`'s job)
+- Does not touch drafts under `research/`; only works research.md, moving Open items into Decided

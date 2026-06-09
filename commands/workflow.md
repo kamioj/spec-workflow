@@ -1,47 +1,47 @@
 ---
-description: SDD 全流程一把梭。从调研到归档自动跑完，遇到拷问必停、遇到 HARD GATE 必停。兼容旧 /sdd 入口。触发词：先 spec / 提案 / 先设计 / 先出方案
+description: Full SDD workflow, end to end. Runs everything from research through archive automatically; MUST stop at interrogation points and MUST stop at HARD GATE. Also accepts the legacy /sdd entry point. Trigger words: spec first / proposal / design first / draft a plan.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
 # /spec:workflow
 
-任务：$ARGUMENTS
+Task: $ARGUMENTS
 
-## 何时使用
+## When to use
 
-大改动（>150 行 / 跨 3+ 文件 / 引入新依赖 / 架构选择）。trivial/small/medium 直接做，**绝不激活本流程**。
+Large changes (>150 lines / touching 3+ files / introducing new dependencies / architectural decisions). Trivial / small / medium tasks should be handled directly — **NEVER activate this workflow for those**.
 
-## 执行顺序
+## Execution order
 
-按下面顺序依次调用各阶段命令。**任一阶段遇到用户驳回或 placeholder scan / HARD GATE 失败 → 停下来汇报，不要硬推**。
+Invoke each phase command in the order below. **If any phase encounters user rejection or a placeholder scan / HARD GATE failure → stop and report; do not push through**.
 
-1. **`/spec:research <方向>`** — 调研业界做法 + 关键约束 + 标记 `[TBD]` 待决点
-2. **`/spec:ask`** — 用 AskUserQuestion 逐个消化 `[TBD]` → 移到 `## Decided`
-   - 期间可能浮现新 [TBD]，加入清单继续问
-3. **判断是否需要 `/spec:design`** — 满足任一则调：
-   - **跨前后端**（同时改 UI 和服务端，含接口契约）← 此场景下 design 是**必须**，非可选
-   - 接口数 >3 个
-   - 需要架构图 / 数据流图 / 序列图
-   - 决策深度论证 >300 字
-4. **`/spec:propose`** — 写 proposal.md 四段（重大方案可加 `--codex` 让 codex 异构挑刺）
-   - 写前 hook 会扫 research.md `[TBD]` 是否清空（placeholder scan）
-5. **HARD GATE** — 输出固定收尾"=== 提案就绪 ==="，等用户确认
-   - **确认前绝不写代码**；满意 → 直接进 `/spec:apply`（apply 自动追加 APPROVED，无需回 go）
-   - 驳回 → 走 `/spec:revise [section]`（微调）或 `/spec:chat`（重聊方向）
-6. **`/spec:apply`** — 实施代码，按 proposal/tasks 推进
-   - 命令前 hook 会检查 proposal 含 APPROVED 标记
-7. **`/spec:verify`** — 三维验证；关键改动可加 `--codex` 引入 codex 异构他审（`--fix` 让 codex 改）
-8. **等用户说"归档"** → `/spec:archive`
+1. **`/spec:research <direction>`** — survey industry practices + key constraints + flag `[TBD]` pending decisions
+2. **`/spec:ask`** — use AskUserQuestion to work through each `[TBD]` one by one → move to `## Decided`
+   - New [TBD]s may surface during this process; add them to the list and keep asking
+3. **Decide whether `/spec:design` is needed** — trigger if any one applies:
+   - **Cross-cutting frontend + backend** (touching both UI and server side, including interface contracts) ← design is **MANDATORY** here, not optional
+   - More than 3 interfaces
+   - Architecture diagram / data-flow diagram / sequence diagram needed
+   - Deep decision argumentation exceeding 300 words
+4. **`/spec:propose`** — write the four-section proposal.md (for major proposals, add `--codex` to have Codex adversarially critique it)
+   - Before writing, the hook scans research.md for any remaining `[TBD]` placeholders
+5. **HARD GATE** — output the fixed closing block "=== Proposal Ready ==="; wait for user confirmation
+   - **Write zero code before confirmation**; if satisfied → go directly to `/spec:apply` (apply auto-appends APPROVED; no "reply go" step needed)
+   - Rejected → use `/spec:revise [section]` (minor adjustments) or `/spec:chat` (rethink the direction)
+6. **`/spec:apply`** — implement the code, advancing through proposal / tasks
+   - The pre-command hook verifies that the proposal contains the APPROVED marker
+7. **`/spec:verify`** — three-dimension verification; for critical changes, add `--codex` to bring in Codex as a heterogeneous peer reviewer (`--fix` lets Codex apply fixes)
+8. **Wait for the user to say "archive"** → `/spec:archive`
 
-## 中途允许的"插队"命令
+## Commands allowed to jump the queue mid-workflow
 
-- `/spec:chat` — 进入讨论模式，不动文档
-- `/spec:ask` — 重新拷问一轮（新增 [TBD]）
-- `/spec:research <新方向>` — 重新调研，旧产物归档不删
-- `/spec:status` — 查当前在哪阶段
+- `/spec:chat` — enter discussion mode; no documents are touched
+- `/spec:ask` — run another interrogation round (for newly surfaced [TBD]s)
+- `/spec:research <new direction>` — re-survey; existing artifacts are snapshotted, not deleted
+- `/spec:status` — check which phase you are currently in
 
-## 反作弊原则
+## Anti-Cheating principles
 
-- 未跑通的命令 / 未验证的输出**不许伪装为成功**
-- workaround 让"看起来通过"必须明说"绕过，真因未解"
-- 任务前提错（题目矛盾 / 范围外 / 工具不兼容）→ 立即停下汇报"任务不可行"
+- Commands that have not actually been run / outputs that have not been verified MUST NOT be presented as successful
+- A workaround that makes something "look like it passed" MUST be explicitly flagged as "bypassed; root cause unresolved"
+- If the task's premise is wrong (contradictory requirements / out of scope / incompatible tooling) → stop immediately and report "task is not feasible"

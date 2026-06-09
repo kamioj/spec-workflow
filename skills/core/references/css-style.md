@@ -1,47 +1,47 @@
 ---
-name: CSS / CSS3 Conventions (自写)
-note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Flex + Grid + Container Queries。
+name: CSS / CSS3 Conventions (hand-written)
+note: Vue projects default to scoped CSS; global styles follow BEM naming. Modern layout stack is Flex + Grid + Container Queries.
 ---
 
-# CSS 规范
+# CSS Conventions
 
 ---
 
-## 1. Vue 项目样式策略
+## 1. Styling Strategy for Vue Projects
 
-| 范围 | 用什么 | 备注 |
+| Scope | What to use | Notes |
 |---|---|---|
-| 组件内样式 | **`<style scoped>`** | Vue SFC 默认，避免全局污染 |
-| 跨组件共享变量（颜色、间距、字号）| **CSS Variables**（`:root` 里定义）| 优先于 SCSS 变量，运行时可改 |
-| 全局重置 / 工具类 | `src/styles/reset.scss` + `utils.scss` | 在 `main.ts` 一次性 import |
-| 主题切换（暗色模式）| CSS Variables + class 切换 | `[data-theme="dark"]` 覆写变量 |
-| 动态计算样式 | `:style` 绑定 + ref | 不要在 CSS 里 hack |
+| Component-level styles | **`<style scoped>`** | Vue SFC default; prevents global bleed |
+| Cross-component shared tokens (colors, spacing, type scale) | **CSS Variables** (defined in `:root`) | Preferred over SCSS variables; can be changed at runtime |
+| Global reset / utility classes | `src/styles/reset.scss` + `utils.scss` | Import once in `main.ts` |
+| Theme switching (dark mode) | CSS Variables + class toggle | Override variables under `[data-theme="dark"]` |
+| Dynamically computed styles | `:style` binding + `ref` | NEVER hack this in CSS |
 
-### scoped CSS 注意
+### Scoped CSS: things to know
 
 ```vue
 <style scoped>
-/* 默认只影响当前组件 */
+/* Applies only to the current component by default */
 .title { color: blue; }
 
-/* 影响子组件根元素或 slot 内容：用 :deep() */
+/* Target a child component's root element or slot content: use :deep() */
 :deep(.child-component) { color: red; }
 
-/* 影响 slot 传入内容 */
+/* Target content passed via slots */
 :slotted(.slotted-child) { color: green; }
 
-/* 全局穿透（慎用，破坏 scoped）*/
+/* Global pierce (use sparingly — breaks scoping) */
 :global(.app-wide) { ... }
 </style>
 ```
 
 ---
 
-## 2. 命名约定
+## 2. Naming Conventions
 
-### 组件内（scoped）
+### Inside components (scoped)
 
-无需命名约定——scoped 自动加 hash 避免冲突，直接用语义化类名：
+No naming convention is needed — scoped CSS automatically appends a hash to prevent collisions. Use plain semantic class names:
 
 ```vue
 <style scoped>
@@ -51,49 +51,49 @@ note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Fl
 </style>
 ```
 
-### 全局样式（BEM 推荐）
+### Global styles (BEM recommended)
 
-跨组件、全局工具类用 **BEM**：`block__element--modifier`
+For cross-component and global utility classes, use **BEM**: `block__element--modifier`
 
 ```scss
-/* Block：独立组件 */
+/* Block: a standalone component */
 .card { ... }
 
-/* Element：组件内的部分（双下划线）*/
+/* Element: a part of the component (double underscore) */
 .card__title { ... }
 .card__body { ... }
 .card__footer { ... }
 
-/* Modifier：变体（双连字符）*/
+/* Modifier: a variant (double hyphen) */
 .card--featured { ... }
 .card__title--large { ... }
 ```
 
-**判断**：scoped 内**不要**用 BEM（多余）；全局样式必须 BEM 防冲突。
+**Rule of thumb**: MUST NOT use BEM inside scoped styles (it's redundant); global styles MUST use BEM to prevent naming conflicts.
 
 ---
 
-## 3. 现代布局选型
+## 3. Modern Layout Toolbox
 
-| 场景 | 用什么 | 理由 |
+| Scenario | Use | Rationale |
 |---|---|---|
-| 1D 排布（一行或一列） | **Flexbox** | API 简单，对齐控制强 |
-| 2D 网格（页面/卡片排列）| **Grid** | 二维原生支持 |
-| 组件自适应（不依赖视口） | **Container Queries** | 2023+ 浏览器普及 |
-| 视口级响应式 | **Media Queries** | 经典方案 |
-| 老项目兼容 | float + clearfix（避免新写）| 仅维护用 |
+| 1D flow (single row or column) | **Flexbox** | Simple API, strong alignment control |
+| 2D grid (pages, card layouts) | **Grid** | Native two-dimensional support |
+| Component-responsive (independent of viewport) | **Container Queries** | Widely available in 2023+ browsers |
+| Viewport-responsive | **Media Queries** | The classic approach |
+| Legacy project maintenance | float + clearfix (avoid writing new) | For maintenance only |
 
-### Flex vs Grid 快速判断
+### Flex vs Grid: quick guide
 
 ```scss
-/* Flex：一行导航、按钮组、垂直居中 */
+/* Flex: horizontal nav, button groups, vertical centering */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Grid：卡片列表、复杂页面布局 */
+/* Grid: card lists, complex page layouts */
 .card-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -101,7 +101,7 @@ note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Fl
 }
 ```
 
-### Container Queries（现代）
+### Container Queries (modern)
 
 ```scss
 .card {
@@ -113,16 +113,16 @@ note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Fl
 }
 ```
 
-组件根据**自己的宽度**响应，不依赖视口——比 media query 更适合可复用组件。
+The component responds to **its own width** rather than the viewport — a better fit for reusable components than media queries.
 
 ---
 
-## 4. CSS Variables（设计令牌）
+## 4. CSS Variables (Design Tokens)
 
 ```scss
-/* src/styles/variables.scss 或 :root */
+/* src/styles/variables.scss or :root */
 :root {
-  /* 颜色 */
+  /* Colors */
   --color-primary: #1890ff;
   --color-success: #52c41a;
   --color-warning: #faad14;
@@ -132,30 +132,30 @@ note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Fl
   --color-border: #e8e8e8;
   --color-bg: #fff;
   
-  /* 间距（4px 基准）*/
+  /* Spacing (4px base) */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
   
-  /* 字号 */
+  /* Type scale */
   --font-size-sm: 12px;
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   
-  /* 圆角 */
+  /* Border radius */
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
   
-  /* 阴影 */
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
   --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
   
-  /* z-index 层级 */
+  /* z-index layers */
   --z-dropdown: 1000;
   --z-modal: 2000;
   --z-toast: 3000;
@@ -168,68 +168,68 @@ note: Vue 项目优先 scoped CSS，全局样式按 BEM 命名；现代布局 Fl
 }
 ```
 
-**好处**：运行时可改（暗色模式只切 class，无需重新构建）；JS 可读可写（`getComputedStyle().getPropertyValue('--color-primary')`）。
+**Benefits**: values can be changed at runtime (dark mode is a class toggle — no rebuild required); JS can read and write them via `getComputedStyle().getPropertyValue('--color-primary')`.
 
 ---
 
-## 5. 间距与字号系统
+## 5. Spacing and Type Scale
 
-**4px / 8px 基准**：所有 padding、margin、gap 应是 4 的倍数。
+**4px / 8px base grid**: all `padding`, `margin`, and `gap` values MUST be multiples of 4.
 
 ```scss
-/* 推荐 */
+/* Preferred */
 padding: 16px 24px;
 margin-bottom: 8px;
 gap: 12px;
 
-/* 不推荐 */
-padding: 13px 19px;  /* 神奇数字，破坏一致性 */
+/* Avoid */
+padding: 13px 19px;  /* magic numbers that break visual consistency */
 margin-top: 7px;
 ```
 
-**字号阶梯**：用 12/14/16/20/24/32... 这种倍数关系，不要 13、15、17 这种。
+**Type scale**: stick to the scale — 12 / 14 / 16 / 20 / 24 / 32… NEVER use off-scale values like 13, 15, or 17.
 
 ---
 
-## 6. z-index 管理
+## 6. z-index Management
 
-**禁止裸写 `z-index: 999`**。必须用 CSS Variables 或固定阶梯：
+**NEVER hardcode `z-index: 999`**. Always use CSS Variables or a fixed stacking ladder:
 
-| 层级 | z-index | 用途 |
+| Layer | z-index | Use case |
 |---|---|---|
-| 基础 | 0 | 普通元素 |
-| 浮动 | 10 | 卡片 hover、tooltip |
-| 下拉 | 1000 | dropdown、popover |
-| 固定栏 | 1500 | sticky header、固定底栏 |
-| 遮罩 | 2000 | modal mask |
-| 弹窗 | 2001 | modal content |
-| 通知 | 3000 | toast、message |
+| Base | 0 | Normal elements |
+| Floating | 10 | Card hover states, tooltips |
+| Dropdown | 1000 | Dropdowns, popovers |
+| Fixed bars | 1500 | Sticky headers, fixed footers |
+| Overlay | 2000 | Modal backdrop |
+| Dialog | 2001 | Modal content |
+| Notifications | 3000 | Toasts, messages |
 
 ---
 
-## 7. 性能与可访问性
+## 7. Performance and Accessibility
 
-- **避免深层嵌套**：SCSS 嵌套 ≤3 层
-- **不写 `!important`**（除非覆盖第三方库无法绕过）
-- **transition 写 `transform` 和 `opacity`**，避免触发 reflow（width/height/top/left 慢）
-- **`will-change` 谨慎用**，只在动画前临时加，结束删掉
-- **图片用 `loading="lazy"`** + 合适的 `width`/`height` 防止 CLS
-- **联系颜色对比度 ≥4.5:1**（WCAG AA）
-- **`outline: none` 必须配合自定义 focus 样式**，否则键盘用户失能
+- **avoid deep nesting**: SCSS nesting MUST NOT exceed 3 levels.
+- **NEVER write `!important`** (unless overriding a third-party library with no other escape hatch).
+- **Animate `transform` and `opacity`** — avoid animating properties that trigger reflow (`width`, `height`, `top`, `left` are slow).
+- **Use `will-change` sparingly** — add it temporarily before an animation starts and remove it when done.
+- **Use `loading="lazy"` on images** along with explicit `width` / `height` to prevent Cumulative Layout Shift (CLS).
+- **Color contrast MUST be at least 4.5:1** (WCAG AA).
+- **NEVER remove `outline` without providing a custom focus style** — doing so disables keyboard navigation for users who rely on it.
 
 ---
 
-## 8. 反模式清单
+## 8. Anti-Patterns
 
-| 反模式 | 为什么不行 |
+| Anti-pattern | Why it's a problem |
 |---|---|
-| 内联 style="" 写大段样式 | 不可复用、不可主题化 |
-| `!important` 解决冲突 | 治标不治本，加 CSS 优先级或重构选择器 |
-| 深层选择器（`.a .b .c .d`）| 性能差、难维护 |
-| `id` 选择器（`#header`） | 不可复用，CSS 优先级混乱 |
-| 同一颜色硬编码多处 | 用 CSS Variable |
-| 13px / 17px 这种非阶梯字号 | 视觉破碎 |
-| 老式 float 布局新写 | 用 Flex/Grid |
-| `* { box-sizing: border-box }` 散在多处 | 全局 reset 一次定义 |
-| Vue 中 `<style>` 不加 scoped | 必然全局污染 |
-| 用 `>>>` 或 `/deep/`（已废弃）| 用 `:deep()` |
+| Inline `style=""` with extensive rules | Not reusable, not themeable |
+| `!important` to resolve conflicts | Treats the symptom — increase CSS specificity or refactor the selector instead |
+| Deep selectors (`.a .b .c .d`) | Poor performance and hard to maintain |
+| `id` selectors (`#header`) | Not reusable; wreaks havoc on CSS specificity |
+| Same color hardcoded in multiple places | Use a CSS Variable |
+| Off-scale font sizes (13px, 17px, etc.) | Produces visual inconsistency |
+| New code using the legacy `float` layout | Use Flex or Grid instead |
+| `* { box-sizing: border-box }` scattered throughout | Define it once in the global reset |
+| `<style>` without `scoped` in Vue components | Will inevitably pollute global styles |
+| Using `>>>` or `/deep/` (deprecated) | Use `:deep()` instead |

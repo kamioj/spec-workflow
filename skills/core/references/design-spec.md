@@ -1,144 +1,144 @@
 # design.md spec
 
-`spec/changes/<change-name>/design.md` 是 sdd 工作流的**可选技术设计产物**。由 `/spec:design` 按需触发，仅在复杂任务 / 跨前后端协作时生成。
+`spec/changes/<change-name>/design.md` is the **optional technical-design artifact** of the sdd workflow. It is produced on demand by `/spec:design`, only for complex tasks / cross-stack collaboration.
 
-## 何时生成
+## When to produce it
 
-满足任一才触发（详见 [`commands/design.md`](../../../commands/design.md)）：
+Triggered when any one holds (see [`commands/design.md`](../../../commands/design.md)):
 
-- **跨前后端项目**（必须，落接口契约让前后端并行）
-- 接口数 >3 个
-- 需要架构图 / 数据流图 / 序列图（mermaid / ASCII）
-- 决策深度论证 >300 字（benchmark / 限制对比 / 性能模型）
+- **Cross-stack project** (mandatory — pin down the interface contract so frontend and backend can build in parallel)
+- More than 3 interfaces
+- An architecture / data-flow / sequence diagram is needed (mermaid / ASCII)
+- A decision needs >300 words of deep argument (benchmark / constraint comparison / performance model)
 
-**简单单栈任务不生成**——`proposal.md ## How` 数句即可说明。
+**Simple single-stack tasks don't get one** — a few sentences in `proposal.md ## How` cover it.
 
-## 高度（写给谁看）
+## Altitude (who it's written for)
 
-design.md 是本改动的**单一设计真相源**——架构、契约、决策均集中于**一份**，**不拆成多文件**（设计随时可能变更，每多一份即多一处可能失同步的隐患；propose 撰写方案时直接参考 design，不作正式跨文件引用）。
+design.md is this change's **single source of design truth** — architecture, contracts, and decisions all live in **one** file, **not split across multiple files** (design can change at any time, and every extra file is one more place that can fall out of sync; when writing the proposal, reference design directly rather than making a formal cross-file citation).
 
-一份之内**两种笔法，不可混用**：
-- **叙述部分**（`## Architecture` 说明 / `## Key Decisions`）：说明 **是什么 / 为什么 / 解决什么**，以自然语言、问题驱动，**叙述中不列函数名 / SQL**——具体代码实现属 propose `## How` 与 tasks。
-- **契约部分**（`## Interfaces` / `## Data Model`）：须充分精确——它是**前后端并行实施的契约源头**，签名 / schema / 字段均须写明。
+Within that one file, **two registers that must not be mixed**:
+- **Narrative parts** (`## Architecture` notes / `## Key Decisions`): explain **what / why / what it solves**, in natural language, problem-driven, and **list no function names / SQL in the narrative** — concrete code belongs to propose `## How` and tasks.
+- **Contract parts** (`## Interfaces` / `## Data Model`): must be fully precise — they are the **contract source for parallel frontend/backend implementation**, so signatures / schemas / fields must all be spelled out.
 
-判据：**非技术人员读叙述即可决策，实现者读契约即可直接据以编码。**
+Test: **a non-technical reader can decide from the narrative; an implementer can code directly from the contract.**
 
-## 格式
+## Format
 
 ```markdown
 # Design: <change-name>
 
 ## Architecture
-（结构图：领域分层、盒子=名字+一句职责，字段不进图。画法见下「Architecture 画法（铁律）」）
+(structure diagram: domain layering, box = name + one-line responsibility, no fields in the diagram. See "Drawing the Architecture (iron rules)" below.)
 
-## Interfaces（契约源头，前后端照它并行；精确 schema 就在这）
-- <能力 / endpoint method path>
-  - 输入：<schema>
-  - 输出：<schema>
-  - 错误码：<列出>
-  - 不变式：<如"输出不含号源">
+## Interfaces (contract source; frontend/backend build against it in parallel; precise schemas go right here)
+- <capability / endpoint method path>
+  - Input: <schema>
+  - Output: <schema>
+  - Error codes: <list>
+  - Invariants: <e.g. "output contains no source IDs">
 
 ## Data Model
-- 表 / 实体 / 字段 + 关系（引用 / 1:N …）
-- 索引 / 约束；关键归属 / 不变式（如"价格的真相源是 X"）
+- tables / entities / fields + relations (references / 1:N …)
+- indexes / constraints; key ownership / invariants (e.g. "the source of truth for price is X")
 
-## Key Decisions（问题驱动·叙述·**只展开争议的**）
-**并非每个决策都进入此节**——决策结论的真相源是 research `## Decided`（DEC-N）。此处**仅展开 1-2 个确有争议 / 高风险**的决策作深度论证（benchmark / 性能模型 / 多方案权衡），非争议决策以一句话留在 DEC-N、**不在此重复**。每项展开 ≤12 行，先陈述**可能出问题的场景**，再叙述解法（不写代码）：
-- 难题：<什么操作 → 出什么问题 → 什么后果>
-- 解法：<叙述如何解决，概念级，不涉及函数 / SQL>
-- 代价：<此解法牺牲了什么——任何方案皆有代价，说不出即未想透>
-- 为何不选其他：<替代方案 + 一句否决理由；**"不做处理"亦属一个被否决的替代**>
+## Key Decisions (problem-driven · narrative · **expand contested ones only**)
+**Not every decision goes in this section** — the source of truth for decision conclusions is research `## Decided` (DEC-N). Here you **expand only the 1–2 genuinely contested / high-risk** decisions into deep argument (benchmark / performance model / multi-option trade-off); non-contested decisions stay as a one-liner in DEC-N and are **not repeated here**. Each expansion ≤12 lines, stating the **scenario that could go wrong** first, then the solution (no code):
+- Problem: <what operation → what goes wrong → what consequence>
+- Solution: <how it's solved, conceptual level, no functions / SQL>
+- Cost: <what this solution sacrifices — every option has a price; if you can't name it, you haven't thought it through>
+- Why not the alternatives: <alternative + one-line reason for rejection; **"do nothing" is itself a rejected alternative**>
 
 ## Migration / Compatibility
-- 老数据如何迁移
-- 旧接口如何兼容 / 何时下线
+- how old data migrates
+- how old interfaces stay compatible / when they retire
 ```
 
-## Architecture 画法（铁律）
+## Drawing the Architecture (iron rules)
 
-`## Architecture` 不是"将所知尽数绘出"——它呈现**结构 + 关键回路**，不绘字段。架构图的首要失败是**细节过载**（无人能读懂）。硬约束：
+`## Architecture` is not "draw everything you know" — it presents **structure + the key loops**, not fields. The primary failure of an architecture diagram is **detail overload** (nobody can read it). Hard constraints:
 
-1. **字段不进图**（头号铁律）：盒子里只有 **名字 + 一句话职责（+ 技术选型）**。字段、枚举、状态、规则、价格、阈值**一律进 `## Data Model` 或图下的表**；接口同理——图里只引用 `## Interfaces` 的名字，不重复画 schema。
-2. **一图一抽象层级**：一张图只站一层（系统级"谁和谁交互" / 组件级"内部哪些块"），不混。粒度参考 C4（Context / Container）。
-3. **领域定骨架，模块填层**：领域 = 层（横带 / 纵带，**有几个真实领域就几层 = N，不固定**）；模块 / 表 = 层内的盒子。注意"层（横带，可 N 个）"≠ rule 2 的"抽象层级（C4 的 system/container，一图一级）"——一张 container 级的图里可以有 N 个领域横带。**模块绝不跨层充当树根**——勿使某一字段（如某 `type` 列）成为整图的分叉轴。
-4. **decomposition 对称**：各参与方按同等粒度拆分——勿一侧拆 4 层、另一侧压为单个盒子（"对外 / 客户"侧亦须拆分到位）。
-5. **不变式靠布局证明**：有业务不变式（如"对外不可见内部源头"），就让相关 token **只出现在该在的层、逐层脱敏**，到对外层归零——**图本身即证明**，不靠旁注一句话。
-6. **结构图也画关键闭环**：不画流程细节，但"谁驱动谁"的核心回路（**发起 → 处理 → 交付 → 回到发起方**）须画出方向，否则将绘成"单向推送"、遗漏发起方。
-7. **线单向 + 带标签**（标"做什么"，不写 `uses`；标签描述的方向与箭头一致）；图要能**脱离正文独立看懂**——用了任何视觉区分（颜色 / 边框 / 符号）就配图例，复杂时加标题。
-8. **复杂度闸**：单图节点超过约 15–20 个 → **拆图**（zoom 到更细一级，或按领域拆成多张），**不得以缩小字体 / 压缩间距强行塞入**。
-9. **外部系统只画边界**：非本系统管控的服务 / 第三方 / SaaS 只画**交互边界**、不展开其内部；明确标 `[外部]`（或区分样式）。共享库算 Component，不算独立系统。
+1. **No fields in the diagram** (the top iron rule): a box holds only **name + one-line responsibility (+ tech choice)**. Fields, enums, states, rules, prices, thresholds **all go to `## Data Model` or a table below the diagram**; interfaces likewise — the diagram only references names from `## Interfaces`, it does not redraw schemas.
+2. **One abstraction level per diagram**: a single diagram stands at one level (system level "who talks to whom" / component level "which blocks are inside"), never mixed. Use C4 (Context / Container) for granularity.
+3. **Domains set the skeleton, modules fill the layers**: domains = layers (horizontal / vertical bands — **as many layers as there are real domains = N, not fixed**); modules / tables = boxes within a layer. Note that "layer (a band, can be N)" ≠ rule 2's "abstraction level (C4's system/container, one level per diagram)" — a single container-level diagram can have N domain bands. **A module must NEVER cross layers to act as the tree root** — don't let one field (e.g. some `type` column) become the whole diagram's branching axis.
+4. **Symmetric decomposition**: each party is broken down at the same granularity — don't decompose one side into 4 layers and flatten the other into a single box (the "external / customer" side must be decomposed properly too).
+5. **Invariants proven by layout**: when there's a business invariant (e.g. "the internal source is invisible externally"), make the relevant token **appear only in the layer where it belongs and get desensitized layer by layer**, reaching zero at the external layer — **the diagram itself is the proof**, not a side note.
+6. **Structure diagrams still draw the key loop**: don't draw process detail, but the core loop of "who drives whom" (**initiate → process → deliver → back to initiator**) must show direction, otherwise it ends up a "one-way push" that omits the initiator.
+7. **One-directional, labeled lines** (label "what it does", not `uses`; the label's direction matches the arrow); the diagram must **stand on its own without the prose** — any visual distinction used (color / border / symbol) gets a legend, and a title when it's complex.
+8. **Complexity gate**: a single diagram over ~15–20 nodes → **split it** (zoom to a finer level, or split by domain into several diagrams); **never cram it in by shrinking fonts / squeezing spacing**.
+9. **External systems get only a boundary**: services / third parties / SaaS not under this system's control are drawn only as an **interaction boundary**, not expanded internally; mark them clearly as `[external]` (or a distinct style). A shared library counts as a Component, not a separate system.
 
-**推荐布局**：按所选纵轴（如"对外透明度"）**自上而下分 N 层**——**层数随系统真实领域 / 阶段而定，不固定**。有几层画几层；勿强凑 2 层，亦勿将 N 个领域挤入 2 层。若存在"内部↔对外"这类可见性边界，把它作为**其中一条横切线**标出（边界两侧各自仍可有多层）。以本系统为视角。
+**Recommended layout**: along the chosen vertical axis (e.g. "external transparency"), **split top-to-bottom into N layers** — **the number of layers follows the system's real domains / stages, not a fixed count**. Draw as many layers as exist; don't force-fit 2, and don't cram N domains into 2. If there's a visibility boundary like "internal ↔ external", mark it as **one of the horizontal cut-lines** (both sides can still have multiple layers each). Take this system's point of view.
 
-骨架示意（层数 N 任意；业务不同，效果一致）：
+Skeleton sketch (N layers, arbitrary; different domains, same effect):
 
 ```
-═══ 层1（最内 / 最深细节）═══
-  [ 领域A ] ──关系标签──▶ [ 领域B ]
+═══ Layer 1 (innermost / deepest detail) ═══
+  [ Domain A ] ──relation label──▶ [ Domain B ]
               │
-═══ 层2 ═══
-  [ 领域C ]
+═══ Layer 2 ═══
+  [ Domain C ]
               │
-              ⋮   ← 层数 = 系统真实的领域 / 阶段数（N，不固定）
+              ⋮   ← number of layers = the system's real domains / stages (N, not fixed)
               │
-══════════════╪══ 可见性边界（如有：内部 ↔ 对外）══
+══════════════╪══ visibility boundary (if any: internal ↔ external) ══
               ▼
-═══ 层N（对外 / 契约层）═══
-  [ 选购 ] ─①发起─▶ [ 处理 ] ─②交付─▶ [ 收货 ]   ← 闭环画出发起方
+═══ Layer N (external / contract layer) ═══
+  [ Browse ] ─①initiate─▶ [ Process ] ─②deliver─▶ [ Receive ]   ← draw the closed loop back to the initiator
 ```
 
-（字段去 `## Data Model`：领域A.xxx、领域B.yyy …）
+(Fields go to `## Data Model`: DomainA.xxx, DomainB.yyy …)
 
-## 段约束
+## Section constraints
 
-各段**非必填**——简单任务可能仅含架构图。但**至少一段**，否则即不应创建 design.md。
+Every section is **optional** — a simple task may contain only the architecture diagram. But **at least one section**, otherwise design.md shouldn't be created at all.
 
-**软预算**（原则见 SKILL「阶段职责矩阵」；行数等数值以本段为准）：**叙述/论证 ≤150 行**（架构图 + Key Decisions + 迁移说明）——`## Interfaces` / `## Data Model` 契约**不计入、须按需精确**（schema / 字段 / 主键 / 错误码须列全，不以"…"省略，使实现者无需猜测即可编码）；`## Key Decisions` **最多展开 1-2 个**争议决策、每个 ≤12 行；架构图 >20 节点强制拆分。叙述若无法压入 150 行即应删减（确需超出，先说明理由）；反之，若契约本身即达数百行，则表明接口过多、应**拆分 change**，而非削减 schema。
+**Soft budget** (the principle is in SKILL § Phase Responsibility Matrix; the line-count numbers are authoritative here): **narrative/argument ≤150 lines** (architecture diagram + Key Decisions + migration notes) — `## Interfaces` / `## Data Model` contracts are **excluded and must be as precise as needed** (schemas / fields / primary keys / error codes listed in full, never elided with "…", so an implementer can code without guessing); `## Key Decisions` **expands at most 1–2** contested decisions, ≤12 lines each; an architecture diagram >20 nodes must be split. If the narrative won't fit in 150 lines, cut it down (if you genuinely must exceed, explain why first); conversely, if the contract alone runs to hundreds of lines, that signals too many interfaces and you should **split the change**, not trim the schema.
 
-## 边界：哪些不该写在 design.md
+## Boundary: what does not belong in design.md
 
-| 内容 | 应该写在哪 |
+| Content | Where it belongs |
 |---|---|
-| 业务动机 / 时间窗口 | proposal.md `## Why` |
-| 改什么文件 / 模块 | proposal.md `## What` |
-| 风险 / 回滚 | proposal.md `## Risk` |
-| 任务拆分 / deps | tasks.md |
-| 代码实现：函数体 / 完整迁移 SQL / 具体算法 | apply 阶段写代码（design 只到契约 schema） |
+| Business motivation / time window | proposal.md `## Why` |
+| Which files / modules change | proposal.md `## What` |
+| Risk / rollback | proposal.md `## Risk` |
+| Task breakdown / deps | tasks.md |
+| Code implementation: function bodies / full migration SQL / concrete algorithms | written in the apply phase (design stops at contract schema) |
 
-design.md 专注于**技术构造**：架构 / 接口 / 数据 / 深度论证。
+design.md focuses on **technical structure**: architecture / interfaces / data / deep argument.
 
-## 跨前后端的特殊职责
+## Special responsibility for cross-stack work
 
-design 的 `## Interfaces` 段是**前后端并行实施的契约源头**（精确 schema 就在这一份里，不另起文件）：
+design's `## Interfaces` section is the **contract source for parallel frontend/backend implementation** (the precise schema lives in this one file, not a separate one):
 
-- **必须先于 `/spec:apply` 落地**
-- frontend agent 用 mock 数据先跑骨架（基于 `## Interfaces` 的 schema）
-- backend agent 实现服务端（同样基于 `## Interfaces`）
-- 联调时双方对齐到真实接口
+- **Must land before `/spec:apply`**
+- the frontend agent runs a skeleton on mock data first (based on the `## Interfaces` schema)
+- the backend agent implements the server side (also based on `## Interfaces`)
+- the two align on the real interface during integration
 
-不写 `## Interfaces` → frontend / backend agent 无法并行（退化成串行实施）。
+No `## Interfaces` → frontend / backend agents can't work in parallel (it degrades to serial implementation).
 
-## 跟 proposal.md / research.md 的关系
+## Relationship to proposal.md / research.md
 
-| 文件 | 关系 |
+| File | Relationship |
 |---|---|
-| research.md | 上游（外部信息） |
-| design.md | **中游**（内部技术构造，深度展开） |
-| proposal.md | 下游（精炼决策书，引用 design 的关键结论） |
+| research.md | upstream (external information) |
+| design.md | **midstream** (internal technical structure, deep expansion) |
+| proposal.md | downstream (distilled decision record, references design's key conclusions) |
 
-proposal.md `## How` 引用 design.md `## Key Decisions` 的结论；不复制深度论证。
+proposal.md `## How` references the conclusions of design.md `## Key Decisions`; it does not copy the deep argument.
 
-## 反模式
+## Anti-patterns
 
-- ❌ 为复杂而复杂：proposal 数句即可说明者，强行写入 design.md
-- ❌ 把 proposal `## How` 全文搬入 design `## Key Decisions`（design 承载"为什么"的深度论证，而非复制结论）
-- ❌ 凭空绘制架构图：未读 research.md / 未扫描项目代码即绘制
-- ❌ 架构图坏味道：字段堆入盒子 / 混淆抽象层级 / 模块充当树根 / decomposition 失衡 / 不变式依赖旁注 / 展开外部系统内部 / 节点超 20 不拆而强行塞入（见「Architecture 画法（铁律）」）
-- ❌ 在叙述中写代码：`## Architecture` 说明 / `## Key Decisions` 中堆砌函数名 / SQL（叙述用自然语言；精确签名 / schema 写在 `## Interfaces` / `## Data Model`）
-- ❌ Key Decisions 抽象罗列决策、不锚定"可能出问题的场景"（读者看不出解决了什么）
-- ❌ Key Decisions 展开**每个**决策（应仅展开 1-2 个争议决策，其余指向 research `## Decided` DEC-N；将 6 个决策写成 6 篇长文即臃肿的首要来源）
-- ❌ design 另写 Context 业务叙述 / 单列 Risks 段（动机真相源是 proposal `## Why`、风险是 proposal `## Risk`；越界即同一内容出现两处，见 SKILL「阶段职责矩阵」）
-- ❌ 将完整迁移 DDL / 函数体写入 design（→ apply 阶段；design 仅至契约 schema + 迁移**形态**，不附可执行 SQL）
-- ❌ 解法只述"如何解决"、不述代价（SKILL 主张自审第③问：任何方案皆有代价，说不出即未想透）
-- ❌ "为何不选其他"只比较替代方案、遗漏"不做处理"这一选项（未回答"此难题是否必须解决"——第④问）
-- ❌ 跨前后端项目跳过 design.md（导致缺少契约，前后端无法并行）
+- ❌ Complexity for its own sake: forcing into design.md what a few sentences in the proposal would cover
+- ❌ Moving the whole of proposal `## How` into design `## Key Decisions` (design carries the "why" deep argument, not a copy of the conclusions)
+- ❌ Drawing the architecture out of thin air: drawing without reading research.md / scanning the project code
+- ❌ Architecture-diagram smells: fields piled into boxes / mixed abstraction levels / a module acting as the tree root / unbalanced decomposition / invariants relying on side notes / external systems expanded internally / over 20 nodes not split but crammed in (see "Drawing the Architecture (iron rules)")
+- ❌ Writing code in the narrative: piling function names / SQL into `## Architecture` notes / `## Key Decisions` (narrative uses natural language; precise signatures / schemas go in `## Interfaces` / `## Data Model`)
+- ❌ Key Decisions listing decisions abstractly without anchoring "the scenario that could go wrong" (the reader can't tell what it solves)
+- ❌ Key Decisions expanding **every** decision (expand only 1–2 contested ones, point the rest at research `## Decided` DEC-N; turning 6 decisions into 6 long essays is the primary source of bloat)
+- ❌ design writing a separate Context business narrative / a standalone Risks section (the source of truth for motivation is proposal `## Why`, for risk proposal `## Risk`; crossing the line puts the same content in two places — see SKILL § Phase Responsibility Matrix)
+- ❌ Writing full migration DDL / function bodies into design (→ the apply phase; design stops at contract schema + migration **shape**, no executable SQL)
+- ❌ A solution that states only "how it's solved" without the cost (SKILL Claim Self-Review question ③: every option has a price; if you can't name it, you haven't thought it through)
+- ❌ "Why not the alternatives" comparing only alternatives while omitting the "do nothing" option (failing to answer "must this problem be solved at all" — question ④)
+- ❌ A cross-stack project skipping design.md (resulting in no contract, so frontend/backend can't parallelize)

@@ -1,43 +1,43 @@
 ---
-description: 归档当前 change 到 spec/archive/YYYY-MM-DD-<name>/。仅用户说"归档"时调。归档前会检查未提交代码
+description: Archives the current change to spec/archive/YYYY-MM-DD-<name>/. Only invoked when the user explicitly says "archive". Checks for uncommitted code before archiving.
 allowed-tools: Read, Glob, Bash(mv:*, mkdir:*, git:*)
 ---
 
 # /spec:archive
 
-## 前置检查
+## Pre-flight checks
 
-1. **git status 检查**：
-   - 有未提交改动 → 警告用户并问"先提交还是先归档"
-   - 用户选"先归档"→ 继续；选"先提交"→ 退出，提示用户调 `git commit`
-2. **验证状态**：
-   - 推荐 `/spec:verify` 全 pass 后再归档
-   - 未通过 → 提示但不强制（用户可能就是想归档失败的提案）
+1. **git status check**:
+   - Uncommitted changes present → warn the user and ask "commit first or archive first?"
+   - User chooses "archive first" → proceed; "commit first" → exit and prompt the user to run `git commit`
+2. **Verification status**:
+   - Recommended: `/spec:verify` should be fully passing before archiving
+   - Not passing → warn but do not block (the user may intentionally want to archive a failed proposal)
 
-## 流程
+## Process
 
-1. 从 `spec/changes/<name>/` 读当前 change 名
-2. 计算归档路径：`spec/archive/<YYYY-MM-DD>-<name>/`（用当天日期，无需调 shell——日期在上下文里）
-3. `mv` 整个目录过去
-4. 输出摘要：
+1. Read the current change name from `spec/changes/<name>/`
+2. Compute the archive path: `spec/archive/<YYYY-MM-DD>-<name>/` (use today's date — it is already in context; no shell call needed)
+3. `mv` the entire directory there
+4. Output a summary:
    ```
-   归档完成：spec/archive/YYYY-MM-DD-<name>/
-   含产物：research.md, design.md, proposal.md, tasks.md
+   Archived: spec/archive/YYYY-MM-DD-<name>/
+   Artifacts included: research.md, design.md, proposal.md, tasks.md
    ```
 
-## 多执行体场景
+## Multi-owner scenario
 
-- 全部 owner 任务完成、各分支合并到主干后才归档
-- 任一 owner 未完成 → 拒绝归档，提示"等 X owner 完成"
+- Only archive after all owner tasks are complete and all branches have been merged to the main trunk
+- Any owner with incomplete tasks → refuse to archive; prompt "waiting for owner X to finish"
 
-## 失败 / 废弃归档
+## Failed / abandoned archive
 
-change 是放弃的（用户说"这方向不对，废了"）：
-- 归档路径：`spec/archive/YYYY-MM-DD-<name>-abandoned/`
-- 目录里加 `ABANDONED.md` 写明放弃原因
+If the change is being abandoned (user says "this direction is wrong, drop it"):
+- Archive path: `spec/archive/YYYY-MM-DD-<name>-abandoned/`
+- Add `ABANDONED.md` inside with the reason for abandonment
 
-## 反模式
+## Anti-patterns
 
-- ❌ 用户没说"归档"擅自归档
-- ❌ git 有未提交改动默认归档（丢代码风险）
-- ❌ 归档失败的 proposal 不加标识（archive 目录里要能看出"这是失败案例"）
+- ❌ Archiving without the user explicitly saying "archive"
+- ❌ Defaulting to archive when git has uncommitted changes (risk of losing code)
+- ❌ Archiving a failed proposal without a label (the archive directory must make it clear "this is a failed case")

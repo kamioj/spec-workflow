@@ -1,75 +1,75 @@
 # proposal.md spec
 
-`spec/changes/<change-name>/proposal.md` 是 sdd 工作流的**方案终态产物**。由 `/spec:propose` 生成，含 HARD GATE 批准标记。
+`spec/changes/<change-name>/proposal.md` is the **final-solution artifact** of the sdd workflow. Produced by `/spec:propose`, it carries the HARD GATE approval marker.
 
-## 格式
+## Format
 
 ```markdown
 # Proposal: <change-name>
 
 ## Why
-为什么做这次改动（业务动机 / 技术痛点 / 时间窗口）。1-3 段。
+Why this change is being made (business motivation / technical pain / time window). 1–3 paragraphs.
 
 ## What
-具体改什么（文件 / 模块 / 接口 / 新增 / 删除 / 重命名）。可用列表。
+What concretely changes (files / modules / interfaces / additions / deletions / renames). A list is fine.
 
 ## How
-关键技术决策（从 research.md `## Decided` 提炼，**不复制原文**）：
-- 选型：X（不选 Y）
-- 理由：精炼一句话——**结论与理由必须自包含于此**，深度论证另见 design `## Key Decisions`（apply 不读 research，不可以指针代替结论）
-- 失效策略 / 关键算法 / 关键参数 ...
+Key technical decisions (distilled from research.md `## Decided`, **not copied verbatim**):
+- Choice: X (not Y)
+- Reason: one distilled sentence — **the conclusion and reason must be self-contained here**; the deep argument lives in design `## Key Decisions` (apply doesn't read research, so a pointer can't stand in for the conclusion)
+- Failure strategy / key algorithm / key parameters ...
 
 ## Risk
-- 影响范围：哪些模块 / 接口 / 用户场景受影响
-- 风险：**每个关键决策的具体隐患 + 触发场景**（非泛泛的"可能有风险"，须能说明"在何种操作下会以何种方式失败"）+ mitigation
-- 回滚方案：怎么撤回
+- Blast radius: which modules / interfaces / user scenarios are affected
+- Risk: **the concrete hazard of each key decision + its trigger scenario** (not a vague "there may be risk"; it must explain "under what operation it fails in what way") + mitigation
+- Rollback plan: how to back it out
 ```
 
-## 段约束
+## Section constraints
 
-- 每段 **≤ 5 行**
-- 内容超限 → 应移至 `design.md`，**不要塞入 proposal**
-- `## How` 提炼 `research.md ## Decided`，不复制原文
-- **What / How 须过第④问（删减）**：非平凡的 What 项 / How 决策落笔前先问"删除后会怎样"，删除无影响者不写（SKILL「主张自审」）——这是 HARD GATE 变化点能让用户一眼判断"是否批准"的前提
+- Each section **≤ 5 lines**
+- Content over the limit → move it to `design.md`, **don't stuff it into the proposal**
+- `## How` distills `research.md ## Decided`, doesn't copy it verbatim
+- **What / How must pass question ④ (cut it)**: before committing a non-trivial What item / How decision, ask "what happens if I remove it" and don't write what makes no difference removed (SKILL § Claim Self-Review) — this is the precondition for the HARD GATE change points to let the user judge "approve or not" at a glance
 
-## HARD GATE 批准标记
+## HARD GATE approval marker
 
-`<!-- APPROVED: YYYY-MM-DD HH:mm -->` 标记由 **`/spec:apply` 命令在执行前自动追加**（视用户主动调用为批准动作）。
+The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by `/spec:apply` before it runs** (treating the user's deliberate invocation as the act of approval).
 
-时间戳用当前 ISO 本地时间。
+The timestamp uses the current ISO local time.
 
-此标记同时是：
-- `check-gate.ps1` hook 放行 `/spec:apply` 的契约
-- **审计记录**：git log 能看到何时批准过
+This marker is simultaneously:
+- the contract for the `check-gate.ps1` hook to let `/spec:apply` through
+- an **audit record**: git log shows when it was approved
 
-**propose 不直接追加 APPROVED**——HARD GATE 是用户决策节点，APPROVED 是 apply 的契约动作。两者分离使流程省去一步"回复 go"的冗余。
+**propose does not append APPROVED directly** — the HARD GATE is the user's decision point, and APPROVED is apply's contract action. Separating them spares the flow a redundant "reply go" step.
 
-## /spec:revise 修订
+## /spec:revise revisions
 
-任何修订必须：
+Any revision MUST:
 
-1. 主动**移除旧的 `<!-- APPROVED: ... -->` 标记**（任何修订作废旧批准）
-2. 改完重新输出 HARD GATE 等用户决策
-3. 用户调 `/spec:apply` 时由 apply 自动追加新 APPROVED 标记（不需要回 "go"）
+1. Actively **remove the old `<!-- APPROVED: ... -->` marker** (any revision invalidates the old approval)
+2. Re-emit the HARD GATE after editing and wait for the user's decision
+3. When the user runs `/spec:apply`, apply appends the new APPROVED marker automatically (no "go" reply needed)
 
-revise 后未移除旧 APPROVED → hook 误判为已批准 → apply 跳过新决策、径直执行修订前逻辑。
+If the old APPROVED isn't removed after a revise → the hook misjudges it as approved → apply skips the new decision and runs the pre-revision logic straight through.
 
-## /spec:revise 的可修订段
+## /spec:revise's editable sections
 
-| 参数 | 改的段 |
+| Parameter | Section edited |
 |---|---|
 | `why` | `## Why` |
 | `what` | `## What` |
 | `how` | `## How` |
 | `risk` | `## Risk` |
 
-revise 时**保留其他段不变**——仅修改指定段（整体重写走 `/spec:propose`）。
+On revise, **leave the other sections untouched** — edit only the named section (a full rewrite goes through `/spec:propose`).
 
-## 反模式
+## Anti-patterns
 
-- ❌ HARD GATE 等待期间未收到批准词就提前自己加 APPROVED 标记
-- ❌ 用户驳回 / 修订时仍保留旧 APPROVED
-- ❌ `## How` 复制 `research.md ## Decided` 原文（应提炼）
-- ❌ 段落超限仍塞入内容（应移至 design.md）
-- ❌ Risk 写泛泛空话（"可能有性能风险"）而不锚定触发场景 / 具体隐患（SKILL 主张自审第③问）
-- ❌ What 罗列"凡能想到的都改"、不经第④问删减（使 HARD GATE 变化点无法判断是否应批准）
+- ❌ Adding the APPROVED marker yourself during the HARD GATE wait, before any approval word
+- ❌ Keeping the old APPROVED when the user rejects / revises
+- ❌ `## How` copying `research.md ## Decided` verbatim (it should distill)
+- ❌ Stuffing content past the section limit (it should move to design.md)
+- ❌ Risk written as vague filler ("there may be a performance risk") without anchoring the trigger scenario / concrete hazard (SKILL Claim Self-Review question ③)
+- ❌ What listing "everything I can think of changing" without passing question ④'s cut (leaving the HARD GATE change points unjudgeable for approval)

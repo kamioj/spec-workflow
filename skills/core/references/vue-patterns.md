@@ -1,77 +1,77 @@
 ---
-name: Vue 3 Modern Patterns & Project Conventions (自写)
-companion: vue-style.md (Vue 官方风格指南，先读那个)
-note: 官方风格指南偏语法层面，本文件补足"现代 Vue 项目怎么组织 + 怎么用设计模式 + 反模式"。
+name: Vue 3 Modern Patterns & Project Conventions (original)
+companion: vue-style.md (Vue official style guide — read that first)
+note: The official style guide focuses on syntax. This file fills in the gaps around how to structure a modern Vue project, apply design patterns, and avoid anti-patterns.
 ---
 
-# Vue 3 现代实践与设计模式
+# Vue 3 Modern Practices & Design Patterns
 
-`vue-style.md` 是官方规则；本文件是落地选型和模式应用。
+`vue-style.md` covers the official rules; this file covers practical choices and pattern application in real projects.
 
 ---
 
-## 1. 默认技术栈选型（2025-2026 主流）
+## 1. Default Tech Stack (2025–2026 Mainstream)
 
-| 维度 | 选 | 备选 / 不推荐 |
+| Dimension | Recommended | Alternatives / Not Recommended |
 |---|---|---|
-| API 风格 | **Composition API + `<script setup>`** | Options API（仅小组件 / 兼容老项目可用）|
-| 类型 | **TypeScript** | 纯 JS（仅小项目 / 个人项目）|
-| 状态管理 | **Pinia** | Vuex（v2 遗留只读）/ 完全本地 ref |
-| 路由 | **Vue Router 4** | (无替代) |
-| 构建 | **Vite** | Webpack（仅老项目维护）|
-| UI 库 | Element Plus / Naive UI / Ant Design Vue | 看项目品味，不强制 |
-| HTTP | axios / fetch + 自封装 | (无强制) |
-| 测试 | Vitest + Vue Test Utils | Jest（旧）|
+| API Style | **Composition API + `<script setup>`** | Options API (acceptable only for small components or legacy compatibility) |
+| Types | **TypeScript** | Plain JS (only for small/personal projects) |
+| State Management | **Pinia** | Vuex (read-only for v2 legacy) / purely local ref |
+| Routing | **Vue Router 4** | (no alternative) |
+| Build Tool | **Vite** | Webpack (only for maintaining existing projects) |
+| UI Library | Element Plus / Naive UI / Ant Design Vue | Project-dependent, no strict requirement |
+| HTTP | axios / fetch + custom wrapper | (no strict requirement) |
+| Testing | Vitest + Vue Test Utils | Jest (legacy) |
 
-**不要在新项目用**：Options API、Vuex、Webpack（除非现有项目已用）。
+**NEVER use in new projects**: Options API, Vuex, Webpack (unless the project already uses them).
 
 ---
 
-## 2. 标准目录结构
+## 2. Standard Directory Structure
 
 ```
 src/
-├── api/                  ← 接口封装（按业务模块拆）
+├── api/                  ← API wrappers (split by business domain)
 │   ├── user.ts
 │   ├── order.ts
-│   └── _client.ts        (axios 实例 + 拦截器)
-├── assets/               ← 静态资源（图片、字体）
+│   └── _client.ts        (axios instance + interceptors)
+├── assets/               ← Static assets (images, fonts)
 │   ├── images/
 │   └── icons/
-├── components/           ← 可复用组件（跨页面共用）
-│   ├── base/             (BaseButton, BaseInput - 最底层)
-│   ├── business/         (UserCard, OrderItem - 业务组件)
+├── components/           ← Reusable components (shared across pages)
+│   ├── base/             (BaseButton, BaseInput — lowest-level primitives)
+│   ├── business/         (UserCard, OrderItem — domain-specific components)
 │   └── layout/           (Header, Sidebar, Footer)
-├── composables/          ← Composition API 复用逻辑 ⭐
+├── composables/          ← Composition API reusable logic ⭐
 │   ├── useUser.ts
 │   ├── usePagination.ts
 │   └── useRequest.ts
-├── layouts/              ← 页面布局模板
+├── layouts/              ← Page layout templates
 │   ├── DefaultLayout.vue
 │   └── AdminLayout.vue
-├── router/               ← 路由配置
+├── router/               ← Route configuration
 │   ├── index.ts
 │   ├── routes.ts
-│   └── guards.ts         (路由守卫：权限、登录)
+│   └── guards.ts         (route guards: auth, login)
 ├── stores/               ← Pinia stores
 │   ├── user.ts
 │   ├── app.ts
 │   └── index.ts
-├── views/                ← 路由级页面（一个 view = 一个路由）
+├── views/                ← Route-level pages (one view = one route)
 │   ├── user/
 │   │   ├── UserList.vue
 │   │   ├── UserDetail.vue
-│   │   └── components/   (本页专属子组件，不跨页用)
+│   │   └── components/   (sub-components exclusive to this view, not shared)
 │   └── order/
-├── types/                ← TypeScript 类型定义
+├── types/                ← TypeScript type definitions
 │   ├── user.ts
 │   ├── api.ts
 │   └── common.ts
-├── utils/                ← 工具函数（纯函数、无副作用）
+├── utils/                ← Utility functions (pure functions, no side effects)
 │   ├── date.ts
 │   ├── format.ts
 │   └── validator.ts
-├── styles/               ← 全局样式
+├── styles/               ← Global styles
 │   ├── variables.scss
 │   ├── reset.scss
 │   └── theme.scss
@@ -79,26 +79,26 @@ src/
 └── main.ts
 ```
 
-### 关键约定
+### Key Conventions
 
-- **`views/` vs `components/`**：路由级别用 `views/`，可复用的用 `components/`；本页专属子组件放该 view 的 `components/` 子目录
-- **`composables/` 是 Vue 3 灵魂**：所有跨组件复用的响应式逻辑放这里，不再用 mixin
-- **`api/` 不放业务逻辑**：只封装请求 + 类型，业务逻辑在 composables/store
-- **`stores/` 只放全局共享状态**：组件本地 state 用 `ref` 不要进 store
-- **`utils/` 纯函数**：不依赖 Vue 响应式（如果依赖 → 放 composables）
+- **`views/` vs `components/`**: Route-level components go in `views/`; anything reusable across pages goes in `components/`. Sub-components used only within a single view live in that view's own `components/` subdirectory.
+- **`composables/` is the heart of Vue 3**: All reactive logic shared across components belongs here. Mixins are no longer used.
+- **`api/` contains no business logic**: Only request wrappers and type definitions. Business logic lives in composables or stores.
+- **`stores/` holds only globally shared state**: Component-local state stays as `ref` inside the component — do not put it in a store.
+- **`utils/` contains pure functions**: No Vue reactivity. If a function depends on reactive state, it belongs in `composables/` instead.
 
 ---
 
-## 3. Composables 模式（Vue 3 最核心模式）
+## 3. The Composables Pattern (The Most Important Vue 3 Pattern)
 
-Composables 替代了 Vue 2 的 mixin，是逻辑复用的标准方式。
+Composables replace Vue 2 mixins as the standard approach for logic reuse.
 
-### 命名约定
+### Naming Convention
 
-- 必须 `use` 前缀：`useUser`, `usePagination`, `useFetch`
-- 文件名同函数名：`composables/usePagination.ts` exports `usePagination`
+- MUST use the `use` prefix: `useUser`, `usePagination`, `useFetch`
+- File name matches the exported function name: `composables/usePagination.ts` exports `usePagination`
 
-### 标准结构
+### Standard Structure
 
 ```ts
 // composables/usePagination.ts
@@ -125,7 +125,7 @@ export function usePagination(initialPage = 1, pageSize = 10) {
 }
 ```
 
-### 使用
+### Usage
 
 ```vue
 <script setup>
@@ -134,44 +134,44 @@ const { currentPage, total, next, reset } = usePagination()
 </script>
 ```
 
-### 何时该写 Composable
+### When to Write a Composable
 
-| 场景 | 是否写 Composable |
+| Scenario | Write a Composable? |
 |---|---|
-| 多个组件需要相同响应式逻辑 | ✅ 必须 |
-| 单组件内 setup 超过 50 行 | ✅ 拆出来 |
-| 涉及 lifecycle hooks（onMounted 等）的复用 | ✅ Composable 是唯一方式 |
-| 纯计算函数无响应式 | ❌ 放 `utils/` |
-| 一次性逻辑、不复用 | ❌ 直接写在组件 |
+| Multiple components need the same reactive logic | ✅ Always |
+| A single component's `setup` exceeds 50 lines | ✅ Extract it |
+| Reusing logic that involves lifecycle hooks (e.g., `onMounted`) | ✅ Composable is the only right approach |
+| Pure computation with no reactive state | ❌ Put it in `utils/` |
+| One-off logic that won't be reused | ❌ Write it directly in the component |
 
 ---
 
-## 4. 其他 Vue 设计模式
+## 4. Other Vue Design Patterns
 
-### 4.1 Provide / Inject（跨层级传递）
+### 4.1 Provide / Inject (Cross-Level Data Passing)
 
-**场景**：祖先组件向深层后代传数据，避免一级级 props 透传
+**Use case**: Pass data from an ancestor component to deeply nested descendants without threading props through every intermediate layer.
 
 ```vue
-<!-- 祖先 -->
+<!-- Ancestor -->
 <script setup>
 import { provide, ref } from 'vue'
 const theme = ref('dark')
-provide('theme', theme)  // 用 key 提供
+provide('theme', theme)  // provide under a key
 </script>
 
-<!-- 任意层后代 -->
+<!-- Any descendant, regardless of nesting depth -->
 <script setup>
 import { inject } from 'vue'
 const theme = inject('theme')
 </script>
 ```
 
-**最佳实践**：用 `Symbol` 作 key 避免冲突，用 TypeScript `InjectionKey<T>` 加类型。
+**Best practice**: Use a `Symbol` as the key to avoid naming collisions, and use TypeScript's `InjectionKey<T>` for type safety.
 
-### 4.2 Render-less Component（无渲染逻辑组件）
+### 4.2 Renderless Components
 
-**场景**：把复杂状态逻辑封装成组件，调用者控制渲染（v-slot scoped slots）
+**Use case**: Encapsulate complex stateful logic in a component while giving the caller full control over rendering via scoped slots (`v-slot`).
 
 ```vue
 <!-- FetchData.vue -->
@@ -186,19 +186,19 @@ fetch(props.url).then(r => r.json()).then(d => { data.value = d; loading.value =
   <slot :data="data" :loading="loading" />
 </template>
 
-<!-- 使用 -->
+<!-- Usage -->
 <FetchData url="/api/users" v-slot="{ data, loading }">
-  <div v-if="loading">加载中</div>
+  <div v-if="loading">Loading…</div>
   <UserList v-else :users="data" />
 </FetchData>
 ```
 
-**注**：Vue 3 时代 Composables 通常替代了 render-less，仅在需要"作为组件传递"时用。
+**Note**: In the Vue 3 era, composables typically replace renderless components. Prefer composables unless the logic truly needs to be passed around as a component.
 
-### 4.3 Pinia Store 设计
+### 4.3 Pinia Store Design
 
 ```ts
-// stores/user.ts - 推荐 Setup Store 风格（同 Composables）
+// stores/user.ts — recommended Setup Store style (mirrors Composables syntax)
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
@@ -209,7 +209,7 @@ export const useUserStore = defineStore('user', () => {
   
   // getters
   const isLoggedIn = computed(() => !!token.value)
-  const userName = computed(() => user.value?.name ?? '游客')
+  const userName = computed(() => user.value?.name ?? 'Guest')
   
   // actions
   async function login(credentials) {
@@ -229,54 +229,54 @@ export const useUserStore = defineStore('user', () => {
 })
 ```
 
-**何时建 Store**：跨多个组件/页面共享的状态。仅本组件内的状态用 `ref`，**不要进 store**。
+**When to create a store**: Only for state that is genuinely shared across multiple components or pages. Component-local state belongs in `ref` inside the component — **do not put it in a store**.
 
-### 4.4 Observer / 事件总线（不推荐用）
+### 4.4 Observer / Event Bus (Avoid)
 
-Vue 3 移除了 `$on`/`$emit` 全局 EventBus。**推荐用 Pinia 替代**全局事件——store 的 action 触发，多个组件 watch state 响应。
+Vue 3 removed the global `$on`/`$emit` EventBus. **Use Pinia instead** for global event-like communication — trigger an action in the store and have other components watch the resulting state.
 
-如果真的需要事件，用 [mitt](https://github.com/developit/mitt)，但**多数情况是设计问题**，先想能不能用 store。
-
----
-
-## 5. SOLID 在 Vue 中
-
-| 原则 | Vue 中表现 |
-|---|---|
-| **S** 单一职责 | 一个组件一个职责；超 200 行就要拆 |
-| **O** 开闭原则 | Slot + Props 让组件可扩展不修改 |
-| **L** 里氏替换 | 基础组件（BaseButton）的衍生（PrimaryButton）应能替代 |
-| **I** 接口隔离 | Props 定义精确类型，不要传 `Object` |
-| **D** 依赖反转 | 组件依赖 props/inject，不直接 import 具体 store（除非必要）|
+If you truly need a pub/sub mechanism, [mitt](https://github.com/developit/mitt) is a minimal option, but in most cases the need indicates a design problem. Consider whether a store would be a cleaner solution first.
 
 ---
 
-## 6. 性能模式
+## 5. SOLID Principles in Vue
 
-| 场景 | 用什么 |
+| Principle | How It Manifests in Vue |
 |---|---|
-| 大列表（>100 项） | `v-memo` 或虚拟列表（vue-virtual-scroller）|
-| 计算昂贵 | `computed`（缓存），避免在 template 写复杂表达式 |
-| 防止子组件重渲染 | `defineProps` 精确类型 + `v-once`（静态内容）|
-| 路由级懒加载 | `() => import('./Page.vue')` |
-| 组件按需引入 | `unplugin-vue-components` 自动导入 |
-| 图片懒加载 | `<img loading="lazy">` 或专门库 |
+| **S** Single Responsibility | One component, one job. Anything over 200 lines should be split. |
+| **O** Open/Closed | Slots and props let components be extended without modification. |
+| **L** Liskov Substitution | A derived base component (e.g., `PrimaryButton`) should be usable wherever `BaseButton` is expected. |
+| **I** Interface Segregation | Define precise prop types; avoid passing generic `Object`. |
+| **D** Dependency Inversion | Components should depend on props/inject, not import specific stores directly (unless unavoidable). |
 
 ---
 
-## 7. 反模式清单
+## 6. Performance Patterns
 
-| 反模式 | 为什么不行 |
+| Scenario | What to Use |
 |---|---|
-| 用 Options API 写新代码 | 与 Composition API 混杂，团队混乱 |
-| 把所有 state 放 Pinia | Store 膨胀，本地 state 应留组件内 |
-| Composable 不用 `use` 前缀 | 违反约定，可读性差 |
-| 在 `utils/` 放响应式逻辑 | utils 应是纯函数，响应式归 composables |
-| 跨页面的子组件放 `views/x/components/` | 跨用的归 `src/components/` |
-| `<script>` 不用 `setup` 语法糖 | 新代码无理由不用 setup |
-| 全局 EventBus（mitt 滥用）| 状态难追踪，用 Pinia |
-| 一个文件 500+ 行组件 | 必拆，按功能拆子组件 + composables |
-| Props 用 `Object` 泛类型 | 失去类型检查，写明 interface |
-| v-for 不写 `:key` 或用 index 当 key | 官方 Priority A 硬规则 |
-| 直接修改 props | 单向数据流违反 |
-| 在模板里写复杂表达式 | 拆 computed |
+| Large lists (>100 items) | `v-memo` or a virtual list library (e.g., `vue-virtual-scroller`) |
+| Expensive computation | `computed` (cached); avoid complex expressions directly in templates |
+| Preventing unnecessary child re-renders | Precise prop types via `defineProps` + `v-once` for truly static content |
+| Route-level lazy loading | `() => import('./Page.vue')` |
+| On-demand component imports | `unplugin-vue-components` for auto-import |
+| Image lazy loading | `<img loading="lazy">` or a dedicated library |
+
+---
+
+## 7. Anti-Pattern Checklist
+
+| Anti-Pattern | Why It's a Problem |
+|---|---|
+| Writing new code with Options API | Mixing it with Composition API creates confusion across the team |
+| Putting all state in Pinia | Bloats the store; local state should stay in the component |
+| Composables without the `use` prefix | Breaks convention and hurts readability |
+| Placing reactive logic in `utils/` | utils should be pure functions; reactive logic belongs in composables |
+| Putting cross-page sub-components in `views/x/components/` | Anything shared across pages belongs in `src/components/` |
+| Using `<script>` without the `setup` syntax sugar in new code | There is no good reason to skip `setup` in new code |
+| Global EventBus abuse (overusing mitt) | State becomes impossible to trace; use Pinia instead |
+| Components with 500+ lines in a single file | Must be split — extract sub-components and composables |
+| Using `Object` as a prop type | Loses all type-checking benefits; define an explicit interface |
+| `v-for` without `:key` or using index as key | Priority A rule; causes unnecessary full re-renders when order changes |
+| Mutating props directly | Violates one-way data flow |
+| Complex expressions in templates | Extract them as `computed` properties |

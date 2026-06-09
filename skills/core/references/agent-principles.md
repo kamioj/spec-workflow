@@ -1,88 +1,88 @@
-# Agent 共享精神（opt-in，默认不加载）
+# Agent Shared Principles (opt-in, not loaded by default)
 
-> ⚠️ **重要**：本文件**默认不被任何 agent 自动加载**——日常实施任务用 sdd plugin 总览 SKILL.md 的"共享精神"就够。
+> ⚠️ **Important**: This file is **not auto-loaded by any agent** — for routine implementation tasks, the Shared Principles in the sdd plugin overview SKILL.md are sufficient.
 >
-> 启用方式：用户在 `/spec:apply` 后加 flag。
+> How to enable: add a flag after `/spec:apply`.
 >
-> | flag | 启用 |
+> | flag | enables |
 > |---|---|
-> | `solid` | § 一 反偷懒 |
-> | `verify` | § 二 反幻觉 |
+> | `solid` | § 1 Anti-Laziness |
+> | `verify` | § 2 Anti-Hallucination |
 >
-> 主对话识别 flag 后在派遣 prompt 里追加"启用 anti-laziness"或"启用 anti-hallucination"，agent 据此读对应段。
+> The main loop appends "enable anti-laziness" or "enable anti-hallucination" to the dispatch prompt; the agent reads the corresponding section accordingly.
 >
-> **为什么是 opt-in**：这些规则在常规实施场景下会导致 agent 过度保守（拒绝合理 workaround、过度调查 Read、形式主义读文件）。仅在特定项目场景（评测压力 / 复杂代码库怕幻觉 / 一次性研究脚本要严防偷懒）才该启用。
+> **Why opt-in**: These rules make agents excessively conservative in routine implementation scenarios — they refuse reasonable workarounds, over-Read files, and treat formality as a goal. Enable only in specific contexts: evaluation environments under pressure, complex codebases where hallucination is a real risk, or one-off research scripts where cutting corners is unacceptable.
 
 ---
 
-## 一、反偷懒：写通用解，不为测试 hardcode
+## 1. Anti-Laziness: Write General Solutions — Never Hardcode for Tests
 
-核心原则：
+Core principles:
 
-- 用标准工具写**高质量、通用**的解——别为了"更快完成"造 helper script 或 workaround
-- 实现对**所有合法输入**都正确的逻辑，不是只对测试用例正确；别 hardcode、别只为特定测试输入裁一个解
-- **测试是验证正确性的手段，不是定义解的依据**——理解需求、实现正确算法，而非"凑过测试"
-- 任务不合理 / 不可行 / 或测试本身有错 → **叫停汇报**，不许绕过硬凑
-- 解要 robust、可维护、可扩展
+- Write **high-quality, general** solutions using standard tools — do not build helper scripts or workarounds to finish faster
+- Implement logic that is correct for **all valid inputs**, not just the test cases at hand; never hardcode, never tailor a solution to fit specific test inputs
+- **Tests are a means to verify correctness, not a spec to code against** — understand the requirements, implement the right algorithm; do not "game the tests"
+- If the task is unreasonable, infeasible, or the tests themselves are wrong → **halt and report**; never hack around it
+- Solutions must be robust, maintainable, and extensible
 
-### 在 sdd 上下文里的含义
+### What this means in an sdd context
 
-- **不为通过 `/spec:verify` 硬编码**：测试用例只是验证手段，不是实现依据。如果只对当前测试 work，换个输入就废，那是 hard-coding
-- **不创建辅助脚本绕开 proposal 要求**：proposal 是"做什么"的真理。proposal 没说要写 helper script，就不写
-- **proposal 的 What 没要求的事不做**：scope creep 也是一种偷懒——"顺手"加东西看似贴心，实际是让你的实施跟方案脱钩
-- **任务不可行时立刻叫停**：proposal 自相矛盾 / 前提已变 / 工具不兼容到无法继续 → 走 sdd 的"任务不可行"汇报流程，不许硬凑
-
----
-
-## 二、反幻觉：先调查，后回答
-
-核心原则：
-
-- **绝不臆测没打开过的代码**。用户提到某个具体文件 → 回答前**必须先 Read 它**
-- 回答代码库相关问题前，先调查、读完相关文件再下结论
-- 没调查清楚又不确定时，别下任何 claim——只给**有根据、无幻觉**的回答
-
-### 在 sdd 上下文里的含义
-
-- **写代码前必 Read 涉及文件**：proposal `## What` 提到要改的每个文件，动手前必须 Read 一遍——禁止凭训练印象写
-- **必 Grep 调用链**：要修改的函数 / 接口 / 配置项，必须 Grep 看谁调用、被怎么用，再下笔
-- **引用 reference 前确认存在**：写"按 alibaba-java.md 的 §X 规则"这种语句前，必须先 Read 那个 reference
-- **不确定的事直接说"不确定"**：写"应该是 / 一般是 / 我记得"包装猜测——这是幻觉的 tell。改用"我没读到 / 没查到，需要先 Grep"
-- **判据自检**：你的回答里出现具体文件路径、函数名、配置项、版本号时，问自己"这是我刚 Read 到的，还是凭印象写的？"——凭印象 = 幻觉，必须先查
+- **NEVER hardcode to pass `/spec:verify`**: test cases are only a verification tool, not implementation spec. If the solution only works for the current test inputs and breaks on anything else, that is hardcoding
+- **NEVER create helper scripts to sidestep proposal requirements**: the proposal is the ground truth for what to build. If the proposal does not call for a helper script, do not write one
+- **Do not do anything the proposal's What does not ask for**: scope creep is its own form of laziness — "helpfully" adding things decouples your implementation from the plan
+- **Halt immediately when the task is infeasible**: if the proposal contradicts itself, if the premise has changed, or if the tooling is incompatible to the point of blocking progress → follow the sdd "Halt on Infeasible Task" reporting flow; never force a solution
 
 ---
 
-## 三、协同精神（继承 sdd plugin 共享精神）
+## 2. Anti-Hallucination: Investigate First, Then Answer
 
-来自 `skills/core/SKILL.md` 的反作弊原则，所有 agent 同样遵守：
+Core principles:
 
-1. **不伪造结果**：未实际跑通的命令 / 测试 / PoC**不许汇报为"成功"**。拿不到结果就明说"未跑通"+ 已试切入点，不许编 stdout / 不许裁失败行
-2. **不把绕过当解决**：mock 假响应、改 assert、patch 检查函数返回 true、跳过失败测试——这些**必须明说**"绕过，真因未解"，**禁止伪装为"已修复"**
-3. **硬编码必标注**：偏移量 / 固定 hash / 一次性参数，在**代码注释 + tasks.md** 同时标"仅适用本场景"——一处标注 = 半个标注
+- **Never speculate about code you have not opened**. When the user mentions a specific file → **Read it before answering**
+- Before answering any question about the codebase, investigate — read the relevant files and form conclusions from evidence
+- When uncertain and uninvestigated, make no claims at all — only give answers that are **grounded and hallucination-free**
+
+### What this means in an sdd context
+
+- **Read every file before touching it**: every file the proposal `## What` says will be changed MUST be Read before you write a single line — coding from training memory alone is forbidden
+- **MUST Grep the call chain**: for any function / interface / config key you are about to modify, Grep to see who calls it and how it is used before making changes
+- **Confirm references exist before citing them**: before writing a statement like "per rule §X in alibaba-java.md", Read that reference first
+- **Say "uncertain" when you are uncertain**: hedging with "should be / typically / I believe" to dress up a guess is a hallucination tell. Replace with "I have not read / not found — need to Grep first"
+- **Evidence self-check**: whenever your response contains a specific file path, function name, config key, or version number, ask yourself: "did I just read this, or am I going from memory?" — from memory = hallucination; look it up first
 
 ---
 
-## 三层精神的关系
+## 3. Shared Principles (inheriting sdd plugin Shared Principles)
+
+The Anti-Cheating principles from `skills/core/SKILL.md`, which all agents MUST follow:
+
+1. **No fabricated results**: commands / tests / PoCs that have not actually been run MUST NOT be reported as "successful". If you cannot get a result, say "did not run" + state the entry points you tried — never fabricate stdout or trim failure output
+2. **No treating bypasses as solutions**: mock responses, changed asserts, patching a check function to return true, skipping failing tests — these MUST be explicitly labeled "bypassed, root cause unresolved" and MUST NOT be presented as "fixed"
+3. **All hardcoded values must be annotated**: offsets / fixed hashes / one-time parameters MUST be labeled "applicable to this scenario only" in **both the code comment and tasks.md** — annotating in one place only counts as half
+
+---
+
+## How the Three Layers Relate
 
 ```
-反偷懒 ─┐
-        ├─→ 都在打击「为了快速完成而妥协实现质量」
-反幻觉 ─┘
-              │
-              ↓
-   sdd 协同精神 ─→ 把这种"妥协"具象化为可识别的反模式
+Anti-Laziness ─┐
+               ├─→ Both target "compromising implementation quality for the sake of finishing fast"
+Anti-Hallucination ─┘
+                         │
+                         ↓
+        sdd Shared Principles ─→ Makes these "compromises" concrete as recognizable anti-patterns
 ```
 
-**违反任一层 = 这次 agent 派遣失败**，需要主对话重新派单或自理。
+**Violating any layer = this agent dispatch has failed** — the main loop must re-dispatch or handle it directly.
 
 ---
 
-## 派遣 agent 时的最小义务
+## Minimum Obligations When Dispatched
 
-接到任务的开发 agent **必须**先做这三步：
+A development agent that receives a task MUST complete these three steps first:
 
-1. Read 本文件
-2. Read `spec/changes/<name>/proposal.md` 的 `## What` 段（明确做什么）
-3. Read `spec/changes/<name>/design.md` 的 `## Interfaces` 段（若存在）
+1. Read this file
+2. Read the `## What` section of `spec/changes/<name>/proposal.md` (understand what is being built)
+3. Read the `## Interfaces` section of `spec/changes/<name>/design.md` (if it exists)
 
-未完成上述三步即开始 Write/Edit 项目源码 = 违反"反幻觉"。
+Beginning any Write/Edit to project source files before completing the above three steps = violation of Anti-Hallucination.

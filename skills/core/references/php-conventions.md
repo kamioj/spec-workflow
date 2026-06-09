@@ -1,55 +1,55 @@
 ---
-name: PHP 工程化规范（国内特化版）
-scope: 现代 PHP（ThinkPHP 国民框架 + Laravel + Symfony）+ 国内老 CMS / 私服后台审计
+name: PHP Engineering Standards (China-Localized Edition)
+scope: Modern PHP (ThinkPHP — the dominant domestic framework + Laravel + Symfony) + legacy CMS / private-server backend auditing
 note: |
-  本文件按"国内真实生态权重"重排，与国外推荐脱钩。
-  ThinkPHP 是国内 PHP 第一框架（份额远超 Laravel），私活 / 政企外包 / 私服后台默认选型。
-  Laravel 占精品互联网 / 创业公司。Symfony 在国内份额可忽略，仅作参考。
-  老 CMS 识别（织梦 / DEDECMS / PHPCMS / Discuz / ECShop / 帝国 CMS）与私服后台审计联动 `~/.claude/skills/ctf-game/references/server-audit.md`。
+  This file is ordered by "real-world weight in the Chinese PHP ecosystem" and intentionally diverges from international recommendations.
+  ThinkPHP is the #1 PHP framework in China (market share far exceeds Laravel) — it is the default choice for freelance work, government/enterprise outsourcing, and private-server backends.
+  Laravel is common in premium internet companies and startups. Symfony's domestic share is negligible and included only for reference.
+  Legacy CMS identification (DEDECMS / PHPCMS / Discuz / ECShop / Empire CMS) ties into private-server backend auditing at `~/.claude/skills/ctf-game/references/server-audit.md`.
 ---
 
-# PHP 工程化规范（国内特化）
+# PHP Engineering Standards (China-Localized)
 
-> **使用前提**：操作者是国内 PHP 开发 / 安全审计场景。如果你在做欧美开源项目，请额外参考国际版 PSR-12 / Laravel 官方文档；本文件**不优先**国外推荐。
+> **Prerequisite**: This document targets PHP development and security auditing in the Chinese domestic context. If you are working on a Western open-source project, also consult the international PSR-12 standard and the official Laravel documentation — this file does NOT prioritize international conventions.
 
 ---
 
-# 第一部分：现代 PHP 写新代码（国内权重排序）
+# Part 1: Writing New PHP Code in Modern Style (ordered by domestic weight)
 
-## 1. PHP 基本盘（PSR + 现代语法）
+## 1. PHP Fundamentals (PSR + Modern Syntax)
 
-PSR 是国际标准，国内一线 PHP 库都遵守 PSR-4 / PSR-12，但**国内业务代码**实际遵守度参差。**审计 / 接手老外包代码时不要假设有 PSR**，但**自己写新代码必须遵守**。
+PSR is an international standard. Mainstream Chinese PHP libraries all comply with PSR-4 / PSR-12, but **domestic business code** compliance varies widely in practice. When **auditing or inheriting legacy outsourced code, NEVER assume PSR compliance** — but **you MUST follow it for any new code you write**.
 
-| 标准 | 必须程度 | 用途 |
+| Standard | Requirement | Purpose |
 |---|---|---|
-| **PSR-1 / PSR-12** | 必须 | 基本编码 + 风格 |
-| **PSR-4** | 必须 | autoload，composer 默认按这个 |
-| **PSR-11** | 中 | 容器接口（用框架时框架已实现）|
-| **PSR-7 / PSR-15** | 中 | HTTP message / middleware（写中间件库时用）|
-| **PHP The Right Way** | 索引 | 社区最佳实践 https://phptherightway.com/ |
+| **PSR-1 / PSR-12** | MUST | Basic coding + style |
+| **PSR-4** | MUST | Autoloading — Composer's default |
+| **PSR-11** | Medium | Container interface (frameworks already implement this) |
+| **PSR-7 / PSR-15** | Medium | HTTP message / middleware (relevant when writing middleware libraries) |
+| **PHP The Right Way** | Reference | Community best practices https://phptherightway.com/ |
 
-**PSR-12 关键速查**：
+**PSR-12 quick reference**:
 
-- 文件首行 `<?php`，**UTF-8 无 BOM**（PS5.1 Set-Content -Encoding UTF8 会带 BOM，国内 Windows 开发者常踩）
-- `declare(strict_types=1);` 紧跟 `<?php`
-- namespace、use 段之间空一行
-- 类 `PascalCase`，方法 / 属性 `camelCase`，常量 `UPPER_SNAKE_CASE`
-- 缩进 4 空格（不要 tab）
-- 类左花括号同行（K&R），方法左花括号下一行
-- 文件**只放一个类**，文件名 = 类名
+- First line of file: `<?php`, **UTF-8 without BOM** (PowerShell 5.1's `Set-Content -Encoding UTF8` adds a BOM — a common pitfall for Windows developers in China)
+- `declare(strict_types=1);` immediately after `<?php`
+- Blank line between `namespace` and `use` blocks
+- Classes: `PascalCase`; methods / properties: `camelCase`; constants: `UPPER_SNAKE_CASE`
+- Indent with 4 spaces (never tabs)
+- Class opening brace on the same line (K&R); method opening brace on the next line
+- **One class per file**; filename = class name
 
-## 2. PHP 8.x 现代特性（写新代码必用）
+## 2. PHP 8.x Modern Features (MUST use for new code)
 
-PHP 8.0 (2020) 起跨度大。国内 2026 年新项目应起步 **PHP 8.2+**（readonly class），生产稳定首选 **PHP 8.3**。
+PHP 8.0 (2020) was a major leap forward. New projects in China in 2026 should target **PHP 8.2+** (readonly classes) as a minimum; **PHP 8.3** is the preferred stable production version.
 
 ```php
 <?php
 
-declare(strict_types=1);   // ★ 全文件必须
+declare(strict_types=1);   // ★ MUST be in every file
 
 namespace app\service;
 
-// ✅ 构造器属性提升（PHP 8.0+）—— 消除 DTO 样板
+// ✅ Constructor property promotion (PHP 8.0+) — eliminates DTO boilerplate
 final class UserDto
 {
     public function __construct(
@@ -59,7 +59,7 @@ final class UserDto
     ) {}
 }
 
-// ✅ readonly class（PHP 8.2+）—— 整类不可变
+// ✅ readonly class (PHP 8.2+) — makes the entire class immutable
 readonly class Address
 {
     public function __construct(
@@ -69,7 +69,7 @@ readonly class Address
     ) {}
 }
 
-// ✅ enum（PHP 8.1+）—— 替代魔法字符串 / 类常量
+// ✅ enum (PHP 8.1+) — replaces magic strings / class constants
 enum OrderStatus: string
 {
     case Pending = 'pending';
@@ -81,36 +81,36 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending   => '待支付',
-            self::Paid      => '已支付',
-            self::Shipped   => '已发货',
-            self::Refunded  => '已退款',
-            self::Cancelled => '已取消',
+            self::Pending   => 'Pending payment',
+            self::Paid      => 'Paid',
+            self::Shipped   => 'Shipped',
+            self::Refunded  => 'Refunded',
+            self::Cancelled => 'Cancelled',
         };
     }
 }
 
-// ✅ Attributes（PHP 8.0+）—— 替代注释元信息
+// ✅ Attributes (PHP 8.0+) — replaces annotation-based metadata
 #[Route('/users/{id}', methods: ['GET'])]
 public function show(int $id): Response { /* ... */ }
 
-// ✅ 命名参数 —— 调用清晰
-$user = new User(name: '张三', age: 28, role: Role::Admin);
+// ✅ Named arguments — makes call sites self-documenting
+$user = new User(name: 'Alice', age: 28, role: Role::Admin);
 
-// ✅ match 表达式 —— 替代 switch（严格比较 + 表达式 + 必须 default 或穷尽）
+// ✅ match expression — replaces switch (strict comparison + expression form + must be exhaustive or have a default)
 $tip = match ($status) {
-    OrderStatus::Pending => '请尽快支付',
-    OrderStatus::Paid    => '商家备货中',
-    default              => '订单状态异常',
+    OrderStatus::Pending => 'Please pay soon',
+    OrderStatus::Paid    => 'Seller is preparing your order',
+    default              => 'Abnormal order status',
 };
 
 // ✅ Nullsafe operator
-$city = $user?->address?->city ?? '未知';
+$city = $user?->address?->city ?? 'unknown';
 
 // ✅ First-class callable syntax (PHP 8.1+)
 $upper = strtoupper(...);
 
-// ✅ Readonly + 命名构造 —— 推荐 DTO 写法
+// ✅ Readonly + named constructor — recommended DTO pattern
 final readonly class PayNotifyDto
 {
     public function __construct(
@@ -130,98 +130,98 @@ final readonly class PayNotifyDto
 }
 ```
 
-## 3. 工具链（2026 国内实际使用）
+## 3. Toolchain (China 2026 Actual Usage)
 
-| 工具 | 用途 | 国内使用度 |
+| Tool | Purpose | Domestic adoption |
 |---|---|---|
-| **composer** | 包管理（一家独大）| 必须 |
-| **PHPStan** | 静态分析（level 8 最严，国内有中文社区翻译）| 高 |
-| **Psalm** | 静态分析（污点分析强，**安全审计推荐**）| 中 |
-| **PHP-CS-Fixer** | 自动格式化按 PSR-12 | 中 |
-| **PHP_CodeSniffer** | 风格检查 | 中 |
-| **PHPUnit** | 测试（老 / 企业项目标配）| 高 |
-| **Pest** | 测试（新项目优雅）| 低（国内推广不足）|
-| **Rector** | 自动化代码升级（PHP 5→7→8、框架升级）| 中（升级老 TP 项目神器）|
-| **php-parallel-lint** | 快速语法 lint | 高 |
-| **deptrac** | 架构边界检查 | 低 |
+| **composer** | Package management (the only real choice) | MUST |
+| **PHPStan** | Static analysis (level 8 = strictest; active Chinese community) | High |
+| **Psalm** | Static analysis (excellent taint tracking — **recommended for security audits**) | Medium |
+| **PHP-CS-Fixer** | Auto-format to PSR-12 | Medium |
+| **PHP_CodeSniffer** | Style checking | Medium |
+| **PHPUnit** | Testing (standard for legacy and enterprise projects) | High |
+| **Pest** | Testing (elegant for new projects) | Low (underadopted domestically) |
+| **Rector** | Automated code upgrades (PHP 5→7→8, framework migrations) | Medium (invaluable for upgrading old TP projects) |
+| **php-parallel-lint** | Fast syntax linting | High |
+| **deptrac** | Architectural boundary enforcement | Low |
 
-**国内特化**：
+**China-specific notes**:
 
-- composer 全局 `config -g repo.packagist composer https://mirrors.aliyun.com/composer/` 配阿里源，否则海外包慢
-- 老项目接手第一件事：`composer install` 看能否拉起 → 不能拉起则项目可能是 PHP 5 时代无 composer 散文件
+- Configure Alibaba's Composer mirror globally to avoid slow package downloads: `composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/`
+- When inheriting a legacy project, the first thing to do is run `composer install` and see if it resolves — if it fails, the project likely predates Composer and is all loose PHP files from the PHP 5 era
 
-## 4. 国内 PHP 框架选型（国民框架版）
+## 4. PHP Framework Selection in China (The National Framework Reality)
 
-**重要前提**：国内 PHP 生态 ThinkPHP 份额第一，**远超** Laravel。Laravel 在精品互联网 / 出海公司常见，但**政企外包 / 私活 / CMS / 私服后台 / 中小企业站** 默认 ThinkPHP。
+**Important context**: ThinkPHP holds the #1 market share in the Chinese PHP ecosystem, **far ahead of Laravel**. Laravel is common in polished internet companies and companies with international exposure, but **government/enterprise outsourcing, freelance work, CMS sites, private-server backends, and small-business sites** default to ThinkPHP.
 
-### 选型决策树
+### Framework Decision Tree
 
 ```
-新项目立项
-├─ 客户是政企 / 外包 / 私服 / 站长生态？        → ThinkPHP（生态、招聘、文档全中文）
-├─ 客户是创业公司 / 出海 / 接 Stripe / 国际化？  → Laravel
-├─ 团队 ≥ 10 人、长期 5 年 + 维护、模块化要求？ → Symfony（罕见，但严肃企业级合理）
-├─ API 性能极致 / 微服务 / 协程？              → Hyperf（基于 Swoole，字节系 / 出海团队用）
-├─ 极简 API / 轻量？                          → Slim / Lumen（已停维护，慎用）
-└─ 接手老代码（>5 年）？                       → 极大概率是 ThinkPHP 3.x / 5.x，先识别版本
+Starting a new project
+├─ Client is a government body / outsourcing / private server / webmaster?  → ThinkPHP (ecosystem, hiring, docs all in Chinese)
+├─ Client is a startup / going overseas / integrating Stripe / international? → Laravel
+├─ Team ≥ 10 people, 5+ year maintenance horizon, strong modularity required? → Symfony (rare, but justified for serious enterprise)
+├─ Extreme API performance / microservices / coroutines?                      → Hyperf (Swoole-based; used by ByteDance-affiliated teams)
+├─ Minimal API / lightweight?                                                 → Slim / Lumen (Lumen is no longer maintained — use with caution)
+└─ Inheriting legacy code (>5 years old)?                                     → Almost certainly ThinkPHP 3.x / 5.x — identify the version first
 ```
 
-### 框架国内份额（粗略 2026）
+### Framework Market Share (approximate 2026)
 
-| 框架 | 份额 | 典型场景 |
+| Framework | Share | Typical use cases |
 |---|---|---|
-| **ThinkPHP**（TP3/5/6/8）| 第一，约 50%+ | 外包、私服、站点、企业站、CMS |
-| **Laravel** | 第二，约 25% | 创业公司、SaaS、API 平台 |
-| **Yii / Yii2** | 较少，约 5-10% | 老外包遗留、政府项目 |
-| **CodeIgniter** | 老遗留，<5% | 早期外包 |
-| **Hyperf**（Swoole）| 增长中 | 字节系、高性能 API |
-| **Symfony** | 极少，<2% | 严肃企业级 / 跨国子公司 |
+| **ThinkPHP** (TP3/5/6/8) | #1, ~50%+ | Outsourcing, private servers, websites, enterprise sites, CMS |
+| **Laravel** | #2, ~25% | Startups, SaaS, API platforms |
+| **Yii / Yii2** | Minor, ~5–10% | Legacy outsourcing, government projects |
+| **CodeIgniter** | Legacy, <5% | Early outsourcing projects |
+| **Hyperf** (Swoole) | Growing | ByteDance-affiliated teams, high-performance APIs |
+| **Symfony** | Negligible, <2% | Serious enterprise / multinational subsidiaries |
 
 ---
 
-## 5. ThinkPHP（国内第一框架）
+## 5. ThinkPHP (China's #1 Framework)
 
-> ThinkPHP 由顶想科技维护，全中文文档 https://doc.thinkphp.cn/ 。版本演化：TP3.2（古早，PHP 5.3）→ TP5（重写，2016）→ TP5.1 → TP6（2020 PHP 7.1+）→ TP8（2023 PHP 8.0+，当前主流新项目选 TP8）。
+> ThinkPHP is maintained by Top Think Technology, with fully Chinese documentation at https://doc.thinkphp.cn/. Version history: TP3.2 (legacy, PHP 5.3) → TP5 (rewrite, 2016) → TP5.1 → TP6 (2020, PHP 7.1+) → TP8 (2023, PHP 8.0+). **TP8 is the current recommended choice for new projects**.
 
-### 5.1 TP8 单应用结构
+### 5.1 TP8 Single-Application Structure
 
 ```
 project/
 ├── app/
-│   ├── controller/         控制器
+│   ├── controller/         Controllers
 │   │   └── Index.php
-│   ├── model/              模型
+│   ├── model/              Models
 │   │   └── User.php
-│   ├── service/            服务层（你自己建）
-│   ├── view/               模板
+│   ├── service/            Service layer (you create this)
+│   ├── view/               Templates
 │   ├── middleware/
-│   ├── validate/           验证器
-│   ├── command/            命令行
+│   ├── validate/           Validators
+│   ├── command/            CLI commands
 │   ├── BaseController.php
 │   ├── ExceptionHandle.php
 │   ├── Request.php
-│   └── common.php          公共函数
-├── config/                 配置（多个 php 文件）
+│   └── common.php          Shared helper functions
+├── config/                 Configuration (multiple PHP files)
 │   ├── app.php
 │   ├── database.php
 │   ├── cache.php
 │   └── route.php
 ├── route/
-│   └── app.php             路由定义
+│   └── app.php             Route definitions
 ├── public/
-│   ├── index.php           入口
+│   ├── index.php           Entry point
 │   └── static/
-├── extend/                 扩展类库（非 composer）
-├── runtime/                缓存 / 日志（必须可写）
-├── vendor/                 composer
-├── .env                    环境变量
+├── extend/                 Extension libraries (outside Composer)
+├── runtime/                Cache / logs (MUST be writable)
+├── vendor/                 Composer
+├── .env                    Environment variables
 ├── composer.json
-└── think                   命令行入口（php think run）
+└── think                   CLI entry point (php think run)
 ```
 
-### 5.2 TP8 多应用结构（更常见）
+### 5.2 TP8 Multi-Application Structure (more common)
 
-老外包 / 政企项目大量采用**多应用模式**（前台 + 后台分目录），需要安装：
+Legacy outsourcing and government/enterprise projects heavily use **multi-application mode** (separate directories for frontend and backend). Requires:
 
 ```bash
 composer require topthink/think-multi-app
@@ -229,25 +229,25 @@ composer require topthink/think-multi-app
 
 ```
 app/
-├── api/                    手机端 API 应用
+├── api/                    Mobile API application
 │   ├── controller/
 │   ├── model/
 │   └── config/
-├── admin/                  后台应用
+├── admin/                  Backend admin application
 │   ├── controller/
 │   ├── model/
 │   ├── view/
 │   └── middleware/
-└── index/                  前台应用
+└── index/                  Frontend application
     ├── controller/
     └── view/
 ```
 
-**判断单应用 / 多应用**：看 `app/` 下是否直接有 `controller/` 文件夹。有 = 单应用；没有但有子目录 = 多应用。
+**Identifying single vs. multi-application**: check whether `app/` contains a `controller/` directory directly. If yes → single-application; if it contains sub-directories instead → multi-application.
 
-可在 `config/app.php` 配域名绑定：`admin.xxx.com` → admin 应用。
+Domain-to-application binding can be configured in `config/app.php` (e.g., `admin.xxx.com` → admin application).
 
-### 5.3 TP 控制器范式
+### 5.3 TP Controller Pattern
 
 ```php
 <?php
@@ -263,7 +263,7 @@ use think\response\Json;
 class User extends BaseController
 {
     public function __construct(
-        protected UserService $userService,  // TP 自带 IoC，构造函数注入
+        protected UserService $userService,  // TP has a built-in IoC container; use constructor injection
     ) {}
 
     public function index(Request $request): Json
@@ -273,7 +273,7 @@ class User extends BaseController
         return json(['code' => 0, 'data' => $list]);
     }
 
-    // 参数自动绑定（TP 特性，路由参数 → 方法参数）
+    // Auto parameter binding (TP feature: route params → method params)
     public function read(int $id): Json
     {
         $user = $this->userService->find($id);
@@ -282,77 +282,77 @@ class User extends BaseController
 }
 ```
 
-### 5.4 TP vs Laravel 核心差异（接手项目前必知）
+### 5.4 TP vs Laravel Core Differences (must know before inheriting a project)
 
-| 维度 | ThinkPHP | Laravel |
+| Dimension | ThinkPHP | Laravel |
 |---|---|---|
-| **设计哲学** | 约定 + 灵活（"开发友好"，但易写脏代码） | 约定优于配置（强工程约束）|
-| **命名空间** | 默认 `app\controller`（小写）| `App\Http\Controllers`（PascalCase）|
-| **ORM** | TP 模型（Active Record，自带 `Db` 类）| Eloquent（Active Record）|
-| **路由** | 默认 PathInfo 自动路由（**危险，无路由也能访问**）| 必须显式定义路由 |
-| **DI 容器** | 弱（构造注入 + facade）| 强（接口自动绑定）|
-| **配置** | `.env` + `config/*.php`（多文件分散）| `.env` + `config/*.php` |
-| **模板** | 自带模板引擎（`{$var}` 风格）| Blade（`{{ $var }}`）|
-| **验证** | Validate 类 | FormRequest |
-| **中文文档** | 原生中文 | 翻译版（laravel-china.org / learnku）|
-| **生态** | 国内站长 / 外包 | 国内创业 / 国际化 |
+| **Design philosophy** | Convention + flexibility ("developer-friendly," but easy to write messy code) | Convention over configuration (strong engineering discipline) |
+| **Namespace** | Default `app\controller` (lowercase) | `App\Http\Controllers` (PascalCase) |
+| **ORM** | TP Model (Active Record, with a standalone `Db` class) | Eloquent (Active Record) |
+| **Routing** | PathInfo auto-routing by default (**dangerous — controllers are accessible without explicit routes**) | Explicit route definitions required |
+| **DI container** | Weak (constructor injection + facades) | Strong (automatic interface binding) |
+| **Configuration** | `.env` + `config/*.php` (scattered across multiple files) | `.env` + `config/*.php` |
+| **Templates** | Built-in template engine (`{$var}` style) | Blade (`{{ $var }}`) |
+| **Validation** | Validate classes | FormRequest |
+| **Chinese docs** | Native Chinese | Community translations (laravel-china.org / learnku) |
+| **Ecosystem** | Domestic webmasters / outsourcing | Domestic startups / international projects |
 
-**核心坑（TP 接手项目高频）**：
+**Common pitfalls when inheriting TP projects**:
 
-- TP 默认开**自动路由**，`/controller/method` 直接可达 → 老 TP 私服项目 admin 控制器若无鉴权中间件，**直接可访问**。审计时 grep `app/admin/controller/*` 找未鉴权方法。
-- TP 模型 `User::create($data)` 默认接受任意字段（无 `$fillable`），**批量赋值漏洞**高发。审计时看 model 是否定义 `protected $field` 白名单。
-- TP3.x / TP5.x 历史 RCE 多发（ThinkPHP 5.0.x 远程代码执行 CVE-2018-20062 / 5.1.x / 5.2.x、TP6 反序列化链）。**TP 版本是审计第一信号**。
+- TP enables **auto-routing** by default — `/controller/method` is directly accessible. In legacy private-server projects, admin controllers with no authentication middleware are **directly reachable by anyone**. During auditing, grep `app/admin/controller/*` to find unguarded methods.
+- TP's `User::create($data)` accepts any field by default (no `$fillable`), making **mass-assignment vulnerabilities** extremely common. During auditing, check whether models define a `protected $field` whitelist.
+- TP3.x / TP5.x has a history of multiple RCEs (ThinkPHP 5.0.x CVE-2018-20062, 5.1.x, 5.2.x, TP6 deserialization chains). **The TP version number is the first signal to look for during an audit**.
 
-### 5.5 TP 版本识别
+### 5.5 TP Version Identification
 
-| 文件 / 标识 | 版本 |
+| File / Indicator | Version |
 |---|---|
-| `ThinkPHP/ThinkPHP.php` + `Application/` | **TP3.x**（古早，PHP 5.3+，无 composer，安全严重落后）|
-| `thinkphp/library/think/App.php` + `application/` | **TP5.0 / 5.1**（有 composer，但目录还是大写 `Application/` 风格残留）|
-| `app/` + `think` 入口 + `composer.json` 中 `topthink/framework: ^6` | **TP6** |
-| 同上，`topthink/framework: ^8` | **TP8** |
-| `runtime/` 目录存在 | TP5+ 标志 |
-| `application/` 目录 | TP3.x / 5.x 老结构 |
+| `ThinkPHP/ThinkPHP.php` + `Application/` | **TP3.x** (legacy, PHP 5.3+, no Composer, severely outdated security) |
+| `thinkphp/library/think/App.php` + `application/` | **TP5.0 / 5.1** (has Composer, but still uses the old uppercase `Application/`-style structure) |
+| `app/` + `think` entry point + `topthink/framework: ^6` in `composer.json` | **TP6** |
+| Same as above, `topthink/framework: ^8` | **TP8** |
+| `runtime/` directory present | TP5+ indicator |
+| `application/` directory | TP3.x / 5.x legacy structure |
 
 ---
 
-## 6. Laravel（国内第二选择）
+## 6. Laravel (China's Second Choice)
 
-> Laravel 国内文档 https://learnku.com/docs/laravel / 中文社区活跃，2026 主流版本 Laravel 11 LTS。
+> Chinese Laravel documentation: https://learnku.com/docs/laravel — active community. The dominant version in 2026 is Laravel 11 LTS.
 
-### 6.1 项目结构（国内常见）
+### 6.1 Project Structure (typical in China)
 
 ```
 app/
 ├── Http/
-│   ├── Controllers/        薄控制器
-│   │   ├── Api/            API 控制器（手机 / H5）
-│   │   └── Admin/          后台控制器
-│   ├── Requests/           FormRequest（验证）
-│   ├── Resources/          API Resource（响应转换）
+│   ├── Controllers/        Thin controllers
+│   │   ├── Api/            API controllers (mobile / H5)
+│   │   └── Admin/          Backend admin controllers
+│   ├── Requests/           FormRequests (validation)
+│   ├── Resources/          API Resources (response transformation)
 │   └── Middleware/
-├── Models/                 Eloquent 模型
-├── Services/               业务逻辑（重，国内项目几乎都建这层）
-├── Repositories/           DB 访问抽象（小项目可省）
-├── DTOs/                   readonly class
+├── Models/                 Eloquent models
+├── Services/               Business logic (heavy — nearly all domestic projects add this layer)
+├── Repositories/           DB access abstraction (optional for small projects)
+├── DTOs/                   readonly classes
 ├── Events/ Listeners/
-├── Jobs/                   队列（结合 Redis / RabbitMQ）
+├── Jobs/                   Queues (with Redis / RabbitMQ)
 ├── Exceptions/
-├── Console/Commands/       artisan 命令
+├── Console/Commands/       Artisan commands
 └── Providers/
 config/
-database/migrations/        迁移
+database/migrations/        Migrations
 routes/
 ├── web.php
 ├── api.php
-└── admin.php               （国内项目常拆）
+└── admin.php               (commonly split in domestic projects)
 resources/views/            Blade
 public/
-storage/                    必须可写
+storage/                    MUST be writable
 .env
 ```
 
-### 6.2 控制器范式（必须薄）
+### 6.2 Controller Pattern (MUST be thin)
 
 ```php
 <?php
@@ -381,117 +381,117 @@ final class UserController extends Controller
 }
 ```
 
-### 6.3 国内常用 Laravel 扩展
+### 6.3 Commonly Used Laravel Packages in China
 
-| 包 | 用途 |
+| Package | Purpose |
 |---|---|
-| `dcat-admin` / `laravel-admin` | 后台脚手架（国内站长爱用）|
-| `larastan` | PHPStan 集成 |
-| `overtrue/wechat`、`yansongda/pay` | 微信 / 支付宝 SDK（国内不可绕开）|
+| `dcat-admin` / `laravel-admin` | Admin panel scaffolding (popular among domestic developers) |
+| `larastan` | PHPStan integration |
+| `overtrue/wechat`, `yansongda/pay` | WeChat / Alipay SDKs (unavoidable in China) |
 | `predis/predis` | Redis |
-| `laravel/horizon` | 队列监控 |
+| `laravel/horizon` | Queue monitoring |
 | `spatie/laravel-permission` | RBAC |
-| `barryvdh/laravel-debugbar` | 调试栏 |
+| `barryvdh/laravel-debugbar` | Debug toolbar |
 
 ---
 
-## 7. Symfony（国内份额低，简略）
+## 7. Symfony (Low domestic share — brief overview)
 
-国内份额 <2%，仅在严肃企业（多为跨国公司 / 严格工程化要求）出现。结构与设计哲学：
+Domestic market share is <2%, appearing mainly in serious enterprises (typically multinationals or companies with strict engineering requirements). Structure and design philosophy:
 
 ```
 src/
-├── Controller/             控制器
-├── Entity/                 Doctrine 实体（Data Mapper，不是 Active Record）
-├── Repository/             Doctrine repository
-├── Service/                业务服务
-├── Form/                   表单类型
-├── Security/               认证授权
+├── Controller/             Controllers
+├── Entity/                 Doctrine entities (Data Mapper — not Active Record)
+├── Repository/             Doctrine repositories
+├── Service/                Business services
+├── Form/                   Form types
+├── Security/               Authentication and authorization
 ├── EventListener/
 └── Kernel.php
-config/services.yaml        服务定义（DI 容器配置）
+config/services.yaml        Service definitions (DI container configuration)
 ```
 
-**与 Laravel/TP 对比**：
+**Compared to Laravel / TP**:
 
-- Doctrine **Data Mapper**（实体不知道自己怎么持久化），与 Eloquent / TP Model 的 Active Record 是两个世界
-- 强 DI，所有依赖必须显式声明
-- 没有 facade、没有自动路由 magic
-- 学习曲线陡，国内招聘难
-- **接手 Symfony 项目通常意味着团队有海外背景或被收购的国内子公司**
+- Doctrine uses the **Data Mapper** pattern (entities have no knowledge of how they are persisted) — a completely different world from Eloquent / TP Model's Active Record
+- Strong DI — all dependencies must be explicitly declared
+- No facades, no auto-routing magic
+- Steep learning curve; hard to hire for in China
+- **Inheriting a Symfony project usually means the team has an overseas background, or the company is a domestic subsidiary acquired by a multinational**
 
 ---
 
-## 8. Hyperf（基于 Swoole 的高性能选择）
+## 8. Hyperf (High-Performance Choice Built on Swoole)
 
-国内增长中，字节系 / 出海团队用。基于 Swoole 协程，**常驻进程**（不是传统 PHP-FPM 请求即销毁模型），需要**注意全局状态污染**。
+Gaining traction in China among ByteDance-affiliated and overseas-facing teams. Built on Swoole coroutines and uses a **persistent process model** (not traditional PHP-FPM's request-and-destroy lifecycle). You MUST **watch for global state contamination**.
 
 ```
 app/
 ├── Controller/
 ├── Service/
 ├── Model/                  Hyperf DB
-├── Process/                常驻进程
+├── Process/                Persistent processes
 ├── Listener/
 └── Middleware/
 ```
 
-**接手 Hyperf 项目注意**：
+**When inheriting a Hyperf project**:
 
-- 不要在 controller / service 写 `static` 缓存（请求间会污染）
-- ORM 模型属性会跨请求复用，赋值后要 `unset` 或新建实例
-- 使用协程上下文：`Hyperf\Utils\Context` 保存请求级数据
-
----
-
-## 9. 设计模式（PHP 国内项目视角）
-
-| 模式 | 何时用 |
-|---|---|
-| **Service Layer**（业务层）| ★国内项目几乎必建。controller 太薄，model 太脏，业务塞 service |
-| **Repository** | DB 切换需求（如多数据源、读写分离手控）|
-| **DTO**（readonly class）| 跨层数据传递。**禁止**直接把 Eloquent / TP Model 当响应返回 |
-| **FormRequest / Validate** | 请求验证集中处理 |
-| **Resource / Transformer** | 响应字段过滤（防字段泄漏）|
-| **Event / Listener** | 解耦副作用（订单创建后发短信、记日志、推送）|
-| **Job / Queue** | 异步处理（导出、批量、第三方接口调用、推送）|
-| **Facade**（仅 Laravel）| 全局便捷调用，但难 mock，新代码尽量构造注入 |
-| **Trait** | 复用切面（如 `SoftDelete`、`HasTimestamps`）|
+- NEVER use `static` variables as caches inside controllers / services — they persist across requests and will contaminate state
+- ORM model properties are reused across requests; after assignment, `unset` them or create new instances
+- Use coroutine context (`Hyperf\Utils\Context`) to store per-request data
 
 ---
 
-## 10. 微信 / 支付 / 国内特化场景（必读）
+## 9. Design Patterns (Domestic PHP Project Perspective)
 
-> **国内 PHP 大半项目都会触碰这块**：公众号、小程序、扫码支付、H5 支付、银联、APP 内支付回调。本节集中讲安全要点。
-
-### 10.1 微信公众号 / 小程序生态
-
-| 场景 | 推荐 SDK |
+| Pattern | When to use |
 |---|---|
-| 公众号 + 小程序 + 企业微信 | `w7corp/easywechat`（国内事实标准，原 `overtrue/wechat`） |
-| 微信支付 v3 | `wechatpay/wechatpay`（官方）或 `yansongda/pay`（社区，更易用）|
-| 支付宝 | `alipaysdk/easysdk` 或 `yansongda/pay` |
-| 银联 | 银联官方 SDK（较少更新，建议封装薄层）|
+| **Service Layer** | ★ Nearly universal in domestic projects. Keeps controllers thin and models clean; business logic belongs in services |
+| **Repository** | When you need DB-switching flexibility (e.g., multiple data sources, manual read/write splitting) |
+| **DTO** (readonly class) | Cross-layer data transfer. **NEVER** return Eloquent / TP Model instances directly as responses |
+| **FormRequest / Validate** | Centralized request validation |
+| **Resource / Transformer** | Response field filtering (prevents field leaks) |
+| **Event / Listener** | Decoupling side effects (send SMS after order creation, logging, push notifications) |
+| **Job / Queue** | Async processing (exports, bulk operations, third-party API calls, push notifications) |
+| **Facade** (Laravel only) | Global convenience access — but hard to mock; prefer constructor injection in new code |
+| **Trait** | Cross-cutting reuse (e.g., `SoftDelete`, `HasTimestamps`) |
 
-### 10.2 微信支付回调（notify_url）安全要点
+---
 
-**这是国内 PHP 漏洞 Top 1 场景**。常见漏洞模式：
+## 10. WeChat / Payment / China-Specific Scenarios (Required Reading)
+
+> **The majority of domestic PHP projects will touch this area**: Official Accounts, Mini Programs, QR code payments, H5 payments, UnionPay, in-app payment callbacks. This section focuses on security-critical points.
+
+### 10.1 WeChat Official Account / Mini Program Ecosystem
+
+| Scenario | Recommended SDK |
+|---|---|
+| Official Account + Mini Program + WeCom | `w7corp/easywechat` (the de facto standard in China; formerly `overtrue/wechat`) |
+| WeChat Pay v3 | `wechatpay/wechatpay` (official) or `yansongda/pay` (community; easier to use) |
+| Alipay | `alipaysdk/easysdk` or `yansongda/pay` |
+| UnionPay | Official UnionPay SDK (infrequently updated — wrap it in a thin abstraction layer) |
+
+### 10.2 WeChat Pay Callback (notify_url) Security
+
+**This is the #1 vulnerability scenario in domestic PHP.** Common anti-patterns:
 
 ```php
-// ❌ 国内私服 / 外包高频反模式：完全没验签
+// ❌ High-frequency anti-pattern in domestic private servers / outsourced code: no signature verification at all
 public function notify()
 {
     $data = $_POST;
     if ($data['result_code'] === 'SUCCESS') {
-        // 充值！加金币！
+        // Recharge! Add coins!
         Db::table('user')->where('id', $data['attach'])
-            ->inc('coin', $data['total_fee']);   // ← 任何人 POST 就能加金币
+            ->inc('coin', $data['total_fee']);   // ← anyone can POST and get coins
     }
     echo 'success';
 }
 ```
 
-**正确写法（微信支付 v3，APIv3 密钥 + 平台证书）**：
+**Correct implementation (WeChat Pay v3, APIv3 key + platform certificate)**:
 
 ```php
 <?php
@@ -504,28 +504,28 @@ use WeChatPay\Crypto\Rsa;
 
 public function wechatNotify(): \think\Response
 {
-    // 1. 取头部签名信息
+    // 1. Extract signature headers
     $timestamp = $_SERVER['HTTP_WECHATPAY_TIMESTAMP'] ?? '';
     $nonce     = $_SERVER['HTTP_WECHATPAY_NONCE']     ?? '';
     $signature = $_SERVER['HTTP_WECHATPAY_SIGNATURE'] ?? '';
     $serial    = $_SERVER['HTTP_WECHATPAY_SERIAL']    ?? '';
 
-    // 2. 取原始 body（必须 php://input，不是 $_POST）
+    // 2. Read raw body (MUST use php://input, not $_POST)
     $body = file_get_contents('php://input');
 
-    // 3. 防重放：时间戳偏移 ±5 分钟
+    // 3. Replay protection: timestamp must be within ±5 minutes
     if (abs(time() - (int) $timestamp) > 300) {
         return response('replay', 400);
     }
 
-    // 4. 用微信平台证书公钥验签（serial 决定用哪张证书）
+    // 4. Verify signature using the WeChat platform certificate public key (serial determines which cert to use)
     $verifyMsg = "$timestamp\n$nonce\n$body\n";
     $publicKey = $this->loadPlatformCert($serial);
     if (!Rsa::verify($verifyMsg, $signature, $publicKey)) {
         return response('sign fail', 401);
     }
 
-    // 5. 解密 resource（AES-GCM，用 APIv3 密钥）
+    // 5. Decrypt the resource (AES-GCM using the APIv3 key)
     $payload = json_decode($body, true);
     $plain = AesGcm::decrypt(
         $payload['resource']['ciphertext'],
@@ -535,360 +535,360 @@ public function wechatNotify(): \think\Response
     );
     $order = json_decode($plain, true);
 
-    // 6. ★ 幂等：DB 唯一键约束 + 状态检查
+    // 6. ★ Idempotency: DB unique-key constraint + status check
     $localOrder = Db::table('orders')->where('out_trade_no', $order['out_trade_no'])->find();
     if (!$localOrder || $localOrder['status'] !== 'pending') {
-        return response('success', 200);    // 已处理过，幂等返回成功
+        return response('success', 200);    // Already processed — return success idempotently
     }
 
-    // 7. ★ 金额校验：必须用本地订单金额，不能信回调金额
+    // 7. ★ Amount verification: MUST use the local order amount — NEVER trust the callback amount
     if ((int) $localOrder['total_fee'] !== (int) $order['amount']['total']) {
         return response('amount mismatch', 400);
     }
 
-    // 8. 事务里改订单状态 + 发货
+    // 8. Update order status + fulfill in a transaction
     Db::transaction(function () use ($localOrder, $order) {
         Db::table('orders')->where('id', $localOrder['id'])
-            ->where('status', 'pending')   // ← 乐观锁
+            ->where('status', 'pending')   // ← optimistic lock
             ->update(['status' => 'paid', 'paid_at' => date('Y-m-d H:i:s')]);
-        // 发货 / 加金币 / 发卡密
+        // Fulfill: ship item / add coins / deliver card key
     });
 
     return response('success', 200);
 }
 ```
 
-**国内私服 / 外包 PHP 支付回调审计 checklist**：
+**Payment callback audit checklist for domestic private servers / outsourced PHP**:
 
-| 检查点 | 漏洞名 |
+| Check | Vulnerability |
 |---|---|
-| 是否验签？ | 伪造充值（直接 POST `result_code=SUCCESS`）|
-| 验签是否用原始 body（`php://input`）？ | 用 `$_POST` 会被 PHP 重排导致验签失败，或被绕 |
-| 是否校验金额 = 本地订单金额？ | 1 元充 1000 金币 |
-| 是否幂等（同 `out_trade_no` 二次回调）？ | 同笔订单充多次 |
-| 是否校验 `out_trade_no` 属于本商户？ | 跨商户订单冒用 |
-| 是否乐观锁 / 行锁防并发？ | 并发回调充两份 |
-| 是否记录原始回调日志？ | 出问题无法回放 |
-| `notify_url` 是否暴露在 `routes/api.php` 且**不在 csrf 排除外**？ | Laravel 默认 web 路由有 csrf，会拒绝回调 → 必须放 api.php |
-| 是否处理 XXE？（老版 v2 XML 接口）| XXE 读文件 |
+| Is the signature verified? | Forged recharge (direct POST with `result_code=SUCCESS`) |
+| Is verification done against the raw body (`php://input`)? | Using `$_POST` allows PHP to reorder params, breaking or bypassing signature verification |
+| Is the amount compared against the local order amount? | ¥1 purchase credits ¥1000 worth of coins |
+| Is the callback idempotent (same `out_trade_no` delivered twice)? | Same order credited multiple times |
+| Is `out_trade_no` verified to belong to this merchant? | Cross-merchant order impersonation |
+| Is there an optimistic or row lock to prevent concurrent callbacks? | Concurrent delivery of two credits for one order |
+| Are raw callback payloads logged? | No ability to replay or investigate incidents |
+| Is `notify_url` in `routes/api.php` and explicitly **excluded from CSRF**? | Laravel's default web routes have CSRF — callbacks will be rejected unless placed in `api.php` |
+| Is XXE handled? (legacy v2 XML interface) | XXE file read |
 
-详见微信支付官方安全实践 https://pay.weixin.qq.com/doc/v2/merchant/4014394306 。
+See WeChat Pay official security practices: https://pay.weixin.qq.com/doc/v2/merchant/4014394306
 
-### 10.3 支付宝回调
+### 10.3 Alipay Callback
 
-支付宝 notify 用 RSA 公钥验签 + 商户应用私钥加密：
+Alipay notify uses RSA public key signature verification + merchant application private key encryption:
 
 ```php
-// 验签（同步异步通用）
+// Signature verification (works for both sync and async callbacks)
 $alipayPublicKey = config('alipay.alipay_public_key');
 $verifyResult = AlipaySdkHelper::rsaCheckV1($_POST, $alipayPublicKey, 'RSA2');
 if (!$verifyResult) {
     exit('fail');
 }
 
-// 之后同样：金额校验 + 幂等 + 状态检查
+// After verification: same requirements apply — amount check + idempotency + status check
 ```
 
-### 10.4 微信 H5 / JSSDK / 小程序登录
+### 10.4 WeChat H5 / JSSDK / Mini Program Login
 
-- `code2session` 换 `openid` / `session_key` → 国内私服后台用户体系一律 `openid` 作为唯一身份
-- **`session_key` 不能下发到前端**，老外包代码这条 90% 踩
-- 解密 `encryptedData`（手机号、unionId）用 AES-128-CBC + `session_key`
+- `code2session` exchanges code for `openid` / `session_key` — domestic private-server user systems universally use `openid` as the primary identity
+- **`session_key` MUST NEVER be sent to the frontend** — roughly 90% of legacy outsourced code gets this wrong
+- Decrypt `encryptedData` (phone number, unionId) using AES-128-CBC with `session_key`
 
 ---
 
-## 11. 国内 PHP 部署环境（必懂）
+## 11. PHP Deployment Environments in China (Essential Knowledge)
 
-国内 PHP 部署 80% 以上用**宝塔面板**，剩余分布在 Docker / 手工 LNMP / 虚拟主机：
+Over 80% of Chinese PHP deployments use **Baota Panel**; the rest are spread across Docker, manual LNMP setups, and shared hosting:
 
-| 场景 | 特征 | 审计 / 维护要点 |
+| Scenario | Characteristics | Audit / maintenance notes |
 |---|---|---|
-| **宝塔面板** | `/www/wwwroot/<domain>/`，`/www/server/nginx/`，`/www/server/php/74/` 多版本并存 | 默认 8888 端口，弱口令 / 已知 CVE 高发；备份在 `/www/backup/` |
-| **手工 LNMP** | `/etc/nginx/`、`/etc/php/7.4/fpm/`、socket 在 `/run/php/` | 配置较散，需 grep |
-| **Docker** | `docker-compose.yml` + 多 service | 较规范 |
-| **共享虚拟主机**（万网 / 阿里云轻量旧版 / 西部数码）| PHP 5.6 / 7.0 + Apache + 无 SSH | 老外包 / 个人小站 |
-| **Windows + IIS + PHP** | 政府 / 教育系统遗留 | `.htaccess` 无效，注意 `web.config` |
+| **Baota Panel** | `/www/wwwroot/<domain>/`, `/www/server/nginx/`, `/www/server/php/74/` (multiple PHP versions coexist) | Default port 8888; weak credentials and known CVEs are common; backups at `/www/backup/` |
+| **Manual LNMP** | `/etc/nginx/`, `/etc/php/7.4/fpm/`, socket at `/run/php/` | Config scattered; requires grep to navigate |
+| **Docker** | `docker-compose.yml` + multiple services | Generally more structured |
+| **Shared hosting** (Aliyun / West.cn / legacy platforms) | PHP 5.6 / 7.0 + Apache, no SSH access | Legacy outsourcing / personal sites |
+| **Windows + IIS + PHP** | Government / education legacy systems | `.htaccess` is ineffective; check `web.config` |
 
-**部署相关安全要点**：
+**Deployment-related security points**:
 
-- 宝塔默认 `phpinfo.php` 在 `/phpinfo.php` 暴露
-- 宝塔旧版本 `/pma`（phpMyAdmin）软链接默认开启
-- 老外包项目根目录常有 `phpinfo.php` / `info.php` / `test.php` / `1.php` 遗留
-- 备份文件常在网站根目录：`*.sql`、`*.zip`、`*.tar.gz`、`backup_*`、`bak/`、`old/`、`www.zip`
-- `.git/` 目录暴露（部署直接 git pull 不删 `.git`）→ 用 `GitTools` 还原源码
+- Baota's default `phpinfo.php` at `/phpinfo.php` is exposed publicly
+- Older Baota versions expose a `/pma` (phpMyAdmin) symlink by default
+- Legacy outsourced projects commonly leave `phpinfo.php` / `info.php` / `test.php` / `1.php` in the web root
+- Backup files are often in the site root: `*.sql`, `*.zip`, `*.tar.gz`, `backup_*`, `bak/`, `old/`, `www.zip`
+- `.git/` directory exposure (deployed with `git pull` without removing `.git/`) — use `GitTools` to reconstruct source code
 
-## 12. 国内 PHP 大厂 / 历史遗产
+## 12. Domestic PHP Giants / Historical Legacy
 
-| 公司 / 产品 | PHP 痕迹 |
+| Company / Product | PHP Footprint |
 |---|---|
-| **新浪微博**（早期）| 早期重度 PHP，后转 Java + Go，留下大量 PHP 遗产 |
-| **百度文库 / 百度知道**（早期）| PHP + 自研框架（odp） |
-| **58 同城 / 赶集**（早期）| PHP |
-| **去哪儿网**（早期）| PHP，后多语言 |
-| **微博部分服务** | Yaf（鸟哥扩展 C-PHP 框架） |
-| **腾讯部分内部服务** | PHP（早期 QQ 空间） |
+| **Sina Weibo** (early) | Heavy PHP usage early on; later migrated to Java + Go, leaving a large PHP legacy |
+| **Baidu Wenku / Baidu Zhidao** (early) | PHP + in-house framework (odp) |
+| **58.com / Ganji** (early) | PHP |
+| **Qunar** (early) | PHP, later polyglot |
+| **Weibo (some services)** | Yaf (a C-extension PHP framework by Laruence) |
+| **Tencent (some internal services)** | PHP (early QQ Space) |
 
-**审计 / 重写老遗产代码常见框架**：
+**Frameworks commonly seen when auditing / rewriting legacy codebases**:
 
-- **Yaf**（鸟哥）—— C 写的 PHP 扩展框架，性能高，社区小，文档少
-- **CodeIgniter**（CI）—— 早期国内外包标配，简单粗暴，已停维护
-- **自研 MVC**—— 大厂早期项目，结构因团队而异
+- **Yaf** (by Laruence) — a C-extension PHP framework; high performance, small community, sparse documentation
+- **CodeIgniter** (CI) — the standard for early domestic outsourcing; simple and direct; no longer maintained
+- **Custom MVC** — large companies' early projects; structure varies by team
 
 ---
 
-# 第二部分：国内老 PHP 代码识别（审计辅助）
+# Part 2: Identifying Legacy Domestic PHP Code (Audit Assistance)
 
-## 13. 拿到陌生 PHP 源码包的快速判型
+## 13. Quick Fingerprinting When You Receive an Unknown PHP Source Package
 
-**第一刻不要急着读代码，先指纹识别**。命令清单：
+**Do not rush to read code first — fingerprint the project**. Command checklist:
 
 ```bash
-# 1. 看根目录文件
+# 1. Check root directory contents
 ls -la
 
-# 2. 看是否有 composer
+# 2. Check for Composer
 test -f composer.json && cat composer.json | head -20
 
-# 3. 找框架特征
+# 3. Find framework indicators
 find . -maxdepth 3 -name 'think' -o -name 'artisan' -o -name 'index.php' | head
 
-# 4. 找入口
+# 4. Find entry points
 grep -rn '<?php' --include='index.php' --include='admin.php' . | head
 
-# 5. 找老函数残留（PHP 5 信号）
+# 5. Find legacy function usage (PHP 5 signals)
 grep -rn 'mysql_query\|mysql_connect\|magic_quotes\|register_globals' . | head -20
 
-# 6. 找后门信号
+# 6. Find backdoor signals
 grep -rn 'eval(\$_\|eval(base64_\|assert(\$_\|preg_replace.*\/e' . | head
 
-# 7. 找 CMS 特征文件
+# 7. Find CMS indicator files
 ls plus/ data/ dede/ 2>/dev/null      # DEDECMS
 ls api/ phpcms/ caches/ 2>/dev/null   # PHPCMS
 ls source/ upload/ template/ 2>/dev/null  # Discuz
 ```
 
-## 14. 国内主流老 CMS 识别表
+## 14. Identification Table for Major Legacy CMS Platforms in China
 
-| CMS | 特征目录 / 文件 | 默认后台 | 典型漏洞历史 |
+| CMS | Indicator directories / files | Default admin path | Notable vulnerability history |
 |---|---|---|---|
-| **DEDECMS / 织梦** | `plus/`、`include/`、`dede/`、`data/common.inc.php`、`uploads/`、`a/`（伪静态生成）| `/dede/` | **国内漏洞冠军**：tpl.php 后台 RCE、`plus/recommend.php` SQLi、`plus/search.php` SQLi、CVE-2018-20129 前台文件上传、CVE-2019-8362、CVE-2023-2928 文件包含、CVE-2025-6335 dedetag.class.php RCE、`member/uploads_edit.php` 变量覆盖、album zip 上传绕扩展名 |
-| **PHPCMS** | `phpcms/`、`api/`、`caches/`、`statics/`、`index.php?m=xxx&c=xxx&a=xxx` URL 模式 | `/index.php?m=admin` | v9 `api.php?op=swfupload_json` 上传、`flash_upload.php` 任意文件上传、authkey 泄漏、SQL 注入多发 |
-| **Discuz!** | `source/`、`uc_server/`、`uc_client/`、`template/`、`config/config_global.php`、`data/cache/` | `/admin.php` | Discuz X3.x 多版本 SQL / SSRF；UC_KEY 泄漏导致全站接管；`forum.php?mod=ajax&action=downremoteimg` SSRF；前台插件多漏洞 |
-| **ECShop** | `admin/`、`api/`、`includes/`、`themes/`、`data/`、`upload/`、`api/client/includes/lib_api.php` | `/admin/` | ECShop 2.x / 3.x `user.php` 注入 + RCE（参数 referer 反序列化 → eval）—— 国内站长服务器沦陷 Top 漏洞 |
-| **帝国 CMS（Empire CMS）** | `e/`、`d/`、`e/admin/`、`e/data/`、`e/class/connect.php` | `/e/admin/` | 后台 sql 注入、模板编辑 RCE |
-| **Z-BlogPHP** | `zb_system/`、`zb_users/` | `/zb_system/login.php` | 较少 |
-| **Typecho** | `var/`、`usr/`、`config.inc.php` | `/admin/` | install.php 反序列化 RCE（CVE-2017-XXXX）|
-| **ShopEx / ECStore** | `app/`、`cache/`、`config/` | `/shopadmin/` | 已停维护，老站常见 |
-| **MetInfo（米拓）** | `admin/`、`include/`、`message/`、`feedback/` | `/admin/` | SQL 注入、文件包含多发 |
-| **CmsEasy（易通）** | `admin/`、`lib/`、`celive/`、`template/` | `/admin/` | 多版本 RCE、SQL 注入 |
-| **PHPWind** | `wind/`、`u/`、`bbs/` | 已停维护 | 论坛遗留 |
+| **DEDECMS / DedeCMS** | `plus/`, `include/`, `dede/`, `data/common.inc.php`, `uploads/`, `a/` (static page generation) | `/dede/` | **China's most-exploited CMS**: `tpl.php` backend RCE, `plus/recommend.php` SQLi, `plus/search.php` SQLi, CVE-2018-20129 front-end file upload, CVE-2019-8362, CVE-2023-2928 file inclusion, CVE-2025-6335 dedetag.class.php RCE, `member/uploads_edit.php` variable overwrite, album zip upload extension bypass |
+| **PHPCMS** | `phpcms/`, `api/`, `caches/`, `statics/`, URL pattern `index.php?m=xxx&c=xxx&a=xxx` | `/index.php?m=admin` | v9 `api.php?op=swfupload_json` upload, `flash_upload.php` arbitrary file upload, authkey leakage, multiple SQL injections |
+| **Discuz!** | `source/`, `uc_server/`, `uc_client/`, `template/`, `config/config_global.php`, `data/cache/` | `/admin.php` | Multiple SQL / SSRF in Discuz X3.x; UC_KEY leakage leading to full-site compromise; `forum.php?mod=ajax&action=downremoteimg` SSRF; multiple plugin vulnerabilities |
+| **ECShop** | `admin/`, `api/`, `includes/`, `themes/`, `data/`, `upload/`, `api/client/includes/lib_api.php` | `/admin/` | ECShop 2.x / 3.x `user.php` injection + RCE (referer parameter deserialization → eval) — a top cause of domestic webmaster server compromise |
+| **Empire CMS** | `e/`, `d/`, `e/admin/`, `e/data/`, `e/class/connect.php` | `/e/admin/` | Backend SQL injection, template editor RCE |
+| **Z-BlogPHP** | `zb_system/`, `zb_users/` | `/zb_system/login.php` | Rare |
+| **Typecho** | `var/`, `usr/`, `config.inc.php` | `/admin/` | `install.php` deserialization RCE (CVE-2017-XXXX) |
+| **ShopEx / ECStore** | `app/`, `cache/`, `config/` | `/shopadmin/` | No longer maintained; common in old sites |
+| **MetInfo** | `admin/`, `include/`, `message/`, `feedback/` | `/admin/` | Multiple SQL injections, file inclusion |
+| **CmsEasy** | `admin/`, `lib/`, `celive/`, `template/` | `/admin/` | Multiple RCEs, SQL injections across versions |
+| **PHPWind** | `wind/`, `u/`, `bbs/` | No longer maintained | Legacy forum |
 
-### 14.1 DEDECMS / 织梦 重点说明
+### 14.1 DEDECMS / DedeCMS — Extended Notes
 
-**国内 PHP 漏洞王者**。织梦官方早期免费爆发，2017 年改商用 5800/年后大量站长拒不付费，导致**漏洞修复停滞**。2026 年仍有大量政府 / 教育 / 中小企业站点跑在 5.7 SP2 上。
+**The king of PHP vulnerabilities in China.** The original free distribution caused widespread adoption, but when the vendor switched to a paid license (¥5,800/year) in 2017, most site owners refused to pay, causing **security patches to stall**. As of 2026, a large number of government, education, and small-enterprise sites are still running DEDECMS 5.7 SP2.
 
-**指纹**：
+**Fingerprints**:
 
-- 根目录有 `plus/`（前台动态脚本）+ `include/`（核心库）+ `dede/`（后台，目录名可改）
-- `data/common.inc.php` 存 DB 凭据
-- `member/` 会员中心
-- 模板在 `templets/`
-- URL 常含 `?aid=` / `?tid=`
-- 页面底部 powered by dedecms 或类似
+- Root contains `plus/` (front-end dynamic scripts) + `include/` (core library) + `dede/` (backend — directory name can be changed)
+- `data/common.inc.php` contains DB credentials
+- `member/` is the member center
+- Templates are in `templets/`
+- URLs often contain `?aid=` / `?tid=`
+- Page footer shows "Powered by DedeCMS" or similar
 
-**审计入口**：
+**Audit entry points**:
 
-1. `plus/*.php` —— 前台动态脚本，**变量覆盖漏洞高发**（`extract` / `$$var` / `parse_str`）
-2. `member/*.php` —— 会员中心，会员可注册后利用
-3. `dede/tpl.php` —— 后台模板，能 getshell（鉴权后）
-4. `data/` —— 缓存 / 备份，常含敏感 `*.bak` / `mysql_*.txt`
-5. `uploads/` —— 上传目录，看是否能解析 PHP
+1. `plus/*.php` — front-end dynamic scripts; **variable-overwrite vulnerabilities are extremely common** (`extract` / `$$var` / `parse_str`)
+2. `member/*.php` — member center; exploitable after user registration
+3. `dede/tpl.php` — backend template editor; can get a shell (post-authentication)
+4. `data/` — cache / backups; often contains sensitive `*.bak` / `mysql_*.txt` files
+5. `uploads/` — upload directory; check whether PHP execution is possible
 
-详细漏洞复现见 https://xz.aliyun.com/t/9705 。
+Detailed vulnerability reproduction: https://xz.aliyun.com/t/9705
 
-### 14.2 老 ThinkPHP（3.x / 5.x）
+### 14.2 Legacy ThinkPHP (3.x / 5.x)
 
-老 TP 框架本身漏洞同样致命：
+The framework itself has critical vulnerabilities:
 
-| TP 版本 | 历史 RCE | 验证方式 |
+| TP Version | Historical RCE | Verification method |
 |---|---|---|
-| TP 3.2.3 | `index.php?m=Home&c=Index&a=index&value[_method]=__construct&method[]=*&filter[]=system&server[]=id` 类构造 | 看是否 `application/` + `ThinkPHP/Library/Think/` |
-| TP 5.0.x | CVE-2018-20062 `?s=/Index/\think\app/invokefunction&function=call_user_func_array&vars[0]=phpinfo&vars[1][]=1` | `composer.json` topthink/framework 5.0.* |
-| TP 5.1.x | 类似 invokefunction | 5.1.* |
-| TP 5.2 / 6.0 早期 | 反序列化链 | 6.0.x |
+| TP 3.2.3 | `index.php?m=Home&c=Index&a=index&value[_method]=__construct&method[]=*&filter[]=system&server[]=id` constructor chain | Check for `application/` + `ThinkPHP/Library/Think/` |
+| TP 5.0.x | CVE-2018-20062 `?s=/Index/\think\app/invokefunction&function=call_user_func_array&vars[0]=phpinfo&vars[1][]=1` | `composer.json` shows `topthink/framework 5.0.*` |
+| TP 5.1.x | Similar invokefunction vector | `5.1.*` |
+| TP 5.2 / 6.0 early | Deserialization chains | `6.0.x` |
 
-**接手老 TP 项目第一件事**：确认 `composer.json` 中 `topthink/framework` 版本 + `composer.lock` 实际锁定版本 + `vendor/topthink/framework/src/think/App.php` 文件头注释版本。三处对不上 = 项目被人改过。
+**The first thing to do when inheriting a legacy TP project**: confirm the `topthink/framework` version in `composer.json`, the actual locked version in `composer.lock`, and the version in the header comment of `vendor/topthink/framework/src/think/App.php`. If the three disagree, the project has been tampered with.
 
-### 14.3 国内私服 PHP 后台（典型源码包风格）
+### 14.3 Domestic Private-Server PHP Backends (Typical Source Package Style)
 
-国内传奇 / 奇迹 MU / 跑跑卡丁车 / 冒险岛 / 完美世界私服**充值站 / GM 后台**，特征：
+Chinese private servers for games like Legend, Miracle MU, KartRider, MapleStory, and Perfect World — their **recharge sites / GM backends** share common characteristics:
 
-- 多用**散文件 PHP**（非框架），或 TP3 / CodeIgniter
-- 目录结构粗暴：`pay/`、`gm/`、`admin/`、`api/`、`include/db.php`
-- 数据库账号硬编码，常 root + 弱密码 / 空密码
-- 充值回调几乎不验签 / 不校验金额
-- GM 后台常无鉴权或硬编码后门账号 `admin/admin`、`gm/123456`
-- 充值卡密表 `card_password`、`pay_log`、`gm_log` 命名直白
-- 常带 `phpinfo.php`、`info.php`、`shell.php`、`1.php`、`x.php`
+- Most use **loose PHP files** (no framework), or TP3 / CodeIgniter
+- Crude directory structure: `pay/`, `gm/`, `admin/`, `api/`, `include/db.php`
+- Database credentials hardcoded; commonly `root` + weak or empty password
+- Payment callbacks almost always lack signature verification and amount validation
+- GM backends often have no authentication, or hardcoded backdoor credentials like `admin/admin`, `gm/123456`
+- Recharge tables are named obviously: `card_password`, `pay_log`, `gm_log`
+- Commonly include `phpinfo.php`, `info.php`, `shell.php`, `1.php`, `x.php`
 
-**审计入口顺序**（私服后台）：
+**Audit entry point order (private-server backends)**:
 
-1. `include/config.php` / `db.php` / `inc/conn.php` → DB 凭据、API key、第三方平台密钥
-2. `pay/*_notify.php` / `pay/notify_*.php` / `recharge.php` → 充值回调，验签 / 重放 / 金额绕过
-3. `admin/` / `gm/` / `manage/` → GM 后台，鉴权绕过 + SQLi + 任意文件上传
-4. `api/` → 玩家接口，物品操作 / 鉴权 / 越权
-5. 根目录散 `.php` → 调试 / 后门 / 备份文件
-6. `upload/` / `uploads/` / `attached/` → 看是否能解析 PHP（Nginx 配置 `location ~ \.php$` 是否包含上传目录）
+1. `include/config.php` / `db.php` / `inc/conn.php` → DB credentials, API keys, third-party platform secrets
+2. `pay/*_notify.php` / `pay/notify_*.php` / `recharge.php` → payment callbacks: signature verification / replay / amount bypass
+3. `admin/` / `gm/` / `manage/` → GM backend: auth bypass + SQLi + arbitrary file upload
+4. `api/` → player endpoints: item operations / auth / horizontal privilege escalation
+5. Loose `.php` files in root → debug / backdoor / backup files
+6. `upload/` / `uploads/` / `attached/` → check whether PHP execution is possible (does `location ~ \.php$` in Nginx config cover the upload directory?)
 
-**与本 skill 联动**：私服业务逻辑漏洞（刷物品、刷币、注入 GM 命令）见 `~/.claude/skills/ctf-game/references/server-audit.md`，本文件只覆盖 PHP 工程化和通用 Web 漏洞模式。
+**Integration with this skill set**: Private-server business logic vulnerabilities (item duplication, currency farming, injecting GM commands) are covered in `~/.claude/skills/ctf-game/references/server-audit.md`. This file covers PHP engineering standards and general web vulnerability patterns only.
 
-## 15. 老 PHP 代码"信号灯"对照表
+## 15. Legacy PHP Code "Signal Light" Reference Table
 
-拿到一份未知 PHP 源码包，**第一时间 grep 这些信号**判断年代和质量：
+When you receive an unknown PHP source package, **grep for these signals immediately** to assess its age and quality:
 
-| 信号 | 推断 | 风险 |
+| Signal | Inference | Risk |
 |---|---|---|
-| `mysql_query()` / `mysql_connect()` | PHP 5 时代（mysql_* PHP 7 已移除）| SQLi 极高 |
-| `mysqli_query($conn, $sql)` + 字符串拼接 | PHP 5.x，未用 prepared | SQLi 高 |
-| `mssql_query` / `mssql_*` | 上古时代 SQL Server 接口 | 全面停用 |
-| `register_globals = On` | PHP < 5.4 | 变量覆盖 |
-| `magic_quotes_gpc = On` | PHP < 5.4 | 输入过滤错觉 |
-| 无 `namespace` 声明 | 老代码 / 散文件 | 全局污染 |
-| `require_once '../config.php'` 频繁 | 平铺项目，无 autoload | 路径攻击 |
-| 直接 `$_GET[...]` 拼 SQL | 私服重灾区 | SQLi |
-| `eval(`, `assert(`, `create_function(` | 后门或动态执行 | RCE |
-| `base64_decode(` + `eval(` | 经典后门模式 | RCE |
-| `preg_replace('/.../e', ...)` | e 修饰符已废弃，是 RCE 入口 | RCE |
-| `extract($_GET)` / `extract($_POST)` | 变量提取 | 任意变量覆盖 |
-| `parse_str($_GET['x'])` | 变量注入 | 同上 |
-| `$$var = ...` 双美元 | 变量变量 | 覆盖任意变量 |
-| `include $_GET['file']` | 文件包含 | LFI / RFI |
-| `file_put_contents(..., $_POST[...])` | 任意写入 | 任意文件写 / getshell |
-| `system($_GET[...])` / `exec(` / 拼接 | 命令执行 | RCE |
-| `unserialize($_COOKIE[...])` / `$_POST[...]` | 反序列化点 | POP 链 RCE |
-| `mt_rand()` / `rand()` 做 token / 密码 | 非密码学安全 | 预测攻击 |
-| `md5($password)` 不加 salt | 老式哈希 | 彩虹表 |
-| `md5($password . SALT)` 固定 salt | 弱 | 仍可彩虹表 |
-| 没有 `composer.json` | 完全手工组织 | 无依赖管理 |
-| 文件中无 `<?php` 关闭 `?>` 后还有内容 | 老风格 | 输出污染 |
-| `header("Content-Type: text/html; charset=gb2312")` | 老编码站，常 GBK | 编码注入 |
-| `iconv('GBK', 'UTF-8', ...)` 大量出现 | 中文站 GBK 遗留 | 编码绕过 |
-| `error_reporting(0)` 在文件头 | 隐藏错误（多见于后门）| 反检测 |
-| `@$_GET[...]` 错误抑制 | 老式写法 | 错误隐藏 |
+| `mysql_query()` / `mysql_connect()` | PHP 5 era (`mysql_*` removed in PHP 7) | Very high SQLi risk |
+| `mysqli_query($conn, $sql)` + string concatenation | PHP 5.x; not using prepared statements | High SQLi risk |
+| `mssql_query` / `mssql_*` | Ancient SQL Server interface | Fully deprecated |
+| `register_globals = On` | PHP < 5.4 | Variable overwrite |
+| `magic_quotes_gpc = On` | PHP < 5.4 | False sense of input filtering |
+| No `namespace` declaration | Legacy / loose-file code | Global namespace pollution |
+| `require_once '../config.php'` everywhere | Flat project, no autoload | Path traversal attack surface |
+| `$_GET[...]` concatenated directly into SQL | High-frequency private-server pattern | SQLi |
+| `eval(`, `assert(`, `create_function(` | Backdoor or dynamic execution | RCE |
+| `base64_decode(` + `eval(` | Classic backdoor pattern | RCE |
+| `preg_replace('/.../e', ...)` | `/e` modifier is deprecated and is an RCE vector | RCE |
+| `extract($_GET)` / `extract($_POST)` | Variable extraction | Arbitrary variable overwrite |
+| `parse_str($_GET['x'])` | Variable injection | Same as above |
+| `$$var = ...` (variable variables) | Double-dollar notation | Overwrite arbitrary variables |
+| `include $_GET['file']` | File inclusion | LFI / RFI |
+| `file_put_contents(..., $_POST[...])` | Arbitrary write | Arbitrary file write / shell upload |
+| `system($_GET[...])` / `exec(` / shell concatenation | Command execution | RCE |
+| `unserialize($_COOKIE[...])` / `$_POST[...]` | Deserialization sink | POP chain RCE |
+| `mt_rand()` / `rand()` used for tokens / passwords | Not cryptographically secure | Predictable values |
+| `md5($password)` without salt | Legacy hashing | Rainbow table attack |
+| `md5($password . SALT)` with a fixed salt | Weak | Still vulnerable to rainbow tables |
+| No `composer.json` | Fully manual project organization | No dependency management |
+| Content after closing `?>` in a file | Old style | Output contamination |
+| `header("Content-Type: text/html; charset=gb2312")` | Legacy GBK-encoded site | Encoding injection |
+| `iconv('GBK', 'UTF-8', ...)` used extensively | GBK legacy Chinese site | Encoding-based bypass |
+| `error_reporting(0)` at top of file | Error suppression (common in backdoors) | Anti-detection |
+| `@$_GET[...]` error suppression operator | Old-style code | Hides errors |
 
-## 16. 现代化重写策略（客户希望升级）
+## 16. Modernization / Rewrite Strategy (when clients want to upgrade)
 
-老 PHP 项目重写到现代的路径：
+The migration path from legacy PHP to modern:
 
 ```
-PHP 5.x 老代码（mysql_*、无 namespace、散文件）
-  ↓ 第一步：上 composer + autoload（PSR-4）
-  ↓ 第二步：把 .php 散文件 namespace 化（按目录组织）
-  ↓ 第三步：mysql_ → PDO + prepared，或迁到框架 ORM
-  ↓ 第四步：$_GET / $_POST → validator / FormRequest
-  ↓ 第五步：搬迁到 ThinkPHP 8 / Laravel 11（保留业务，重写表现层）
-  ↓ 第六步：DB 凭据移到 .env，密码改 password_hash，session 改 redis
+PHP 5.x legacy code (mysql_*, no namespace, loose files)
+  ↓ Step 1: Add Composer + autoloading (PSR-4)
+  ↓ Step 2: Add namespaces to .php files (organized by directory)
+  ↓ Step 3: mysql_* → PDO + prepared statements, or migrate to a framework ORM
+  ↓ Step 4: $_GET / $_POST → validators / FormRequests
+  ↓ Step 5: Migrate to ThinkPHP 8 / Laravel 11 (preserve business logic, rewrite the presentation layer)
+  ↓ Step 6: DB credentials move to .env; passwords switch to password_hash; sessions move to Redis
 ```
 
-**工具**：
+**Tools**:
 
-- **Rector** —— 自动化前 4 步（PHP 版本升级 + 部分 SQL 重构）。规则集：`Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_83`
-- **php-cs-fixer** —— 风格统一
-- **PHPStan** —— 找类型错误、未定义变量
+- **Rector** — automates steps 1–4 (PHP version upgrades + partial SQL refactoring). Rule set: `Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_83`
+- **php-cs-fixer** — consistent code style
+- **PHPStan** — catches type errors and undefined variables
 
 ---
 
-# 第三部分：反模式清单（国内频率排序）
+# Part 3: Anti-Pattern Catalog (ordered by domestic frequency)
 
-## 17. 高频反模式（按国内项目实际频率）
+## 17. High-Frequency Anti-Patterns (by actual occurrence rate in domestic projects)
 
-| # | 反模式 | 严重度 | 频率 | 后果 |
+| # | Anti-Pattern | Severity | Frequency | Consequence |
 |---|---|---|---|---|
-| 1 | 拼接 SQL（任何形态）| **致命** | 高 | SQLi |
-| 2 | 微信 / 支付宝回调不验签 | **致命** | 高（私服 / 外包必中）| 伪造充值 |
-| 3 | 支付回调不校验金额 / 不幂等 | **致命** | 高 | 1 元充 1000 |
-| 4 | 用 md5 / sha1 存密码（无 salt 或固定 salt）| **致命** | 高（老 CMS / 私服 100%）| 彩虹表 |
-| 5 | TP 自动路由 + admin 控制器无中间件鉴权 | 高 | 中 | 后台直接访问 |
-| 6 | 上传目录在 Web 根下且 Nginx 解析 PHP | 高 | 高 | getshell |
-| 7 | DB 凭据硬编码在 `.php` 文件 | 高 | 高 | 信息泄漏 |
-| 8 | 老 CMS 不及时打补丁（DEDECMS 5.7 / Discuz 3.x）| **致命** | 高 | 已知 CVE 直接打 |
-| 9 | 把 Eloquent / TP Model 直接当响应 | 高 | 高 | 字段泄漏（手机号 / 身份证 / 密码哈希）|
-| 10 | 不用 FormRequest / Validate，直接 `$request->input()` | 中 | 高 | 验证散乱 |
-| 11 | `$_GET` / `$_POST` 直接拼接到 `include` / `file_*` 函数 | **致命** | 中 | LFI / 任意文件 |
-| 12 | 不开 `declare(strict_types=1)` | 中 | 高 | 类型强转坑 |
-| 13 | God Controller（业务塞控制器）| 高 | 高 | 不可测、难重构 |
-| 14 | 没有 CSRF 保护（非 API） | 高 | 中 | CSRF |
-| 15 | 老代码全局 mutable `$GLOBALS` | 高 | 中 | 隐式依赖 |
-| 16 | 不用 type 声明（参数 / 返回值无类型）| 中 | 高 | IDE 帮不上 |
-| 17 | `eval` / `assert` / `preg_replace /e` | **致命** | 中（老代码 / 后门）| RCE |
-| 18 | 反序列化用户输入 | **致命** | 中 | POP 链 RCE |
-| 19 | 用 `@` 抑制错误 | 中 | 高 | 隐藏 bug + 性能损耗 |
-| 20 | Facade 全局调用难 mock（Laravel）| 中 | 高 | 测试困难 |
-| 21 | TP / Laravel 模型无 `$fillable` 白名单 | 高 | 高 | 批量赋值漏洞 |
-| 22 | `phpinfo.php` / `test.php` / 备份 `.sql` 暴露在 webroot | 高 | 高 | 信息泄漏 |
-| 23 | `.git/` 目录暴露 | 高 | 高 | 源码泄漏 |
-| 24 | session 用文件存 + 多机不共享 | 中 | 中 | 登录失效 |
-| 25 | Hyperf 项目用 `static` 缓存 | 高 | 低 | 请求间数据污染 |
+| 1 | SQL concatenation (any form) | **Critical** | High | SQLi |
+| 2 | WeChat / Alipay callback with no signature verification | **Critical** | High (virtually guaranteed in private servers / outsourced code) | Forged recharge |
+| 3 | Payment callback with no amount check / no idempotency | **Critical** | High | ¥1 purchase for ¥1000 worth of credits |
+| 4 | md5 / sha1 password hashing (no salt or fixed salt) | **Critical** | High (100% in legacy CMS / private servers) | Rainbow table attack |
+| 5 | TP auto-routing + admin controller with no auth middleware | High | Medium | Backend directly accessible |
+| 6 | Upload directory under web root with Nginx executing PHP | High | High | Remote shell |
+| 7 | DB credentials hardcoded in `.php` files | High | High | Information leakage |
+| 8 | Legacy CMS not patched (DEDECMS 5.7 / Discuz 3.x) | **Critical** | High | Known CVEs exploitable directly |
+| 9 | Returning Eloquent / TP Model directly as response | High | High | Field leakage (phone numbers / ID numbers / password hashes) |
+| 10 | No FormRequest / Validate — using `$request->input()` directly everywhere | Medium | High | Scattered, inconsistent validation |
+| 11 | `$_GET` / `$_POST` concatenated into `include` / `file_*` functions | **Critical** | Medium | LFI / arbitrary file access |
+| 12 | Missing `declare(strict_types=1)` | Medium | High | Implicit type coercion bugs |
+| 13 | God Controller (business logic crammed into controllers) | High | High | Untestable, impossible to refactor |
+| 14 | No CSRF protection (non-API routes) | High | Medium | CSRF attacks |
+| 15 | Global mutable `$GLOBALS` in legacy code | High | Medium | Implicit hidden dependencies |
+| 16 | No type declarations (no parameter or return types) | Medium | High | IDE cannot help; silent bugs |
+| 17 | `eval` / `assert` / `preg_replace /e` | **Critical** | Medium (legacy / backdoors) | RCE |
+| 18 | Deserializing user input | **Critical** | Medium | POP chain RCE |
+| 19 | Using `@` to suppress errors | Medium | High | Hides bugs; performance overhead |
+| 20 | Global Facade calls that are hard to mock (Laravel) | Medium | High | Difficult to test |
+| 21 | TP / Laravel models without a `$fillable` whitelist | High | High | Mass-assignment vulnerability |
+| 22 | `phpinfo.php` / `test.php` / backup `.sql` files exposed in webroot | High | High | Information leakage |
+| 23 | `.git/` directory exposed | High | High | Source code leakage |
+| 24 | Sessions stored in files on multi-server deployments without sharing | Medium | Medium | Login state lost across servers |
+| 25 | Hyperf project using `static` for caching | High | Low | Cross-request data contamination |
 
-## 18. 安全审计 checklist（私服 / 外包接单）
+## 18. Security Audit Checklist (private servers / outsourced projects)
 
 ```
-□ 框架版本（TP / Laravel / Yii / CMS）及是否最新补丁
-□ DB 凭据存放位置（.env / config / 硬编码）
-□ 是否有 .git / .svn / .bak / *.sql / phpinfo / 备份压缩包暴露
-□ 支付回调验签 + 金额 + 幂等
-□ 文件上传：扩展名白名单 / 内容检测 / 上传目录禁止解析 PHP
-□ SQL：是否全 prepared / Query Builder / ORM
-□ 命令执行：grep system/exec/shell_exec/passthru/popen/proc_open/`/eval/assert
-□ 反序列化：unserialize 用户输入 / __wakeup / __destruct 类
-□ 鉴权：后台中间件 / API token / Sanctum / JWT
-□ 越权：横向（用户 A 访问 B 资源）/ 纵向（普通用户访问 admin）
-□ XSS：模板是否默认转义（Blade {{ }} 是，TP {$var} **不是默认**！）
-□ CSRF：web 路由是否启用，notify 是否在 csrf 排除外
-□ 密码：password_hash / password_verify，禁止 md5
-□ session：是否 redis / DB 存，cookie httpOnly + secure + sameSite
-□ 日志：是否记录敏感操作 + 是否泄漏到响应
-□ debug 模式是否生产关闭（APP_DEBUG=false / app_debug=false）
-□ CORS：Access-Control-Allow-Origin 是否过宽
-□ Redis / MySQL 是否绑 0.0.0.0 暴露公网
-□ 宝塔面板：是否最新版 / 入口路径是否改 / 弱口令
+□ Framework version (TP / Laravel / Yii / CMS) and whether the latest patches are applied
+□ Where DB credentials are stored (.env / config / hardcoded)
+□ Whether .git / .svn / .bak / *.sql / phpinfo / backup archives are exposed
+□ Payment callbacks: signature verification + amount check + idempotency
+□ File upload: extension whitelist / content inspection / PHP execution blocked in upload directory
+□ SQL: are all queries using prepared statements / Query Builder / ORM
+□ Command execution: grep system/exec/shell_exec/passthru/popen/proc_open/`/eval/assert
+□ Deserialization: unserialize on user input / __wakeup / __destruct classes
+□ Authentication: backend middleware / API token / Sanctum / JWT
+□ Authorization: horizontal escalation (user A accessing user B's resources) / vertical escalation (regular user accessing admin)
+□ XSS: does the template engine escape by default (Blade {{ }} does; TP {$var} does NOT by default!)
+□ CSRF: enabled on web routes; notify endpoints excluded from CSRF verification
+□ Passwords: password_hash / password_verify; NEVER md5
+□ Sessions: Redis / DB storage; cookies with httpOnly + secure + sameSite
+□ Logging: are sensitive operations logged; is log content leaking into responses
+□ Debug mode disabled in production (APP_DEBUG=false / app_debug=false)
+□ CORS: is Access-Control-Allow-Origin too permissive
+□ Redis / MySQL: are they bound to 0.0.0.0 and exposed to the public internet
+□ Baota Panel: latest version / entry path changed / no weak credentials
 ```
 
 ---
 
-## 19. 权威信息源
+## 19. Authoritative References
 
-**官方 / 标准**：
+**Official / Standards**:
 
-- [PHP-FIG PSR 列表](https://www.php-fig.org/psr/)
-- [PSR-12 全文](https://www.php-fig.org/psr/psr-12/)
-- [PHP The Right Way](https://phptherightway.com/) — 社区索引
-- [PHP 官方文档](https://www.php.net/manual/zh/) — 中文版
+- [PHP-FIG PSR Index](https://www.php-fig.org/psr/)
+- [PSR-12 Full Text](https://www.php-fig.org/psr/psr-12/)
+- [PHP The Right Way](https://phptherightway.com/) — community index
+- [PHP Official Documentation](https://www.php.net/manual/zh/) — Chinese edition
 
-**框架**：
+**Frameworks**:
 
-- [ThinkPHP 8 官方文档](https://doc.thinkphp.cn/v8_0/) — 中文原生
-- [ThinkPHP 6 完全开发手册](https://www.kancloud.cn/manual/thinkphp6_0/)
-- [Laravel 官方](https://laravel.com/docs) / [Learnku Laravel 中文文档](https://learnku.com/docs/laravel)
-- [Symfony 官方](https://symfony.com/doc)
-- [Hyperf 官方](https://hyperf.wiki/)
+- [ThinkPHP 8 Official Docs](https://doc.thinkphp.cn/v8_0/) — native Chinese
+- [ThinkPHP 6 Complete Guide](https://www.kancloud.cn/manual/thinkphp6_0/)
+- [Laravel Official](https://laravel.com/docs) / [Learnku Laravel Chinese Docs](https://learnku.com/docs/laravel)
+- [Symfony Official](https://symfony.com/doc)
+- [Hyperf Official](https://hyperf.wiki/)
 
-**工具**：
+**Tools**:
 
 - [PHPStan](https://phpstan.org/) / [Psalm](https://psalm.dev/)
 - [Pest PHP](https://pestphp.com/) / [PHPUnit](https://phpunit.de/)
-- [Rector](https://getrector.com/) — 自动化升级
+- [Rector](https://getrector.com/) — automated code upgrades
 
-**国内 SDK**：
+**Domestic SDKs**:
 
-- [EasyWeChat](https://www.easywechat.com/) — 微信开发事实标准
-- [yansongda/pay](https://pay.yansongda.cn/) — 支付聚合
-- [微信支付商户文档](https://pay.weixin.qq.com/doc/v3/merchant/) — 支付安全规范
-- [支付宝开放平台文档](https://opendocs.alipay.com/)
+- [EasyWeChat](https://www.easywechat.com/) — the de facto standard for WeChat development in China
+- [yansongda/pay](https://pay.yansongda.cn/) — unified payment aggregation
+- [WeChat Pay Merchant Documentation](https://pay.weixin.qq.com/doc/v3/merchant/) — payment security specifications
+- [Alipay Open Platform Documentation](https://opendocs.alipay.com/)
 
-**安全 / 审计**：
+**Security / Auditing**:
 
-- [先知社区 - dedecms 漏洞总结](https://xz.aliyun.com/t/9705)
-- [百宝箱 CMS 漏洞库](https://github.com/BaizeSec/bylibrary)
-- 私服 / 游戏后台逻辑漏洞 → `~/.claude/skills/ctf-game/references/server-audit.md`
-- Web 通用漏洞模式 → OWASP Top 10 / PortSwigger Academy
+- [Xz.aliyun.com - DEDECMS Vulnerability Summary](https://xz.aliyun.com/t/9705)
+- [BaizeSec bylibrary - CMS Vulnerability Library](https://github.com/BaizeSec/bylibrary)
+- Private-server / game backend logic vulnerabilities → `~/.claude/skills/ctf-game/references/server-audit.md`
+- General web vulnerability patterns → OWASP Top 10 / PortSwigger Academy

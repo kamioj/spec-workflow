@@ -1,162 +1,162 @@
 ---
-description: 实施代码，按 proposal/tasks 推进。命令前 hook 检查 proposal.md 含 APPROVED 标记。增量验证：每节点做完就近调 /spec:verify，不攒到最后
+description: Implement the code, advancing by proposal/tasks. A pre-command hook checks that proposal.md carries the APPROVED marker. Incremental verification: call /spec:verify close to each node as it lands, don't save it all for the end
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # /spec:apply
 
-## 前置检查 + 自动批准
+## Pre-check + auto-approval
 
-1. **检查 proposal.md 存在性**：
-   - 不存在 → 报错，提示用户先调 `/spec:propose`
-   - 存在但缺四段（Why / What / How / Risk 任一缺失）→ 报错，提示先调 `/spec:revise` 补全
+1. **Check proposal.md exists**:
+   - Doesn't exist → error, tell the user to run `/spec:propose` first
+   - Exists but missing a section (any of Why / What / How / Risk) → error, tell the user to run `/spec:revise` to complete it first
 
-2. **自动追加 APPROVED 标记**（视用户主动调用 `/spec:apply` 为批准动作）：
-   - proposal.md 末尾**无** `<!-- APPROVED: ... -->` 标记 → 立即追加：
+2. **Auto-append the APPROVED marker** (treating the user's deliberate `/spec:apply` invocation as the act of approval):
+   - proposal.md has **no** `<!-- APPROVED: ... -->` marker at the end → append immediately:
      ```markdown
      <!-- APPROVED: YYYY-MM-DD HH:mm -->
      ```
-     时间戳用当前 ISO 本地时间
-   - 已有 APPROVED 标记（来自 `/spec:workflow` 流程或上次 apply）→ 不重复追加
+     Timestamp uses the current ISO local time
+   - Already has an APPROVED marker (from the `/spec:workflow` flow or a previous apply) → don't append again
 
-3. **hook 校验**：`check-gate.ps1` 仍在 `UserPromptSubmit` 时机检查 —— apply 自动追加后 hook 顺利放行（作为审计层和兜底防御）。
+3. **Hook check**: `check-gate.ps1` still checks at the `UserPromptSubmit` moment — after apply auto-appends, the hook lets it through smoothly (serving as an audit layer and backstop).
 
-   罕见情况下 hook 阻断（如 proposal.md 缺失 / 名字不对）→ 按 hook 错误信息处理，不强行绕过。
+   In the rare case the hook blocks (e.g. proposal.md missing / wrong name) → handle per the hook's error message, don't force a bypass.
 
-## 范围确定
+## Scoping
 
-读 proposal.md 的 `## What`：
-- **无 tasks.md** → 全量按 proposal 推进
-- **有 tasks.md 单执行体** → 按 tasks 顺序
-- **有 tasks.md 多执行体** → 只做本 owner 任务（先 checkout `feat/<name>-<owner>`）
+Read proposal.md's `## What`:
+- **No tasks.md** → advance fully by the proposal
+- **tasks.md, single executor** → advance in tasks order
+- **tasks.md, multi-executor** → do only this owner's tasks (checkout `feat/<name>-<owner>` first)
 
-## 派遣专属 agent
+## Dispatch the dev agent
 
-按 proposal `## What` 涉及的代码类型派单：
+Dispatch by the type of code the proposal `## What` involves:
 
-| What 涉及 | 派单方式 |
+| What involves | Dispatch |
 |---|---|
-| UI / 路由 / 组件 / 样式 / 客户端交互 | `spec-dev`（scope: frontend） |
-| 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 | `spec-dev`（scope: backend） |
-| **跨前后端（含接口契约改动）** | **契约先固化 → 并发派两个 `spec-dev`（一 frontend、一 backend）**（见下） |
-| 配置 / 脚本 / CI / 文档 | 主对话自理 |
+| UI / routing / components / styling / client-side interaction | `spec-dev` (scope: frontend) |
+| server-side logic / API / data models / DB migration / middleware | `spec-dev` (scope: backend) |
+| **Cross-stack (including interface-contract changes)** | **Pin the contract first → dispatch two `spec-dev` concurrently (one frontend, one backend)** (see below) |
+| config / scripts / CI / docs | main conversation handles it |
 
-**派 `spec-dev` 必须在 dispatch prompt 里写明 scope**（`scope: frontend` / `scope: backend` / `scope: fullstack`）——这是 agent 决定读哪套栈 reference、design 哪些段的依据。漏写 = agent 只能按要改的文件类型自行推定，是次优路径。
+**Dispatching `spec-dev` MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 
-### 跨前后端：契约先行 + 并行实施
+### Cross-stack: contract first + parallel implementation
 
-**禁止串行做法**（先后端再前端 = 浪费 50% 时间）。正确流程：
+**The serial approach is forbidden** (backend then frontend = 50% of the time wasted). The correct flow:
 
-1. **前置检查**：`design.md` 的 `## Interfaces` 段必须已写明：
+1. **Pre-check**: design.md's `## Interfaces` section must already spell out:
    - endpoint / method / path
-   - 输入 schema
-   - 输出 schema
-   - 错误码 + 错误响应结构
+   - input schema
+   - output schema
+   - error codes + error response structure
 
-   缺则**拒绝派单**，先走 `/spec:design` 把契约固化。
+   If missing, **refuse to dispatch** and go through `/spec:design` to pin the contract first.
 
-2. **并发派单**（同一条消息发出两个 Agent 调用）：
-   - `spec-dev`（scope: backend）：实现服务端，先返回符合契约的 mock 数据，再接真实数据源
-   - `spec-dev`（scope: frontend）：实现客户端骨架，用 mock 数据 / TypeScript 类型对接契约
+2. **Concurrent dispatch** (issue two Agent calls in one message):
+   - `spec-dev` (scope: backend): implement the server side, returning contract-compliant mock data first, then wiring the real data source
+   - `spec-dev` (scope: frontend): implement the client skeleton, wiring the contract with mock data / TypeScript types
 
-   两个 agent **不互相等待**，各自按 design.md `## Interfaces` 推进。
+   The two agents **do not wait on each other**, each advancing by design.md `## Interfaces`.
 
-3. **联调阶段**（两个 agent 都报"实施完成"后）：
-   - 后端切真实数据
-   - 前端切真实接口
-   - 端到端测试
+3. **Integration phase** (after both agents report "implementation done"):
+   - backend switches to real data
+   - frontend switches to the real interface
+   - end-to-end test
 
-**契约 = 高扇出节点**：tasks.md 应明确：
+**The contract = a high-fan-out node**: tasks.md should make it explicit:
 
 ```
-- [ ] 1. 接口契约（已在 design.md ## Interfaces 落地）
-- [ ] 2. 后端实现        owner: backend   deps: 1
-- [ ] 3. 前端骨架(mock)  owner: frontend  deps: 1
-- [ ] 4. 联调切真实接口   deps: 2, 3
+- [ ] 1. Interface contract (landed in design.md ## Interfaces)
+- [ ] 2. Backend implementation   owner: backend   deps: 1
+- [ ] 3. Frontend skeleton (mock) owner: frontend  deps: 1
+- [ ] 4. Wire up the real interface                deps: 2, 3
 ```
 
-第 2 和第 3 步**互不依赖**（都只依赖第 1 步），所以并行。
+Steps 2 and 3 **don't depend on each other** (both depend only on step 1), so they run in parallel.
 
-### dev agent 的优势
+### What the dev agent gives you
 
-agent 按 scope 自动加载对应技术栈 references（vue-style / java-conventions 等）+ 继承 sdd plugin 共享精神（反作弊 / 卡死保护 / 任务不可行叫停）。
+The agent automatically loads the corresponding tech-stack references by scope (vue-style / java-conventions, etc.) + inherits the sdd plugin's Shared Principles (Anti-Cheating / Stuck Protection / halt on infeasible task).
 
-### 可选 flag：principles 加强
+### Optional flags: principles reinforcement
 
-`/spec:apply` 支持三个 flag，空格分隔，可组合，可省略。
+`/spec:apply` supports three flags, space-separated, combinable, omittable.
 
-| flag | 启用项 | 效果 |
+| flag | Turns on | Effect |
 |---|---|---|
-| `design` | anti-ai-slop | `spec-dev`（frontend scope）读 `skills/core/references/frontend-aesthetics.md` |
-| `solid` | anti-laziness | agent 读 `skills/core/references/agent-principles.md` § 一 |
-| `verify` | anti-hallucination | agent 读 `skills/core/references/agent-principles.md` § 二 |
+| `design` | anti-AI-slop | `spec-dev` (frontend scope) reads `skills/core/references/frontend-aesthetics.md` |
+| `solid` | anti-laziness | the agent reads `skills/core/references/agent-principles.md` § 1 |
+| `verify` | anti-hallucination | the agent reads `skills/core/references/agent-principles.md` § 2 |
 
-**$ARGUMENTS 解析**：split 空格，对每个 token 检查是否在 `{design, solid, verify}` 集合里。命中的转成派遣 prompt 的"启用 anti-X"指令，没命中的 token 当作错别字提示用户。
+**$ARGUMENTS parsing**: split on spaces, and for each token check whether it's in the `{design, solid, verify}` set. Matched ones turn into "turn on anti-X" instructions in the dispatch prompt; unmatched tokens are flagged to the user as possible typos.
 
-**用法示例**：
+**Usage examples**:
 
-| 命令 | 行为 |
+| Command | Behavior |
 |---|---|
-| `/spec:apply` | 默认，轻量实施 |
-| `/spec:apply design` | 前端 agent 加载反 AI slop |
-| `/spec:apply solid verify` | 反偷懒 + 反幻觉 |
-| `/spec:apply design solid verify` | 三件套全启用 |
+| `/spec:apply` | default, lean implementation |
+| `/spec:apply design` | the frontend agent loads anti-AI-slop |
+| `/spec:apply solid verify` | anti-laziness + anti-hallucination |
+| `/spec:apply design solid verify` | all three on |
 
-**默认不带任何 flag**——避免在常规工具型 UI / 内部页 / 后端服务里过度保守。
+**No flag by default** — to avoid over-caution on routine tool-type UIs / internal pages / backend services.
 
-主对话只在派单失败 / 跨执行体协调 / agent 报告卡死时介入。
+The main conversation only steps in when dispatch fails / cross-executor coordination is needed / an agent reports it's stuck.
 
-## 实施 + 增量验证
+## Implementation + incremental verification
 
-- 按 deps 推进，只动 deps 已完成的任务
-- 多个 deps 满足且互不依赖 → **优先派两个专属 agent 并发**（前后端独立的话）
-- 每完成一个（或一组并行）节点 → 就近调 `/spec:verify`，**不攒到最后**
-- 完成的任务在 tasks.md 标 `[x]` —— **谁完成谁标**：dev agent 标自己 owner 的子任务；主对话标自理项（如配置 / 脚本 / 跨模块协调类）
+- Advance by deps, touching only tasks whose deps are done
+- Multiple deps satisfied and independent → **prefer dispatching two dedicated agents concurrently** (if frontend and backend are independent)
+- After finishing each node (or a group of parallel ones) → call `/spec:verify` close by, **don't save it for the end**
+- Mark finished tasks `[x]` in tasks.md — **whoever finishes it marks it**: the dev agent marks the subtasks it owns; the main conversation marks the items it handles itself (config / scripts / cross-module coordination)
 
-## 失败定层
+## Failure triage
 
-跑 verify 失败 → 先诊断后修，按归类处理：
+A verify failure → diagnose first, then fix, handling by category:
 
-| 现象 | 归类 | 处理 |
+| Symptom | Category | Handling |
 |---|---|---|
-| 没实现到 proposal 要求 | 实施未完成 | 继续 apply |
-| 语法 / 类型 / 边界错 | 单点 bug | 直接修 |
-| 做了 proposal 没要求的事 | 偏离 | 回到 proposal 重新对齐 |
-| 完全照 proposal 做仍不对 | proposal 错 | 停下走 `/spec:revise`（多半 ask 漏问到这点） |
+| Didn't implement to the proposal's requirement | Implementation incomplete | keep applying |
+| Syntax / type / boundary error | Single-point bug | fix it directly |
+| Did something the proposal didn't ask for | Drift | go back to the proposal and re-align |
+| Followed the proposal exactly and it's still wrong | Proposal is wrong | stop and go through `/spec:revise` (ask probably missed this point) |
 
-**严禁默改 proposal 适配已写的代码**——proposal 是"该做什么"的真理。
+**NEVER silently edit the proposal to fit the code already written** — the proposal is the truth of "what should be done".
 
-## 卡死保护
+## Stuck Protection
 
-同一报错 / 用例，连续 **3 次**修复尝试仍失败 → 立即停下汇报。
+Same error / case, **3 consecutive** fix attempts still failing → stop immediately and report.
 
-一次尝试 = 新假设 + 改码 + 验证；重跑同样代码 / 修 typo / 调日志**不算**。
+One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **doesn't count**.
 
 ```
-=== 卡死自检 ===
-现象：<一句话>
-已试三个假设：
-  1. <假设> → <结果>
-  2. <假设> → <结果>
-  3. <假设> → <结果>
-推断真因：<能推断写真因，否则"未知">
-建议换方向：<有则写，否则"等用户指示">
+=== Stuck Self-Check ===
+Symptom: <one line>
+Three hypotheses tried:
+  1. <hypothesis> → <result>
+  2. <hypothesis> → <result>
+  3. <hypothesis> → <result>
+Inferred root cause: <write it if you can infer one, otherwise "unknown">
+Suggested new direction: <write it if you have one, otherwise "awaiting user guidance">
 ```
 
-等用户决策，**禁止无限 patch**。
+Wait for the user's decision; **no endless patching**.
 
-## 反作弊
+## Anti-Cheating
 
-- 未实际跑通的命令 / 测试**不许汇报为"成功"**
-- workaround 让"看起来通过"（mock 假响应、改 assert、patch 检查函数返回 true）**必须明说**"绕过，真因未解"
-- 硬编码（偏移、固定 hash）若必要必须在代码注释 + tasks.md 标注"仅适用本场景"
+- A command / test that hasn't actually run **MUST NOT be reported as "success"**
+- A workaround that makes it "look like it passes" (mocking a fake response, changing an assert, patching a check function to return true) **MUST be stated plainly** as "bypass, root cause unresolved"
+- Hardcoding (offsets, fixed hashes) if necessary MUST be flagged in a code comment + a "applies to this case only" note in tasks.md
 
-## 编码公约（本阶段所有写代码者必守）
+## Coding Charter (binding on everyone who writes code in this phase)
 
-dev agent 启动必读 `code-charter.md`；**主对话自理写代码（配置 / 脚本 / CI）同样守**，落键前 Read `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`。核心：失败要响亮（该 throw 就 throw，**禁止默默改道查询凑结果**）、**改逻辑是替换不是叠加**（禁止把旧逻辑留作回退——脏数据 + 功能不稳定的头号来源）、核心逻辑 fail-fast、降级只在信任边界且必须响亮。**仅编码阶段适用**，不约束 research/design/propose 的方案发散。
+The dev agent reads `code-charter.md` on startup; **the main conversation, when it writes code itself (config / scripts / CI), is equally bound** — before the first keystroke, Read `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`. The core: failure must be loud (throw when you should, **NEVER silently re-route a query to scrape a result**), **changing logic is replacement, not accumulation** (NEVER keep the old logic as a fallback — the number-one source of dirty data + instability), fail-fast for core logic, degrade only at a trust boundary and always loudly. **Applies to the coding phase only** — it does not constrain the solution-space exploration of research/design/propose.
 
-## 不做的事
+## What it does not do
 
-- 不执行 `git commit` / `git push`（仅用户要求时）
-- 不归档（仅用户说"归档"时走 `/spec:archive`）
-- 不改 proposal 适配代码（应反向：改代码符合 proposal，或 `/spec:revise` 改 proposal）
+- Doesn't run `git commit` / `git push` (only on user request)
+- Doesn't archive (only when the user says "archive", via `/spec:archive`)
+- Doesn't edit the proposal to fit the code (it should be the reverse: change the code to match the proposal, or `/spec:revise` the proposal)

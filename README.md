@@ -172,6 +172,7 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
         ├── tasks-spec.md
         ├── agent-principles.md     # opt-in: anti-laziness + anti-hallucination
         ├── frontend-aesthetics.md  # opt-in: anti-AI-slop
+        ├── code-charter.md         # coding-phase baseline: fail-fast / no silent fallback / no old-logic fallback
         ├── alibaba-java.md         # 14 language/framework guides
         ├── bulletproof-react.md
         ├── vue-style.md vue-patterns.md
@@ -240,7 +241,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 
 How this plugin cooperates with the global CLAUDE.md protocol:
 
-- **Language** — proposal and research content is written in Chinese; section headers stay in English (## Why / ## What / ## How / ## Risk) so tools can spot them and `revise` can target them by name.
+- **Language** — proposal and research prose follows your working language; section headers stay in English (## Why / ## What / ## How / ## Risk) so tools can spot them and `revise` can target them by name.
 - **Subagent delegation** — the research stage hands off to the global `@researcher`; the apply stage hands off to the in-plugin `spec-dev` (dispatched by scope).
 - **Concurrency** — independent tasks are dispatched all at once.
 
@@ -261,7 +262,7 @@ Design calls I worried about, then confirmed safe after digging in:
 
 ## Changelog
 
-- **0.1.0** — first release: 11 commands, 2 hooks, 2 agents; migrated from an earlier skill-only form.
+- **0.1.0** — first release: 11 commands, 2 hooks, 1 agent; migrated from an earlier skill-only form.
 
 ---
 
