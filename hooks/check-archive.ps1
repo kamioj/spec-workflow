@@ -25,7 +25,8 @@ try {
     $userPrompt = $data.user_prompt
     $cwd = $data.cwd
 
-    if ($userPrompt -notmatch '/spec:archive') { exit 0 }
+    # Only trigger on invocation (line start), not on mention ("explain /spec:archive")
+    if ($userPrompt -notmatch '(?m)^\s*/spec:archive') { exit 0 }
 
     # Deliberate override: the user explicitly said force / abandoned
     if ($userPrompt -match '(?i)\b(force|abandon(ed)?)\b') { exit 0 }

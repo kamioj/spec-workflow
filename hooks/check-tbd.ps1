@@ -1,7 +1,9 @@
 #!/usr/bin/env pwsh
 # Pre-check for /spec:propose: research.md's ## Open [TBD] section must be empty
 # Trigger: UserPromptSubmit hook
-# Behavior: when the user input contains /spec:propose, scan research.md; if it contains [TBD], exit 2 to block
+# Behavior: when the user input INVOKES /spec:propose (at the start of a line -- merely
+# mentioning the command in a question must not trigger the gate), scan research.md;
+# if it contains [TBD], exit 2 to block
 
 # UTF-8 stdin/stdout
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -18,8 +20,8 @@ try {
     $userPrompt = $data.user_prompt
     $cwd = $data.cwd
 
-    # Only trigger when the user input contains /spec:propose
-    if ($userPrompt -notmatch '/spec:propose') { exit 0 }
+    # Only trigger on invocation (line start), not on mention ("what does /spec:propose do?")
+    if ($userPrompt -notmatch '(?m)^\s*/spec:propose') { exit 0 }
 
     # Find the un-archived change (spec/changes/<name>/, excluding archive)
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'

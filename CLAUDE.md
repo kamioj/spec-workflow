@@ -42,7 +42,7 @@ The whole design of sdd centers on "**stopping for real where you have to stop**
 1. **Soft constraints** (the command / agent markdown prompts saying "you must do X") — the model can violate them.
 2. **Hard constraints** (`hooks/*.ps1` shell scripts that intercept) — a 0% violation rate.
 
-The three gate hooks are attached to the `UserPromptSubmit` event (see `hooks/hooks.json`) and decide whether to intervene by **regex-matching the command name in the user input**; a fourth, `check-verify-reminder.ps1`, is attached to the **Stop** event (a reminder, not a gate):
+The three gate hooks are attached to the `UserPromptSubmit` event (see `hooks/hooks.json`) and decide whether to intervene by **regex-matching the command name at the start of a line in the user input** (invocation, not mention — "what does /spec:apply do?" must pass through); a fourth, `check-verify-reminder.ps1`, is attached to the **Stop** event (a reminder, not a gate):
 
 | Hook | Matches | Blocks | When unsatisfied |
 |---|---|---|---|

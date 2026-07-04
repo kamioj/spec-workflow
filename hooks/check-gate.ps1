@@ -1,7 +1,9 @@
 #!/usr/bin/env pwsh
 # Pre-check for /spec:apply: proposal.md must carry the APPROVED marker
 # Trigger: UserPromptSubmit hook
-# Behavior: when the user input contains /spec:apply, scan proposal.md; if there's no APPROVED marker, exit 2 to block
+# Behavior: when the user input INVOKES /spec:apply (at the start of a line -- merely
+# mentioning the command in a question must not trigger the gate), scan proposal.md;
+# if there's no APPROVED marker, exit 2 to block
 
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -17,7 +19,8 @@ try {
     $userPrompt = $data.user_prompt
     $cwd = $data.cwd
 
-    if ($userPrompt -notmatch '/spec:apply') { exit 0 }
+    # Only trigger on invocation (line start), not on mention ("what does /spec:apply do?")
+    if ($userPrompt -notmatch '(?m)^\s*/spec:apply') { exit 0 }
 
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) {
