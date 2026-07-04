@@ -4,7 +4,7 @@
 
 ## When it exists
 
-Produced by `/spec:propose` (trigger conditions + generation steps are detailed in [`commands/propose.md`](../../../commands/propose.md) § "When to also generate tasks.md").
+Produced by `/spec:propose` (trigger conditions + generation steps are detailed in [`commands/propose.md`](../../../commands/propose.md) § "When to also generate tasks.md"). **The generation decision is declared at the HARD GATE** (which trigger fired + how the work was split) — never silently attached.
 
 Afterward `/spec:apply` advances by it, `/spec:status` reads it to report progress, and `/spec:archive` packages it on archive.
 

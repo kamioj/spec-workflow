@@ -16,6 +16,7 @@ Read the `spec/changes/` directory (excluding `archive/`) and output the current
    - `research.md` (current research) + discarded drafts under `research/` (if any), `design.md`, `proposal.md`, `tasks.md`
 3. Read `research.md` to count `[TBD-N]` entries under `## Open [TBD]` and the number of `## Decided` entries; count discarded drafts under `research/` (if any)
 4. Read `proposal.md` to check whether the HARD GATE approval marker is present (`<!-- APPROVED: YYYY-MM-DD HH:mm -->`)
+5. Read `verify.md` (the verification ledger, if present): frontmatter `round` / `conclusion` + count of Status=open findings
 
 ## Output format
 
@@ -38,6 +39,7 @@ Artifacts:
   design.md   <✓/✗> (note whether one is needed if absent)
   proposal.md ✓ (HARD GATE: <pending approval / approved / rejected>)
   tasks.md    <✓/✗>
+  verify.md   <✓/✗> (round <N>, <pass/fail>, <M> open findings)
 
 Current stage: <determined by the state machine below>
 Recommended next step: <mapped from the state machine below — do not generate from memory>
@@ -58,9 +60,9 @@ Multiple un-archived changes → list all, and add a note: this workflow is desi
 | `research.md` exists + Open [TBD] empty + no `proposal.md` | Interrogation done, awaiting propose | For complex tasks, `/spec:design` first (architecture / >3 interfaces / data-flow diagram); otherwise `/spec:propose` |
 | `proposal.md` exists + **no** `<!-- APPROVED: ... -->` marker | Awaiting HARD GATE approval | ✅ Satisfied → `/spec:apply` (apply auto-appends APPROVED then implements)<br>🔧 Partial changes → `/spec:revise [why \| what \| how \| risk]`<br>💭 Want to discuss → `/spec:chat`<br>🔄 Direction changed → `/spec:research "<new direction>"` |
 | `proposal.md` has APPROVED + tasks.md (if present) has unchecked tasks, or code changes have not been through verify | In progress | `/spec:apply` to continue / run `/spec:verify` incrementally after each node |
-| Main implementation done but verify not yet run | Awaiting verification | `/spec:verify` to run the three-dimension check |
-| `/spec:verify` report contains fail | Verification failed | Review the verify report: `/spec:apply` to continue fixing / `/spec:revise` to fix the proposal (if the proposal itself is wrong) |
-| `/spec:verify` all three dimensions pass | Verification passed (self-review) | Optional: heterogeneous Codex peer review → `/spec:verify --codex` (fills blind spots; `--fix` lets Codex apply fixes). **Do not proactively recommend archive** — call `/spec:archive` when you want to archive |
+| Main implementation done but no `verify.md` ledger yet (or code changed since its last round) | Awaiting verification | `/spec:verify` to run the three-dimension check |
+| `verify.md` latest round `conclusion: fail` (incl. escalated still-open findings) | Verification failed | Review the ledger's open findings: `/spec:apply` to continue fixing / `/spec:revise` to fix the proposal (if the proposal itself is wrong) |
+| `verify.md` latest round `conclusion: pass` | Verification passed (independent review) | Optional: heterogeneous Codex peer review → `/spec:verify --codex` (fills blind spots; `--fix` lets Codex apply fixes). **Do not proactively recommend archive** — call `/spec:archive` when you want to archive |
 | User says "archive" | Ready to archive | `/spec:archive` |
 
 **Key anti-patterns**:

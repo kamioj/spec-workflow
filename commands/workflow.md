@@ -30,7 +30,7 @@ Invoke each phase command in the order below. **If any phase encounters user rej
    - Rejected → use `/spec:revise [section]` (minor adjustments) or `/spec:chat` (rethink the direction)
 6. **`/spec:apply`** — implement the code, advancing through proposal / tasks
    - The pre-command hook verifies that the proposal contains the APPROVED marker
-7. **`/spec:verify`** — three-dimension verification; for critical changes, add `--codex` to bring in Codex as a heterogeneous peer reviewer (`--fix` lets Codex apply fixes)
+7. **`/spec:verify`** — dispatches the independent spec-verifier agent (three dimensions + charter audit, ledger round); for critical changes, add `--codex` to bring in Codex as a heterogeneous peer reviewer (`--fix` lets Codex apply fixes)
 8. **Wait for the user to say "archive"** → `/spec:archive`
 
 ## Commands allowed to jump the queue mid-workflow

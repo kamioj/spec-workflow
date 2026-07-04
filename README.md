@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,7 +24,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 - **Fast lane** — start coding right away and let hooks catch the mistakes (hookify, or a stripped-down superpowers brainstorm).
 - **Heavy lane** — spec everything up front, but down a rigid track (OpenSpec's 4 commands, superpowers brainstorm's 9 steps).
 
-**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 11 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Two hard-constraint hooks make sure the workflow stops where it has to.
+**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 11 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification.
 
 ### Comparison
 
@@ -84,14 +84,16 @@ Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
 |  | `/spec:verify [--codex] [--fix]` | self-review on three axes; `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:archive` | archive the current change |
 
-### 2 hard-constraint hooks
+### 4 hooks — 3 hard gates + 1 reminder
 
-On the `UserPromptSubmit` event, **shell scripts block** any command that breaks the flow:
+On the `UserPromptSubmit` event, **shell scripts block** any command that breaks the flow; on the `Stop` event, a reminder catches implementation ending without verification:
 
-| Hook | Fires before | What it blocks |
+| Hook | Fires on | What it does |
 |---|---|---|
-| `check-tbd.ps1` | `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
-| `check-gate.ps1` | `/spec:apply` | blocks if proposal.md has no `<!-- APPROVED -->` |
+| `check-tbd.ps1` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
+| `check-gate.ps1` | before `/spec:apply` | blocks if proposal.md has no `<!-- APPROVED -->` |
+| `check-archive.ps1` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
+| `check-verify-reminder.ps1` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
 
@@ -103,6 +105,10 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 | `backend` | server-side logic / API / data models / DB migrations / middleware |
 
 `spec-dev` is a single agent; frontend/backend is a dispatch-time scope. In a cross-stack project, the interface contract is pinned down first in `design.md ## Interfaces`, then **two `spec-dev` instances** (one frontend, one backend) **build in parallel** — never one after the other.
+
+### 1 verification agent (fresh context)
+
+`spec-verifier` is dispatched by `/spec:verify` with a **deliberately fresh context** — the conversation that implemented the change never audits itself. Its protocol: no pass without fresh evidence (a dev agent's self-reported success gets re-run, not trusted), evidence-or-drop findings (no quotable code = no finding, ≤3 per dimension), a refutation phase where a defense must cite a gate decision, and an ast-grep machine pass over the shipped `rules/dirty-data/` pack (validated: catches "return default in catch" even behind a log line; never flags a proper throw).
 
 ### opt-in enhancement flags
 
@@ -161,9 +167,15 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── hooks/                          # hard constraints (pwsh)
 │   ├── hooks.json
 │   ├── check-tbd.ps1
-│   └── check-gate.ps1
-├── agents/                         # development agents
-│   └── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
+│   ├── check-gate.ps1
+│   ├── check-archive.ps1
+│   └── check-verify-reminder.ps1
+├── agents/
+│   ├── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
+│   └── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify
+├── rules/                          # ast-grep rule packs (charter-audit machine pass)
+│   ├── sgconfig.yml
+│   └── dirty-data/                 # swallowed exceptions / default-return fallbacks (java/js/ts)
 └── skills/core/
     ├── SKILL.md                    # plugin overview (shared principles)
     └── references/                 # knowledge base
@@ -190,12 +202,15 @@ What the plugin writes into your project when you run it:
 
 ```
 <your-project>/spec/
+├── knowledge.md                    # project-level durable facts (cross-change; archive maintains, research reads first)
 ├── changes/<change-name>/          # active change workspace
 │   ├── research.md   required      # current research (practices + constraints + open decisions), single file
 │   ├── research/     optional      # discarded-direction drafts for this change (research.md snapshots, no markers/links, revivable)
 │   ├── design.md     optional      # technical design (architecture / interfaces / data model)
 │   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
-│   └── tasks.md      optional      # multi-executor task list
+│   ├── tasks.md      optional      # multi-executor task list
+│   ├── verify.md     at-verify     # verification ledger: stable finding IDs + round diffing + unfixed-escalation
+│   └── retrospect.md at-archive    # written by /spec:archive: divergence review + evidence + leftovers
 └── archive/<YYYY-MM-DD-name>/      # archived changes
 ```
 
@@ -233,7 +248,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 ## Limitations
 
 - **Windows-only.** Hooks are written in pwsh and run on Windows for now; going cross-platform needs a bash/sh equivalent.
-- **Not built yet.** Dedicated sdd-researcher / sdd-reviewer agents, an MCP server, a Stop hook (a "you forgot a task" reminder).
+- **Not built yet.** Dedicated sdd-researcher / sdd-reviewer agents, an MCP server.
 
 ---
 
@@ -262,6 +277,14 @@ Design calls I worried about, then confirmed safe after digging in:
 
 ## Changelog
 
+- **0.2.0**
+  - HARD GATE gains an explanation layer: Changes written for the decision-maker (scenario → how the decision avoids it → cost), with mandatory "Decided without asking" and "Not in this change" disclosures
+  - proposal `## What`: every item carries a `verify:` acceptance check; the section closes with an explicit **Not in this change** boundary that flows into agent dispatch prompts and verify exclusion zones
+  - `/spec:verify` now dispatches an independent fresh-context `spec-verifier` agent (evidence-or-drop findings, refutation phase, optional ast-grep machine pass via `rules/dirty-data/`) and writes a verification ledger `verify.md` (stable finding IDs, round diffing, unfixed findings escalate to fail)
+  - Charter audit: fallback / degrade / compat paths must trace to a gate decision — untraceable ones are findings (critical on data-write paths); the spec-dev summary must disclose every fallback and carry an Evidence block
+  - Two new hooks: `check-archive.ps1` (blocks archiving a change that bypassed the flow; override with `force`/`abandoned`) and `check-verify-reminder.ps1` (Stop event: a turn can't quietly end with an approved proposal and no verification ledger)
+  - New artifacts: archive-stage `retrospect.md` (divergence review + evidence) and project-level `spec/knowledge.md` (durable cross-change facts; archive maintains, research reads first)
+  - tasks.md generation is declared at the gate (trigger + split), never silently attached
 - **0.1.0** — first release: 11 commands, 2 hooks, 1 agent; migrated from an earlier skill-only form.
 
 ---

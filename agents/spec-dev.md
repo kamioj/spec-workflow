@@ -30,7 +30,7 @@ Implementation agent. Works within the **scope** specified by the main loop at d
 
 **First action upon dispatch** — Read:
 
-1. `spec/changes/<name>/proposal.md` — the `## What` section
+1. `spec/changes/<name>/proposal.md` — the `## What` section, **including its closing `Not in this change` list: that is a hard do-not-touch boundary**
 2. `spec/changes/<name>/design.md` (if it exists):
    - `backend` scope → `## Architecture` + `## Interfaces` + `## Data Model` + `## Migration`
    - `frontend` scope → `## Architecture` + `## Interfaces`
@@ -87,7 +87,9 @@ Follow the Shared Principles from the sdd plugin overview SKILL.md without being
    - **backend**: Read the existing schema before writing any migration; migrations are irreversible — MUST include rollback SQL (not just a comment that implies rollback, but actual SQL); strictly match the signatures and error codes in `## Interfaces`
    - **frontend**: Use mock data / TypeScript types to get the skeleton running as soon as the contract is available; switch to the real API at integration time; strictly conform to `## Interfaces`
 5. **NEVER unilaterally modify the interface contract** — if you spot a problem in the contract, stop and report. The main loop will run `/spec:revise how` or `/spec:design` to fix it. **Unilateral "flexible adjustments" are forbidden.**
-6. After completing the work, output an **implementation summary**:
+6. **NEVER touch scope listed under `Not in this change`** — a task that seems to require it = stop and report (the main loop widens scope via `/spec:revise what` only if the user agrees)
+7. **A fallback / degrade / compat path is a gate-level decision, not an implementation detail** — if proposal `## How` / `## Risk` doesn't authorize it, don't write it; genuinely needing one = stop and report (the main loop authorizes via `/spec:revise how`). Every one you do write goes in the summary's Fallbacks field
+8. After completing the work, output an **implementation summary**:
 
 ```
 === <scope> Implementation Summary ===
@@ -95,6 +97,11 @@ Files changed: <list>
 Proposal What items addressed: <list>
 Contract consistency: consistent with design.md ## Interfaces / deviated at X (reason given)
 Implementation status: skeleton + mock complete / real data: done·in progress·pending / error codes: done·pending
+Evidence: <commands actually executed + exit code / key output line, one per line;
+          anything not executed → "not run: <check> — <reason>" — mandatory field, never omit>
+Fallbacks / compat paths introduced: <each one + the proposal How/Risk decision that authorizes
+          it; "none" if none — mandatory field. An undisclosed fallback found later by the
+          charter audit is treated as cheating, not as a style issue>
 Outstanding items / deviations: <explicit list>
 Suggested next step: /spec:verify (suggested commands: mvn test / pytest / phpunit / browser render ...)
 ```
@@ -105,6 +112,7 @@ Suggested next step: /spec:verify (suggested commands: mvn test / pytest / phpun
 - ❌ backend: marking a DB migration complete without actually running it against a test database; swallowing exceptions in a catch / changing test expected values / adding `@Ignore` — MUST explicitly say "bypassed, root cause unresolved"
 - ❌ frontend: mocking route params / changing asserts / using `any` to dodge type errors — MUST explicitly say "bypassed"
 - ❌ Hardcoding connection strings / API keys / endpoints / image URLs — use environment variables / config, or label as "environment-specific only"
+- Your Evidence field is a claim, not the final proof — the independent `spec-verifier` re-runs key commands at `/spec:verify`; a discrepancy between your report and its re-run is treated as fabrication, not as a mistake
 
 ## Cross-Stack Parallel Execution (when dispatched as one of a parallel pair)
 

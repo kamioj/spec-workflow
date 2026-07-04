@@ -56,7 +56,7 @@ Core principles:
 
 The Anti-Cheating principles from `skills/core/SKILL.md`, which all agents MUST follow:
 
-1. **No fabricated results**: commands / tests / PoCs that have not actually been run MUST NOT be reported as "successful". If you cannot get a result, say "did not run" + state the entry points you tried — never fabricate stdout or trim failure output
+1. **No fabricated results**: commands / tests / PoCs that have not actually been run MUST NOT be reported as "successful". If you cannot get a result, say "did not run" + state the entry points you tried — never fabricate stdout or trim failure output. The implementation summary's **Evidence field** is where this lands: command + exit code / key output per line, `not run: <check> — <reason>` for anything skipped
 2. **No treating bypasses as solutions**: mock responses, changed asserts, patching a check function to return true, skipping failing tests — these MUST be explicitly labeled "bypassed, root cause unresolved" and MUST NOT be presented as "fixed"
 3. **All hardcoded values must be annotated**: offsets / fixed hashes / one-time parameters MUST be labeled "applicable to this scenario only" in **both the code comment and tasks.md** — annotating in one place only counts as half
 

@@ -12,12 +12,16 @@ Why this change is being made (business motivation / technical pain / time windo
 
 ## What
 What concretely changes (files / modules / interfaces / additions / deletions / renames). A list is fine.
+- <item> | verify: <observable behavior or executable check that proves this item landed>
+- ...
+
+**Not in this change**: <1–3 lines of adjacent scope explicitly excluded — the boundary of what approval covers>
 
 ## How
 Key technical decisions (distilled from research.md `## Decided`, **not copied verbatim**):
 - Choice: X (not Y)
 - Reason: one distilled sentence — **the conclusion and reason must be self-contained here**; the deep argument lives in design `## Key Decisions` (apply doesn't read research, so a pointer can't stand in for the conclusion)
-- Failure strategy / key algorithm / key parameters ...
+- Failure strategy / key algorithm / key parameters ... — any fallback / degrade / compat behavior the implementation may introduce **MUST be decided here or in `## Risk`**; `/spec:verify`'s charter audit treats untraceable fallbacks as defects (critical on data-write paths)
 
 ## Risk
 - Blast radius: which modules / interfaces / user scenarios are affected
@@ -27,7 +31,7 @@ Key technical decisions (distilled from research.md `## Decided`, **not copied v
 
 ## Section constraints
 
-- Each section **≤ 5 lines**
+- Each section **≤ 5 lines** (What: ≤5 items; the `| verify:` clause on an item and the closing **Not in this change** block don't count toward the limit)
 - Content over the limit → move it to `design.md`, **don't stuff it into the proposal**
 - `## How` distills `research.md ## Decided`, doesn't copy it verbatim
 - **What / How must pass question ④ (cut it)**: before committing a non-trivial What item / How decision, ask "what happens if I remove it" and don't write what makes no difference removed (SKILL § Claim Self-Review) — this is the precondition for the HARD GATE change points to let the user judge "approve or not" at a glance
@@ -73,3 +77,6 @@ On revise, **leave the other sections untouched** — edit only the named sectio
 - ❌ Stuffing content past the section limit (it should move to design.md)
 - ❌ Risk written as vague filler ("there may be a performance risk") without anchoring the trigger scenario / concrete hazard (SKILL Claim Self-Review question ③)
 - ❌ What listing "everything I can think of changing" without passing question ④'s cut (leaving the HARD GATE change points unjudgeable for approval)
+- ❌ A What item without a `verify:` clause (Completeness verification has nothing falsifiable to check)
+- ❌ Scope limits bolted on after APPROVED as extra HTML comments (they belong in **Not in this change**, re-gated via `/spec:revise what`)
+- ❌ Translated section headers (`## 为什么（Why）`) — headers are always the English canonical forms; prose follows the working language

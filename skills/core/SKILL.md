@@ -36,26 +36,29 @@ Spec-driven development workflow: research → interrogate → propose → HARD 
 |  | `/spec:propose [--codex]` | write proposal.md; `--codex` lets codex poke holes in the solution |
 |  | `/spec:revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `/spec:apply` | implement the code |
-|  | `/spec:verify [--codex] [--fix]` | self-review on three axes; `--codex` adds codex as a second reviewer, `--fix` lets codex edit |
+|  | `/spec:verify [--codex] [--fix]` | dispatches the independent spec-verifier agent (three dimensions + charter audit); `--codex` adds codex as a heterogeneous second reviewer, `--fix` lets codex edit |
 | Wrap up | `/spec:archive` | archive the change |
 
 ## Artifact map
 
 ```
 spec/
+├── knowledge.md                      project-level durable facts, cross-change (maintained by /spec:archive, read first by /spec:research)
 ├── changes/                          active change workspace
 │   └── <change-name>/
 │       ├── research.md   required    current research (Practices + Constraints + Open[TBD] + Decided, single file)
 │       ├── research/     optional    discarded-draft pile of research directions (research.md snapshots of abandoned directions, no markers/links, revivable)
 │       ├── design.md     optional    technical design (architecture / interfaces / data model)
 │       ├── proposal.md   required    the final solution (carries the HARD GATE approval marker)
-│       └── tasks.md      optional    task list for multi-executor collaboration
+│       ├── tasks.md      optional    task list for multi-executor collaboration
+│       ├── verify.md     at-verify   verification ledger (stable V-N finding IDs + round history + Evidence; written by /spec:verify)
+│       └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + evidence + leftovers)
 │
 └── archive/                          archive directory
     └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
-**The artifact set is fixed at these four + the discarded-draft pile.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
+**The artifact set is fixed at these four + the discarded-draft pile + the verification ledger + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
@@ -65,8 +68,11 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 |---|---|---|---|
 | research.md | External information: Practices / Constraints / Open[TBD] / Decided (DEC-N conclusion + one-line reason) | architecture·interfaces·schema→design ｜ changed files→proposal What ｜ raw search process→discarded-draft pile | one line each |
 | design.md | Internal technical structure: architecture diagram (structure, no fields) / interface contract (precise schema) / data model / **deep argument for contested decisions only** | business motivation→proposal Why ｜ risk·rollback→proposal Risk ｜ full code·DDL→apply ｜ copying DEC-N conclusions (reference, don't transcribe) ｜ expanding non-contested decisions | **narrative/argument ≤150 lines** (contracts excluded, as precise as needed); split diagrams >20 nodes; expand 1–2 decisions, ≤12 lines each |
-| proposal.md | Decision record: Why / What / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section |
+| proposal.md | Decision record: Why / What (each item + `verify:` acceptance check, closing **Not in this change** list) / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section (`verify:` clauses + the Not-in-this-change block don't count) |
 | tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
+| verify.md | Verification ledger (written by /spec:verify only): findings with stable V-N IDs + severity + status (open/fixed/wontfix) + per-round Evidence | restating the fix → it lives in code ｜ restating the solution → proposal/design | one line per finding |
+| retrospect.md | Archive-stage audit (written by /spec:archive only): divergences found ("docs say A, code does B"), verify Evidence lines, unfinished/deferred items, force/abandon reason | restating the solution → point back to proposal/design | ≤40 lines |
+| knowledge.md (project-level, outside the change dir) | Durable cross-change facts: topology/ownership, verified mechanisms, gotchas — `<fact> \| evidence \| date (change)` | anything change-specific → stays in that change's artifacts ｜ a fact proven wrong is **replaced** (correction noted), never left contradicting | one line per fact |
 
 **The soft budget governs "narrative/argument" only, not "contracts":** `## Interfaces` / `## Data Model` contracts are as precise as they need to be and **do not count toward the budget** — an imprecise contract is the real failure to specify. The exact line counts for design and rules like "split the change if the contract is too large" live in `references/design-spec.md` § Section Constraints (those numbers are authoritative) — **this matrix sets the principle only and does not restate them**.
 
@@ -85,9 +91,26 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 <HARD-GATE>
 === Proposal ready ===
 Path: spec/changes/<name>/proposal.md
-(if tasks.md was generated too → add a line: + tasks.md (<N>-phase breakdown + deps + owner))
+(if tasks.md was generated too → declare the decision, not just the fact:
+ + tasks.md — trigger: <cross-stack / >5 subtasks / multi-executor>; split: <N> groups — <one-line group list>
+   disagree with the need or the split → say so now, before /spec:apply)
 
-Changes: <list each key decision in substance, one line of "what was decided + why" per point, so the user can judge approval at a glance>
+Changes — the explanation layer for the decision-maker. proposal.md stays compressed for
+the executor; this block is where it gets explained. NEVER paste proposal lines verbatim.
+One block per key decision (3–6):
+
+  1. <the decision, one plain sentence>
+     Scenario: <the concrete situation where the problem bites — who does what, what goes wrong>
+     Avoided by: <how this decision prevents that, in plain words>
+     Cost: <the price paid — dependency / latency / limitation / rework>
+
+Register test: a smart reader who has never seen this codebase can approve or veto every
+point without a follow-up question. Define each domain term at first use; a line only an
+insider can parse must be rewritten around its scenario.
+
+Decided without asking: <factual [TBD]s resolved autonomously, one line each + the evidence
+used; "none" if none — mandatory line, it lets the user catch a misclassified preference>
+Not in this change: <mirror What's "Not in this change" list — what approval does NOT cover>
 
 Next:
   ✅ Looks good → run /spec:apply to start implementing
@@ -118,7 +141,7 @@ The `check-gate.ps1` hook checks for this marker before `/spec:apply` runs. **No
 
 **3 consecutive** failed fixes in the same direction during any command → stop immediately and report.
 
-One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **does not count**.
+One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **does not count**. From the second attempt on, the hypothesis must also state **why the previous attempt failed** — a retry without a root-cause reading of the last failure is a blind retry, and does not count.
 
 ```
 === Stuck Self-Check ===
@@ -135,9 +158,10 @@ Wait for the user's decision; no endless patching.
 
 ### Anti-Cheating (in the spirit of the explore skill)
 
-1. **No faking results**: a command / PoC / output that hasn't actually run **MUST NOT be reported as "success"**
+1. **No faking results**: a command / PoC / output that hasn't actually run **MUST NOT be reported as "success"** — a success claim must carry its evidence (the command + exit code / key output line; see /spec:verify's Evidence block)
 2. **No passing off a bypass as a fix**: mocking a fake response / changing an assert / patching a check function to return true MUST be stated plainly as "bypass, root cause unresolved"
 3. **Hardcoding must be flagged**: offsets / fixed hashes / one-off parameters get a code comment + a "applies to this case only" note in tasks.md
+4. **Self-reported success is not verification**: a result reported by another agent (or by an earlier round) must be independently re-run before it counts as evidence — /spec:verify's spec-verifier re-runs the key commands itself (Iron Law)
 
 ### Halt on infeasible task
 
@@ -156,14 +180,16 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 |---|---|---|
 | `hooks/check-tbd.ps1` | before `/spec:propose` | refuses to run if research.md still contains `[TBD]`, points to `/spec:ask` |
 | `hooks/check-gate.ps1` | before `/spec:apply` | refuses to run if proposal.md lacks the `APPROVED` marker |
+| `hooks/check-archive.ps1` | before `/spec:archive` | refuses to run if the change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
+| `hooks/check-verify-reminder.ps1` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
 
-Both hooks also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive the rest before continuing).
+check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive the rest before continuing). check-archive deliberately does **not** block on multiple changes: archiving is exactly how you get back down to one.
 
 **Soft vs hard constraints:**
 - Soft constraint (prompt): the model may violate it; the violation rate depends on the model's quality
 - Hard constraint (hook): a shell script blocks it; a 0% violation rate
 
-The PowerShell scripts under `hooks/` are registered to the `UserPromptSubmit` event by `hooks/hooks.json`.
+The PowerShell scripts under `hooks/` are registered by `hooks/hooks.json`: the three gates to the `UserPromptSubmit` event, the verify reminder to the `Stop` event.
 
 ## references loading strategy
 
@@ -180,6 +206,6 @@ Read on demand only when writing a concrete technical decision, to avoid polluti
 
 ## Interaction with the global protocol
 
-- **Language**: proposal / research prose follows your working language; section headers stay English (per the CLAUDE.md compromise — English headers make them tool-detectable and parameterizable)
+- **Language**: proposal / research prose follows your working language; **section headers are ALWAYS the English canonical forms** (`## Why / ## What / ## How / ## Risk` — never translated, e.g. ❌ `## 为什么（Why）`). A global "write in Chinese" protocol applies to prose only — hooks and `/spec:revise` target headers by their English names, and translated headers break that targeting
 - **Subagent delegation**: WebSearch goes to `@researcher`, cross-file search to `@code-explorer`
 - **Concurrency**: independent operations are dispatched at once

@@ -50,7 +50,7 @@ Key references: <URL>
    - Hard constraints (compatibility / performance / security / dependency versions) → `## Constraints`
    - References MUST include URLs
    - **Apply the four-question self-check before writing anything** (SKILL "Claim Self-Audit"): do not dump everything found — for each practice / constraint ask "what breaks if this is removed?"; omit anything whose removal has no impact; a constraint MUST identify where it causes a failure if violated. Zero encyclopedia-style padding.
-3. Main conversation Grep / Glob relevant modules in the project to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design).
+3. Main conversation maps the status quo — **read `spec/knowledge.md` first** (if it exists: project-level durable facts from previous changes — table ownership / call chains / verified gotchas; don't re-derive or re-Grep what's already recorded there), then Grep / Glob relevant modules to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design). A knowledge.md fact contradicted by what you find → note the correction in research (`订正/corrected: ...`); the fix to knowledge.md itself lands at archive time.
 4. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
    - Factual (determinable by reading code / docs) → decide yourself, note "decided from status quo: X"
    - Preference-driven (multiple valid options, depends on user trade-offs) → MUST mark `[TBD]` for `/spec:ask`

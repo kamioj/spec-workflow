@@ -43,6 +43,8 @@ Dispatch by the type of code the proposal `## What` involves:
 
 **Dispatching `spec-dev` MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 
+**The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope). An agent whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`/spec:revise what`), never the agent's.
+
 ### Cross-stack: contract first + parallel implementation
 
 **The serial approach is forbidden** (backend then frontend = 50% of the time wasted). The correct flow:
@@ -110,7 +112,8 @@ The main conversation only steps in when dispatch fails / cross-executor coordin
 
 - Advance by deps, touching only tasks whose deps are done
 - Multiple deps satisfied and independent → **prefer dispatching two dedicated agents concurrently** (if frontend and backend are independent)
-- After finishing each node (or a group of parallel ones) → call `/spec:verify` close by, **don't save it for the end**
+- After finishing each node (or a group of parallel ones) → run that node's own checks close by (compile / tests for the node), **don't save them for the end**. These are working checks — they do NOT write ledger rounds
+- **Closing verification is part of apply, not optional**: after the last What item / task lands, **dispatch the `spec-verifier` agent** (the same fresh-context, evidence-or-drop protocol `/spec:verify` uses — the conversation that just implemented MUST NOT write the closing round from its own self-review, that is exactly the bias the verifier exists to remove) and write its results as a ledger round to `spec/changes/<name>/verify.md` **before reporting implementation complete** — "done" without an independent ledger round covering the final state is not done. The Stop-event reminder hook (`check-verify-reminder.ps1`) backstops this: ending a turn with an approved proposal and no ledger gets nudged back.
 - Mark finished tasks `[x]` in tasks.md — **whoever finishes it marks it**: the dev agent marks the subtasks it owns; the main conversation marks the items it handles itself (config / scripts / cross-module coordination)
 
 ## Failure triage
@@ -130,7 +133,7 @@ A verify failure → diagnose first, then fix, handling by category:
 
 Same error / case, **3 consecutive** fix attempts still failing → stop immediately and report.
 
-One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **doesn't count**.
+One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **doesn't count**. From the second attempt on, the hypothesis must also state **why the previous attempt failed** — a retry without a root-cause reading of the last failure is a blind retry, and doesn't count.
 
 ```
 === Stuck Self-Check ===
@@ -147,13 +150,13 @@ Wait for the user's decision; **no endless patching**.
 
 ## Anti-Cheating
 
-- A command / test that hasn't actually run **MUST NOT be reported as "success"**
+- A command / test that hasn't actually run **MUST NOT be reported as "success"** — success claims carry evidence (command + exit code / key output), same contract as /spec:verify's Evidence block
 - A workaround that makes it "look like it passes" (mocking a fake response, changing an assert, patching a check function to return true) **MUST be stated plainly** as "bypass, root cause unresolved"
 - Hardcoding (offsets, fixed hashes) if necessary MUST be flagged in a code comment + a "applies to this case only" note in tasks.md
 
 ## Coding Charter (binding on everyone who writes code in this phase)
 
-The dev agent reads `code-charter.md` on startup; **the main conversation, when it writes code itself (config / scripts / CI), is equally bound** — before the first keystroke, Read `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`. The core: failure must be loud (throw when you should, **NEVER silently re-route a query to scrape a result**), **changing logic is replacement, not accumulation** (NEVER keep the old logic as a fallback — the number-one source of dirty data + instability), fail-fast for core logic, degrade only at a trust boundary and always loudly. **Applies to the coding phase only** — it does not constrain the solution-space exploration of research/design/propose.
+The dev agent reads `code-charter.md` on startup; **the main conversation, when it writes code itself (config / scripts / CI), is equally bound** — before the first keystroke, Read `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`. The core: failure must be loud (throw when you should, **NEVER silently re-route a query to scrape a result**), **changing logic is replacement, not accumulation** (NEVER keep the old logic as a fallback — the number-one source of dirty data + instability), fail-fast for core logic, degrade only at a trust boundary and always loudly. **Applies to the coding phase only** — it does not constrain the solution-space exploration of research/design/propose. A fallback / degrade / compat path is a **gate-level decision**: if proposal How/Risk doesn't authorize it, don't write it — `/spec:verify`'s charter audit treats unauthorized ones as findings (critical on data-write paths).
 
 ## What it does not do
 
