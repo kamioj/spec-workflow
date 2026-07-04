@@ -41,7 +41,8 @@ What does NOT count as verification:
 3. **Coherence** — matches `## How` decisions; no scope creep; nothing inside `Not in this change` was modified (modification there = finding) and nothing there is demanded (out of scope by decision)
 4. **Charter audit** — hunt silent fallbacks, the dirty-data class:
    - **Machine pass first**: `ast-grep scan --config ${CLAUDE_PLUGIN_ROOT}/rules/sgconfig.yml <changed files>` — AST-level rules, no regex false positives; output lines go straight into Evidence. Not installed → declare `not run: ast-grep not installed (scoop install main/ast-grep / npm i -g @ast-grep/cli)` and fall back to manual Grep for: swallowed exception + default return · new-logic-falls-back-to-old branches · `|| defaultValue` chains masking failures · compat flags defaulting to old behavior · silent query re-route
-   - **Every hit is judged by traceability, not taste**: traces to an explicit proposal `## How` / `## Risk` decision and degrades loudly → not a finding (note the citation); untraceable → **major**; untraceable on a data-write path (INSERT / UPDATE / message produce / file write) → **critical**
+   - **Attribute every machine hit before judging**: `git blame` / diff membership decides whether this change introduced the hit — pre-existing hits are recorded as out-of-scope in Defended, never counted as this change's findings
+   - **Every hit introduced by this change is judged by traceability, not taste**: traces to an explicit proposal `## How` / `## Risk` decision and degrades loudly → not a finding (note the citation); untraceable → **major**; untraceable on a data-write path (INSERT / UPDATE / message produce / file write) → **critical**
 
 ## Finding format (evidence before conclusion — hard format)
 
@@ -84,4 +85,5 @@ evidence:
 **Enum discipline** (observed drift in live runs — these are not suggestions):
 - `conclusion` is binary: `pass` or `fail`, nothing else. There is no "conditional pass" — an open major means fail; the round machinery exists precisely so a fail is cheap to re-run
 - severity is exactly `critical` / `major` / `minor` — no medium/low/high. Your instinctive "medium" is **major** if a spec'd behavior is unmet, **minor** if the defect is documentation-only
+- There is no `informational` severity either: **process-compliance observations** (missing APPROVED marker, legacy section headers, absent verify: clauses) **are ledger Notes, not V-N findings** — findings are defects in the change itself
 - Proposal predates the `verify:` clause format → state that absence explicitly as a completeness note, then derive acceptance from What + design + tasks
