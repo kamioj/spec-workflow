@@ -63,7 +63,7 @@ Multiple un-archived changes → list all, and add a note: this workflow is desi
 | Main implementation done but no `verify.md` ledger yet (or code changed since its last round) | Awaiting verification | `/spec:verify` to run the three-dimension check |
 | `verify.md` latest round `conclusion: fail` (incl. escalated still-open findings) | Verification failed | Review the ledger's open findings: `/spec:apply` to continue fixing / `/spec:revise` to fix the proposal (if the proposal itself is wrong) |
 | `verify.md` latest round `conclusion: pass` | Verification passed (independent review) | Optional: heterogeneous Codex peer review → `/spec:verify --codex` (fills blind spots; `--fix` lets Codex apply fixes). **Do not proactively recommend archive** — call `/spec:archive` when you want to archive |
-| User says "archive" | Ready to archive | `/spec:archive` |
+| The user explicitly said "archive" in conversation (not file-detectable — never inferred from artifacts alone) | Ready to archive | `/spec:archive` |
 
 **Key anti-patterns**:
 

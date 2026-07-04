@@ -1,9 +1,18 @@
 #!/usr/bin/env pwsh
-# Pre-check for /spec:apply: proposal.md must carry the APPROVED marker
+# Pre-check for /spec:apply: prerequisites must exist -- a proposal that went through
+# /spec:propose (all four sections present) and a single active change.
 # Trigger: UserPromptSubmit hook
 # Behavior: when the user input INVOKES /spec:apply (at the start of a line -- merely
-# mentioning the command in a question must not trigger the gate), scan proposal.md;
-# if there's no APPROVED marker, exit 2 to block
+# mentioning the command in a question must not trigger the gate), verify prerequisites;
+# missing -> exit 2 to block.
+#
+# Deliberately NOT checked here: the <!-- APPROVED --> marker. Under the
+# invocation-as-approval design, /spec:apply itself appends the marker AFTER this hook
+# has fired -- requiring the marker here would deadlock the happy path (the pre-0.2.3
+# bug: propose -> gate -> /spec:apply -> blocked "no marker" -> apply never runs -> the
+# marker never gets appended). The marker is an audit record: check-archive.ps1 enforces
+# it at archive time, /spec:status reports it.
+# fail-open: internal errors exit 0.
 
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -51,11 +60,13 @@ try {
 
         $content = Get-Content $proposalPath -Raw -Encoding UTF8
 
-        # APPROVED marker: only the <!-- APPROVED: ... --> comment form written by apply counts (bare text / headings don't, to avoid the body text being misread as approval)
-        $approvedPattern = '(?i)<!--\s*APPROVED\s*[:>]'
-
-        if ($content -notmatch $approvedPattern) {
-            [Console]::Error.WriteLine("SDD: proposal.md ($($change.Name)) has no APPROVED marker. Run /spec:propose through the HARD GATE first, then run /spec:apply once satisfied (apply auto-appends the APPROVED marker)")
+        # A proposal that went through /spec:propose carries all four sections
+        $missing = @()
+        foreach ($section in '## Why', '## What', '## How', '## Risk') {
+            if ($content -notmatch "(?m)^$section") { $missing += $section }
+        }
+        if ($missing.Count -gt 0) {
+            [Console]::Error.WriteLine("SDD: proposal.md ($($change.Name)) is missing section(s): $($missing -join ', '). Run /spec:revise to complete it, or /spec:propose to rewrite")
             exit 2
         }
     }

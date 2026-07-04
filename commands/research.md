@@ -49,7 +49,7 @@ Key references: <URL>
    - WebSearch option A/B/C comparisons, known issues, benchmarks → `## Practices`
    - Hard constraints (compatibility / performance / security / dependency versions) → `## Constraints`
    - References MUST include URLs
-   - **Apply the four-question self-check before writing anything** (SKILL "Claim Self-Audit"): do not dump everything found — for each practice / constraint ask "what breaks if this is removed?"; omit anything whose removal has no impact; a constraint MUST identify where it causes a failure if violated. Zero encyclopedia-style padding.
+   - **Apply the four-question self-check before writing anything** (SKILL "Claim Self-Review"): do not dump everything found — for each practice / constraint ask "what breaks if this is removed?"; omit anything whose removal has no impact; a constraint MUST identify where it causes a failure if violated. Zero encyclopedia-style padding.
 3. Main conversation maps the status quo — **read `spec/knowledge.md` first** (if it exists: project-level durable facts from previous changes — table ownership / call chains / verified gotchas; don't re-derive or re-Grep what's already recorded there), then Grep / Glob relevant modules to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design). A knowledge.md fact contradicted by what you find → note the correction in research (`订正/corrected: ...`); the fix to knowledge.md itself lands at archive time.
 4. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
    - Factual (determinable by reading code / docs) → decide yourself, note "decided from status quo: X"
@@ -73,7 +73,7 @@ Key references: <URL>
 
 ## Loading references (on demand)
 
-Load the corresponding reference only when writing Practices that involve a specific tech stack:
+Load the corresponding reference only when writing Practices that involve a specific tech stack (all files below live under `${CLAUDE_PLUGIN_ROOT}/skills/core/references/`):
 - Java + Spring → `${CLAUDE_PLUGIN_ROOT}/skills/core/references/alibaba-java.md` + `java-conventions.md`
 - Vue / uni-app → `vue-style.md` + `vue-patterns.md` + `js-style.md` + `css-style.md` (add `uniapp-miniprogram.md` for uni-app)
 - React → `bulletproof-react.md` + `react-patterns.md`
@@ -87,4 +87,4 @@ Load the corresponding reference only when writing Practices that involve a spec
 - **NEVER fabricate** links or benchmark numbers you did not actually find
 - If research coverage is incomplete, proactively say "could not find X — recommend the user supplement"; do not fill gaps from memory
 - If the in-project call chain was not fully scanned, proactively say "did not scan module Y"; do not speculate
-- ❌ Encyclopedia-style padding: listing every option / constraint found without applying the fourth self-check question (can it be cut?) — only what survives the cut gets written (SKILL "Claim Self-Audit")
+- ❌ Encyclopedia-style padding: listing every option / constraint found without applying the fourth self-check question (can it be cut?) — only what survives the cut gets written (SKILL "Claim Self-Review")

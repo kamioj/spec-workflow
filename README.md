@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.2.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -60,7 +60,7 @@ A Claude Code plugin only ships files (commands / hooks / agents / rules); it ne
 | Tool | Powers | Install | Without it |
 |---|---|---|---|
 | [ast-grep](https://github.com/ast-grep/ast-grep) | charter-audit machine pass over `rules/dirty-data/` (AST-level detection of swallowed exceptions / default-return fallbacks) | `scoop install main/ast-grep` or `npm i -g @ast-grep/cli` | the verifier falls back to manual pattern review and declares `not run: ast-grep not installed` in Evidence |
-| Codex CLI | the `--codex` heterogeneous peer review in `/spec:propose` and `/spec:verify` | `npm i -g @openai/codex` + login | `--codex` flags unavailable; the default independent review is unaffected |
+| Codex CLI | the `--codex` heterogeneous peer review in `/spec:propose` and `/spec:verify` | `npm i -g @openai/codex`, then run `codex` once — the first run walks you through login | `--codex` flags unavailable; the default independent review is unaffected |
 
 ### Try it
 
@@ -72,6 +72,8 @@ Once claude is running:
 ```
 
 Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
+
+From there, walk the flow: `/spec:ask` settles the open `[TBD]` decisions with you → `/spec:propose` writes the proposal and **stops at the HARD GATE for your approval** → `/spec:apply` implements → `/spec:verify` audits independently → say "archive" when you're done. Lost? `/spec:status` tells you exactly where you are and what to run next.
 
 ---
 
@@ -90,7 +92,7 @@ Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
 |  | `/spec:propose [--codex]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | dispatch agents to implement |
-|  | `/spec:verify [--codex] [--fix]` | self-review on three axes; `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
+|  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (three dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:archive` | archive the current change |
 
 ### 4 hooks — 3 hard gates + 1 reminder
@@ -100,7 +102,7 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 | Hook | Fires on | What it does |
 |---|---|---|
 | `check-tbd.ps1` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
-| `check-gate.ps1` | before `/spec:apply` | blocks if proposal.md has no `<!-- APPROVED -->` |
+| `check-gate.ps1` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
 | `check-archive.ps1` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
 | `check-verify-reminder.ps1` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
 
@@ -185,6 +187,8 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── rules/                          # ast-grep rule packs (charter-audit machine pass)
 │   ├── sgconfig.yml
 │   └── dirty-data/                 # swallowed exceptions / default-return fallbacks (java/js/ts)
+├── scripts/
+│   └── codex-exec.ps1              # wrapper for every --codex invocation (timeout / session reuse / Windows workarounds)
 └── skills/core/
     ├── SKILL.md                    # plugin overview (shared principles)
     └── references/                 # knowledge base
@@ -273,7 +277,7 @@ How this plugin cooperates with the global CLAUDE.md protocol:
 
 ## Verified Decisions
 
-Design calls I worried about, then confirmed safe after digging in:
+Design calls I worried about, then confirmed safe after digging in (evidence cites Claude Code's official plugin-dev plugin and hookify sources — install those to re-verify):
 
 | Item | Verdict | Evidence |
 |---|---|---|
@@ -286,6 +290,10 @@ Design calls I worried about, then confirmed safe after digging in:
 
 ## Changelog
 
+- **0.2.1 – 0.2.3** — live-fire hardening from the first real runs and two independent audits:
+  - verifier output enum discipline (0.2.1)
+  - gate hooks trigger on invocation only, never on mention — "what does /spec:apply do?" passes through (0.2.2)
+  - the apply gate now checks prerequisites (proposal exists + four sections + single change) instead of the APPROVED marker, fixing a happy-path deadlock where the hook demanded a marker that only apply itself could append; `--codex` tool permissions repaired (`/spec:propose --codex` was unable to run its script); doc drift swept (0.2.3)
 - **0.2.0**
   - HARD GATE gains an explanation layer: Changes written for the decision-maker (scenario → how the decision avoids it → cost), with mandatory "Decided without asking" and "Not in this change" disclosures
   - proposal `## What`: every item carries a `verify:` acceptance check; the section closes with an explicit **Not in this change** boundary that flows into agent dispatch prompts and verify exclusion zones

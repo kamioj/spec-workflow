@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.2.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -60,7 +60,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | 工具 | 解锁什么 | 安装 | 不装的话 |
 |---|---|---|---|
 | [ast-grep](https://github.com/ast-grep/ast-grep) | charter 审计的机器扫描（`rules/dirty-data/`，AST 级检测吞异常/catch 返默认值） | `scoop install main/ast-grep` 或 `npm i -g @ast-grep/cli` | verifier 退回手工模式，并在 Evidence 里如实声明 `not run` |
-| Codex CLI | `/spec:propose` 与 `/spec:verify` 的 `--codex` 异构他审 | `npm i -g @openai/codex` + 登录 | `--codex` 不可用；默认的独立审查不受影响 |
+| Codex CLI | `/spec:propose` 与 `/spec:verify` 的 `--codex` 异构他审 | `npm i -g @openai/codex`，然后运行一次 `codex`——首次运行会引导完成登录 | `--codex` 不可用；默认的独立审查不受影响 |
 
 ### Try it
 
@@ -72,6 +72,8 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 ```
 
 3 分钟内 `research.md` 会落在 `spec/changes/caffeine-vs-redis/` 目录里。
+
+接下来照流程走：`/spec:ask` 和你一起消化待决的 `[TBD]` → `/spec:propose` 写提案并**在 HARD GATE 停下等你批准** → `/spec:apply` 实施 → `/spec:verify` 独立审查 → 想收尾时说"归档"。迷路了就 `/spec:status`，它会告诉你在哪一步、下一步跑什么。
 
 ---
 
@@ -90,7 +92,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
-|  | `/spec:verify [--codex] [--fix]` | 三维自审；`--codex` codex 异构他审，`--fix` codex 直接改 |
+|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（三维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:archive` | 归档当前 change |
 
 ### 4 个 Hook——3 个硬门 + 1 个提醒
@@ -100,7 +102,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | Hook | 何时触发 | 做什么 |
 |---|---|---|
 | `check-tbd.ps1` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.ps1` | `/spec:apply` 之前 | proposal.md 缺 `<!-- APPROVED -->` 就拒绝 |
+| `check-gate.ps1` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
 | `check-archive.ps1` | `/spec:archive` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
 | `check-verify-reminder.ps1` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 
@@ -185,6 +187,8 @@ graph LR
 ├── rules/                          # ast-grep 规则包（charter 审计机器扫描）
 │   ├── sgconfig.yml
 │   └── dirty-data/                 # 吞异常 / catch 返默认值（java/js/ts）
+├── scripts/
+│   └── codex-exec.ps1              # 所有 --codex 调用的统一包装（超时 / 会话复用 / Windows 兼容）
 └── skills/core/
     ├── SKILL.md                    # plugin 总览（共享精神）
     └── references/                 # 知识库
@@ -273,7 +277,7 @@ claude --plugin-dir .
 
 ## Verified Decisions
 
-调研后确认无问题的设计点（曾担心过）：
+调研后确认无问题的设计点（曾担心过；证据引用 Claude Code 官方 plugin-dev 插件与 hookify 源码，安装它们可复核）：
 
 | 项 | 结论 | 证据 |
 |---|---|---|
@@ -286,6 +290,10 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.2.1 – 0.2.3** — 首批真实运行 + 两轮独立审计的实战加固：
+  - verifier 输出枚举纪律（0.2.1）
+  - 门 hook 只在调用时触发、提及不拦——"apply 是干嘛的"这类提问正常放行（0.2.2）
+  - apply 门改查前置条件（proposal 存在 + 四节齐全 + 单活跃 change）而非 APPROVED 标记，修复一个 happy path 死锁（hook 要求的标记只有 apply 自己才能盖）；修复 `--codex` 工具权限（`/spec:propose --codex` 此前无法执行脚本）；扫平文档漂移（0.2.3）
 - **0.2.0**
   - HARD GATE 增加讲解层：Changes 按"场景 → 如何避免 → 代价"写给决策者，并强制披露"未询问自决项"与"不在本次范围"
   - proposal `## What` 每项带 `verify:` 验收条，节尾必有 **Not in this change** 范围边界，且贯穿到 agent 派单与 verify 排除区

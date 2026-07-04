@@ -49,7 +49,7 @@ Stack detection: Read the root manifest file(s) (`pom.xml` / `build.gradle*` / `
 | Java + Spring | `alibaba-java.md` + `java-conventions.md` |
 | Python | `python-conventions.md` |
 | PHP modern (Laravel / Symfony) | `php-conventions.md` |
-| PHP legacy (no namespace / filename-based routing) | `php-conventions.md` legacy section + `~/.claude/skills/ctf-game/references/server-audit.md` (if it exists) |
+| PHP legacy (no namespace / filename-based routing) | `php-conventions.md` legacy section |
 | Node BFF (JS) | `js-style.md` |
 | Node BFF (TS) | `google-ts-style.md` + `ts-conventions.md` + `js-style.md` |
 

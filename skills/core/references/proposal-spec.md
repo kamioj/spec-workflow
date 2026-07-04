@@ -43,8 +43,10 @@ The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by 
 The timestamp uses the current ISO local time.
 
 This marker is simultaneously:
-- the contract for the `check-gate.ps1` hook to let `/spec:apply` through
+- the contract `check-archive.ps1` enforces at archive time (a change without it = flow bypassed) and `check-verify-reminder.ps1` uses to detect the implementation window
 - an **audit record**: git log shows when it was approved
+
+(`check-gate.ps1` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow.)
 
 **propose does not append APPROVED directly** — the HARD GATE is the user's decision point, and APPROVED is apply's contract action. Separating them spares the flow a redundant "reply go" step.
 
@@ -56,7 +58,7 @@ Any revision MUST:
 2. Re-emit the HARD GATE after editing and wait for the user's decision
 3. When the user runs `/spec:apply`, apply appends the new APPROVED marker automatically (no "go" reply needed)
 
-If the old APPROVED isn't removed after a revise → the hook misjudges it as approved → apply skips the new decision and runs the pre-revision logic straight through.
+If the old APPROVED isn't removed after a revise → apply sees a marker and won't append a fresh one, and status / check-archive treat the pre-revision approval as still valid — the approval audit trail lies about what was actually approved.
 
 ## /spec:revise's editable sections
 

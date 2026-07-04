@@ -58,7 +58,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
 6. Output a summary:
    ```
    Archived: spec/archive/YYYY-MM-DD-<name>/
-   Artifacts included: research.md, design.md, proposal.md, tasks.md, verify.md, retrospect.md
+   Artifacts included: research.md, research/ (if present), design.md, proposal.md, tasks.md, verify.md, retrospect.md
    Retrospect: divergences <N / none> · evidence <attached / not verified> · deferred <M items / none>
    Knowledge: <K facts added/corrected in spec/knowledge.md / nothing durable>
    ```

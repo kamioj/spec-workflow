@@ -1,6 +1,6 @@
 ---
 description: Implement the code, advancing by proposal/tasks. A pre-command hook checks that proposal.md carries the APPROVED marker. Incremental verification: call /spec:verify close to each node as it lands, don't save it all for the end
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
 ---
 
 # /spec:apply
@@ -19,9 +19,9 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
      Timestamp uses the current ISO local time
    - Already has an APPROVED marker (from the `/spec:workflow` flow or a previous apply) → don't append again
 
-3. **Hook check**: `check-gate.ps1` still checks at the `UserPromptSubmit` moment — after apply auto-appends, the hook lets it through smoothly (serving as an audit layer and backstop).
+3. **Hook check**: `check-gate.ps1` fires at the `UserPromptSubmit` moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections, single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `check-archive.ps1` audits it at archive time.
 
-   In the rare case the hook blocks (e.g. proposal.md missing / wrong name) → handle per the hook's error message, don't force a bypass.
+   If the hook blocks (no/incomplete proposal, multiple active changes) → handle per its error message, don't force a bypass.
 
 ## Scoping
 

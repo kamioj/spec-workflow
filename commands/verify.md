@@ -13,14 +13,14 @@ allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 | `/spec:verify --codex` | + Codex heterogeneous peer review, produces findings | ❌ report only |
 | `/spec:verify --codex --fix` | Codex review + applies fixes + Claude second-pass sign-off | ✅ |
 
-`--fix` MUST be paired with `--codex` (standalone `--fix` produces an error prompt). Default (no flags) performs the independent review only, maintaining a read-only reporter stance.
+`--fix` MUST be paired with `--codex` — standalone `--fix` outputs exactly `--fix requires --codex; run /spec:verify --codex --fix` and stops. Default (no flags) performs the independent review only, maintaining a read-only reporter stance.
 
 ## Independent verifier (why verify dispatches an agent instead of reviewing inline)
 
-The conversation that just ran `/spec:apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `/spec:verify` therefore **dispatches the `spec-verifier` agent** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself:
+The conversation that just ran `/spec:apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `/spec:verify` therefore **dispatches the `spec-verifier` agent** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself. The same rule binds `/spec:apply`'s closing verification: the review is ALWAYS performed by a dispatched spec-verifier, whoever initiates it — the implementing conversation only ever does bookkeeping:
 
 1. Dispatch `spec-verifier` with the change name and nothing else — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
-2. Copy its findings into the ledger **verbatim** — disagreement is recorded as a note next to the finding, never by deleting or softening it
+2. Transcribe its findings into ledger rows **without softening, dropping, or re-judging them** — format conversion only (one finding = one table row; severity / location / text preserved). Derive the per-dimension pass/fail lines from its findings; its `conclusion` is authoritative and may never be upgraded fail → pass. Disagreement is recorded as a note next to the row, never by deletion
 3. Run the round rules below (diff vs previous round, escalation)
 4. The user overrules a finding as a false positive → distill the generalized lesson (what pattern + why it's acceptable here) into `spec/knowledge.md`, so later rounds and later changes stop repeating it
 
@@ -74,6 +74,8 @@ When `--codex` is specified, after the independent review, invoke **Codex (a het
 **All invocation mechanics are encapsulated in `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1`** — Windows workarounds (#336 bypass sandbox / #337 avoid node spawn), `effort=low` for cost control, timeout to prevent hangs, residual-process cleanup, session parsing. The "why this exact invocation is required" constraints are in the script header comments (single source of truth).
 
 **Session reuse**: if `spec/changes/<name>/.codex-session` exists (left by `/spec:propose --codex`), pass `-ResumeSession <id>` to resume — Codex remembers the proposal it reviewed and can judge "**does the code faithfully implement the proposal?**". Omit the parameter if no session file exists.
+
+> Executed by Claude inside the session (`${CLAUDE_PLUGIN_ROOT}` resolves only there) — **not** a command for you to run in a terminal.
 
 ```powershell
 $prompt = @"

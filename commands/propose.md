@@ -1,6 +1,6 @@
 ---
 description: Write or fully rewrite proposal.md (## Why / ## What / ## How / ## Risk). A pre-command hook forces research.md's [TBD] list to be empty. On completion, emit the HARD GATE and wait for user approval
-allowed-tools: Read, Write, Edit, Glob
+allowed-tools: Read, Write, Edit, Glob, Bash
 ---
 
 # /spec:propose
@@ -69,6 +69,8 @@ With `--codex`, after proposal.md is written, **explicitly** call codex to adver
 **codex only critiques, it doesn't edit the solution** (the solution is the product of the user's HARD GATE decision; edits go through `/spec:revise`, and codex can't bypass that decision authority to touch the proposal).
 
 Invoke the unified wrapper script `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1` (Windows workarounds for #336/#337 + `effort=low` for cost control + timeout against hangs + leftover-process cleanup + session parsing all live in the script; "why it must be called this way" is in the script's header comment):
+
+> Executed by Claude inside the session (`${CLAUDE_PLUGIN_ROOT}` resolves only there) — **not** a command for you to run in a terminal.
 
 ```powershell
 $prompt = @"

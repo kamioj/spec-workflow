@@ -1,6 +1,6 @@
 ---
 description: Full SDD workflow, end to end. Runs everything from research through archive automatically; MUST stop at interrogation points and MUST stop at HARD GATE. Also accepts the legacy /sdd entry point. Trigger words: spec first / proposal / design first / draft a plan.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, Task
 ---
 
 # /spec:workflow
@@ -29,7 +29,7 @@ Invoke each phase command in the order below. **If any phase encounters user rej
    - **Write zero code before confirmation**; if satisfied → go directly to `/spec:apply` (apply auto-appends APPROVED; no "reply go" step needed)
    - Rejected → use `/spec:revise [section]` (minor adjustments) or `/spec:chat` (rethink the direction)
 6. **`/spec:apply`** — implement the code, advancing through proposal / tasks
-   - The pre-command hook verifies that the proposal contains the APPROVED marker
+   - The pre-command hook verifies the prerequisites (proposal.md with all four sections, single active change); apply itself then appends the APPROVED marker
 7. **`/spec:verify`** — dispatches the independent spec-verifier agent (three dimensions + charter audit, ledger round); for critical changes, add `--codex` to bring in Codex as a heterogeneous peer reviewer (`--fix` lets Codex apply fixes)
 8. **Wait for the user to say "archive"** → `/spec:archive`
 
@@ -44,4 +44,6 @@ Invoke each phase command in the order below. **If any phase encounters user rej
 
 - Commands that have not actually been run / outputs that have not been verified MUST NOT be presented as successful
 - A workaround that makes something "look like it passed" MUST be explicitly flagged as "bypassed; root cause unresolved"
+- Hardcoded values (offsets / fixed hashes / one-off parameters) MUST be flagged in a code comment + a "applies to this case only" note in tasks.md
+- Self-reported success from another agent or an earlier round is not verification — it gets independently re-run
 - If the task's premise is wrong (contradictory requirements / out of scope / incompatible tooling) → stop immediately and report "task is not feasible"

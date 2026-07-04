@@ -47,14 +47,14 @@ The three gate hooks are attached to the `UserPromptSubmit` event (see `hooks/ho
 | Hook | Matches | Blocks | When unsatisfied |
 |---|---|---|---|
 | `check-tbd.ps1` | `/spec:propose` | research.md's `## Open [TBD]` section still has `[TBD-N]` | `exit 2`, points to `/spec:ask` |
-| `check-gate.ps1` | `/spec:apply` | proposal.md lacks the `<!-- APPROVED: ... -->` marker | `exit 2`, points to passing the HARD GATE first |
+| `check-gate.ps1` | `/spec:apply` | prerequisites missing: proposal.md absent, or lacking any of the four sections, or ≠1 active change | `exit 2`, points to `/spec:propose` / `/spec:revise`. **Deliberately does NOT require the APPROVED marker** — apply appends it after the hook fires (requiring it here = happy-path deadlock, the pre-0.2.3 bug); `check-archive.ps1` enforces it at archive time |
 | `check-archive.ps1` | `/spec:archive` | the change bypassed the flow: proposal without APPROVED / tasks.md with unchecked items / no proposal.md | `exit 2`, lists the findings; deliberate override = the prompt contains `force` or `abandon(ed)` (the archive command then records the reason in retrospect.md) |
 | `check-verify-reminder.ps1` | Stop event (end of a Claude turn) | the single active change has an APPROVED proposal but no verify.md ledger — implementation ended without a closing verification | `exit 2`, nudges Claude to run the closing verification or state explicitly why it's pausing; `stop_hook_active` in stdin guards against loops (one nudge per stop cycle) |
 
 Hook conventions (must hold when editing hooks):
 - The stdin JSON field is named **`user_prompt`** (not `prompt`) + `cwd`. This was a trap we hit; the README records the evidence specifically.
 - **fail-open**: a hook erroring out goes to catch → `exit 0` (allow). A bug in a hook must never block the user's normal flow.
-- `check-gate.ps1`'s APPROVED regex recognizes only the `<!-- APPROVED:` comment form (which is exactly what apply writes; bare text / headings are not recognized, to avoid the body text mentioning the word being misread as approval). When changing the marker format, change the regex together with it.
+- The APPROVED regex (in `check-archive.ps1` / `check-verify-reminder.ps1`) recognizes only the `<!-- APPROVED:` comment form (which is exactly what apply writes; bare text / headings are not recognized, to avoid the body text mentioning the word being misread as approval). When changing the marker format, change the regex together with it.
 - **Multiple active changes**: check-tbd and check-gate `exit 2` when there is >1 non-archive directory under `spec/changes/`, requiring you to archive down to a single change first (this workflow assumes a single active change, otherwise a draft change cross-blocks an approved one). check-archive deliberately does **not** block on multiple changes — archiving is exactly how you get back down to one.
 
 ## Big picture: commands + agent + artifacts

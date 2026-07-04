@@ -1,5 +1,5 @@
 {
-  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: APPROVED marker exists; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger)",
+  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: prerequisites ready — proposal with all four sections + single active change; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger)",
   "hooks": {
     "UserPromptSubmit": [
       {
