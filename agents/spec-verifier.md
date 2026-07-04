@@ -80,3 +80,8 @@ evidence:
   <every command you actually ran + exit code / key output line>
   not run: <check> — <reason>
 ```
+
+**Enum discipline** (observed drift in live runs — these are not suggestions):
+- `conclusion` is binary: `pass` or `fail`, nothing else. There is no "conditional pass" — an open major means fail; the round machinery exists precisely so a fail is cheap to re-run
+- severity is exactly `critical` / `major` / `minor` — no medium/low/high. Your instinctive "medium" is **major** if a spec'd behavior is unmet, **minor** if the defect is documentation-only
+- Proposal predates the `verify:` clause format → state that absence explicitly as a completeness note, then derive acceptance from What + design + tasks
