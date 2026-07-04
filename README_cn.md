@@ -53,6 +53,15 @@ claude plugin marketplace add kamioj/spec-workflow
 claude plugin install spec@spec-workflow
 ```
 
+### 可选依赖（不会自动安装——不装也能完整跑通，插件优雅降级）
+
+Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不往你机器上装软件**。两个外部工具解锁增强层，均为自愿安装：
+
+| 工具 | 解锁什么 | 安装 | 不装的话 |
+|---|---|---|---|
+| [ast-grep](https://github.com/ast-grep/ast-grep) | charter 审计的机器扫描（`rules/dirty-data/`，AST 级检测吞异常/catch 返默认值） | `scoop install main/ast-grep` 或 `npm i -g @ast-grep/cli` | verifier 退回手工模式，并在 Evidence 里如实声明 `not run` |
+| Codex CLI | `/spec:propose` 与 `/spec:verify` 的 `--codex` 异构他审 | `npm i -g @openai/codex` + 登录 | `--codex` 不可用；默认的独立审查不受影响 |
+
 ### Try it
 
 启动 claude 后：

@@ -53,6 +53,15 @@ claude plugin marketplace add kamioj/spec-workflow
 claude plugin install spec@spec-workflow
 ```
 
+### Optional dependencies (not auto-installed — the plugin degrades gracefully without them)
+
+A Claude Code plugin only ships files (commands / hooks / agents / rules); it never installs software on your machine. Two external tools unlock extra layers, both opt-in:
+
+| Tool | Powers | Install | Without it |
+|---|---|---|---|
+| [ast-grep](https://github.com/ast-grep/ast-grep) | charter-audit machine pass over `rules/dirty-data/` (AST-level detection of swallowed exceptions / default-return fallbacks) | `scoop install main/ast-grep` or `npm i -g @ast-grep/cli` | the verifier falls back to manual pattern review and declares `not run: ast-grep not installed` in Evidence |
+| Codex CLI | the `--codex` heterogeneous peer review in `/spec:propose` and `/spec:verify` | `npm i -g @openai/codex` + login | `--codex` flags unavailable; the default independent review is unaffected |
+
 ### Try it
 
 Once claude is running:
