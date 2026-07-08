@@ -14,3 +14,7 @@ desktop.ini
 
 # Claude Code internal
 .gcs-sha
+
+# Local artifacts (not part of the plugin)
+demo/
+serving-dev.zip
