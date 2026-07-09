@@ -24,7 +24,7 @@ allowed-tools: Read, Edit, AskUserQuestion
    - **Uncertain → treat as preference-driven** (never skip)
 3. **How to ask preference-driven questions** (inherits global *Asking Style* + SKILL "Self-Contained Prompts"):
 <!-- host:codex -->
-   - Ask each question as numbered plain-text in the conversation. Do **not** use a structured tool UI — list options as numbered items (1, 2, 3 …), mark the recommended option with "(Recommended)", and wait for the user's answer before moving to the next question.
+   - Ask each question as plain text in the conversation. Do **not** use a structured tool UI. Fixed format, no deviation: questions are numbered `Q1 / Q2 / …`; **options are ALWAYS lettered `A. / B. / C.` — never numbered** (numbered options visually continue the question sequence, and the user reads five questions where there is one); recommended option first, marked "(Recommended)"; close each question with `Reply with a letter (e.g. "A").`; wait for the answer before the next question.
 <!-- /host -->
    - **Every question must be self-contained (top priority)**: ① one-sentence decision statement + ② why it must be settled now (what it affects / what breaks if left open) + ③ for each option, "choosing this leads to what — specific scenario / consequence". **The user must be able to answer without asking a follow-up**.
 <!-- host:claude -->
@@ -48,11 +48,11 @@ allowed-tools: Read, Edit, AskUserQuestion
 <!-- /host -->
 <!-- host:codex -->
      >
-     > 1. Redis (Recommended): shared across instances, strongly consistent across machines; cost = extra dependency + network round-trip per read
-     > 2. Caffeine: fastest in-process, zero dependencies; cost = each instance holds its own copy, **data inconsistent across machines**
-     > 3. Skip for now: simplest; cost = high-frequency reads hit the DB directly, revisit when load demands it
+     > A. Redis (Recommended): shared across instances, strongly consistent across machines; cost = extra dependency + network round-trip per read
+     > B. Caffeine: fastest in-process, zero dependencies; cost = each instance holds its own copy, **data inconsistent across machines**
+     > C. Skip for now: simplest; cost = high-frequency reads hit the DB directly, revisit when load demands it
      >
-     > Which do you prefer? (reply with the number)
+     > Reply with a letter (e.g. "A").
 <!-- /host -->
 4. Before the first question, one-line declaration:
    ```
