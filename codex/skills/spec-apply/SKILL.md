@@ -42,6 +42,8 @@ Dispatch by the type of code the proposal `## What` involves:
 | **Cross-stack (including interface-contract changes)** | **Pin the contract first → spawn two spec-dev agents concurrently (one frontend, one backend)** (see below) |
 | config / scripts / CI / docs | main conversation handles it |
 
+`spawn_agent` parameter contract: pass EITHER `message` (plain-text task only) OR `items` (use this when attaching a skill reference — put the task text inside `items` as a `{type:"text"}` entry alongside the `{type:"skill"}` entry). Passing both is rejected by the tool.
+
 **Dispatching spec-dev MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 
 **The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope). An agent whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`$spec-revise what`), never the agent's.

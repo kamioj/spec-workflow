@@ -60,6 +60,10 @@ Dispatch by the type of code the proposal `## What` involves:
 <!-- /host -->
 | config / scripts / CI / docs | main conversation handles it |
 
+<!-- host:codex -->
+`spawn_agent` parameter contract: pass EITHER `message` (plain-text task only) OR `items` (use this when attaching a skill reference — put the task text inside `items` as a `{type:"text"}` entry alongside the `{type:"skill"}` entry). Passing both is rejected by the tool.
+<!-- /host -->
+
 <!-- host:claude -->
 **Dispatching `spec-dev` MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 <!-- /host -->

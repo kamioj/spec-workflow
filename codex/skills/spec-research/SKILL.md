@@ -46,7 +46,8 @@ Key references: <URL>
 ## Process
 
 1. **Confirm the change directory**: no active change → create `spec/changes/<kebab-name>/`, deriving the name from the user's description; active change with a matching direction → append to research.md.
-2. **Spawn the researcher agent** (defined in ~/.codex/agents/researcher.toml) to research and write into research.md:
+2. **Spawn a researcher subagent** to research and write into research.md. No dedicated researcher TOML ships with sdd — describe the role inline in the spawn task ("web-research specialist: survey practices, cite URLs, no fabrication").
+   `spawn_agent` parameter contract: pass EITHER `message` (plain-text task only) OR `items` (use this when attaching a skill reference — put the task text inside `items` as a `{type:"text"}` entry alongside the `{type:"skill"}` entry). Passing both is rejected by the tool.
    - WebSearch option A/B/C comparisons, known issues, benchmarks → `## Practices`
    - Hard constraints (compatibility / performance / security / dependency versions) → `## Constraints`
    - References MUST include URLs
