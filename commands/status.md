@@ -2,6 +2,7 @@
 description: Reports where the current SDD change stands, what artifacts exist, and which commands can be run next. Use when returning after an interruption and unsure where things left off.
 allowed-tools: Read, Glob, Bash(ls:*)
 ---
+<!-- GENERATED from core/commands/status.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:status
 

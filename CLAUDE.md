@@ -8,15 +8,24 @@ This is a **Claude Code plugin marketplace** housing the `sdd` (spec-driven deve
 
 Manifest layout: `.claude-plugin/` holds both `marketplace.json` (`source: "./"`, pointing back at the repo root) and `plugin.json` (the plugin itself) — this is the source-self-referencing single-plugin layout, where the repo root is the plugin root. When changing plugin metadata, **keep both manifests in sync** (name / version / description).
 
+## Single-source layout (edit core/, never the generated trees)
+
+All shipped markdown in BOTH plugins is generated from **`core/`** by `node tools/generate.mjs`:
+`core/commands|references|rules|agents|skill.md` → the Claude tree (`commands/`, `skills/core/`, `rules/`, `agents/`) near-identity, and the Codex tree (`codex/skills/`, `codex/agents/`) via six mechanical rules (sigil `/spec:x`→`$spec-x`, frontmatter mapping, path rewrite, `--codex` section drop, host-marker selection, agent md→TOML). Generated files carry a first-line `GENERATED from core/...` marker — **hand edits there are overwritten by the next generate**. Host-divergent passages in core use paired `<!-- host:claude -->` / `<!-- host:codex -->` … `<!-- /host -->` blocks (no nesting; unclosed = generator hard error). NOT generator-owned (hand-maintained): all hooks (`hooks/`, `codex/hooks/`), both plugin manifests, READMEs, install scripts, `codex/skills/spec-setup`.
+
 ## Dev loop (no build/test — load and run for real)
 
 ```pwsh
-# Local development: load the source copy directly, which wins over the marketplace cache, so edits are testable immediately
+# Edit core/, regenerate both trees, then load the source copy directly
+node tools/generate.mjs
 claude --plugin-dir .
 
-# Release loop: sync the cache after pushing
+# Release loop: drift check, then sync the cache after pushing
+node tools/generate.mjs --check   # nonzero exit = a generated file was hand-edited or core changed without regenerating
 git add . ; git commit -m "..." ; git push
 claude plugin marketplace update spec-workflow
+# Codex side (local-path marketplaces don't support `upgrade` — that's Git-only):
+codex plugin remove spec@spec-workflow ; codex plugin add spec@spec-workflow
 ```
 
 **Key: changing anything under `hooks/` (hooks.json or .ps1) requires restarting Claude to take effect** — commands / skills / agents hot-reload, hooks don't. This is the easiest trap: edit a hook without restarting and you're testing the old behavior.

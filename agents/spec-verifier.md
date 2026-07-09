@@ -11,6 +11,7 @@ model: inherit
 color: yellow
 tools: Read, Bash, Grep, Glob
 ---
+<!-- GENERATED from core/agents/spec-verifier.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # SDD Verifier Agent
 

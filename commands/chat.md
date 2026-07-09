@@ -2,6 +2,7 @@
 description: Discussion mode. Everything said during this mode is treated as thinking material only — no documents are touched. Use for brainstorming directions, or to talk through concerns about a proposal before deciding how to change it.
 allowed-tools: Read
 ---
+<!-- GENERATED from core/commands/chat.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:chat
 

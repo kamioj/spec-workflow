@@ -11,6 +11,7 @@ model: inherit
 color: cyan
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
+<!-- GENERATED from core/agents/spec-dev.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # SDD Dev Agent
 

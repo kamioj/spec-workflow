@@ -1,9 +1,15 @@
 {
   "name": "spec",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Spec-driven development plugin: research → ask → propose → HARD GATE → apply → verify → archive, enforced by 4 hooks (TBD scan / approval gate / archive audit / verify reminder), with scope-dispatched dev agents and a fresh-context verifier agent",
   "author": {
     "name": "kamioj"
   },
-  "keywords": ["spec", "proposal", "workflow", "hook", "sdd"]
+  "keywords": [
+    "spec",
+    "proposal",
+    "workflow",
+    "hook",
+    "sdd"
+  ]
 }

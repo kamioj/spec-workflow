@@ -2,6 +2,7 @@
 description: Implement the code, advancing by proposal/tasks. A pre-command hook checks that proposal.md carries the APPROVED marker. Incremental verification: call /spec:verify close to each node as it lands, don't save it all for the end
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
 ---
+<!-- GENERATED from core/commands/apply.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:apply
 

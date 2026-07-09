@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/agent-principles.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # Agent Shared Principles (opt-in, not loaded by default)
 
 > ⚠️ **Important**: This file is **not auto-loaded by any agent** — for routine implementation tasks, the Shared Principles in the sdd plugin overview SKILL.md are sufficient.

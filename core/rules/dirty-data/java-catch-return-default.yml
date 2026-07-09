@@ -1,0 +1,20 @@
+id: java-catch-return-default
+language: java
+severity: error
+message: "Catch block returns a default literal instead of propagating — silent fallback, dirty-data risk (charter: must trace to a gate decision)"
+rule:
+  kind: catch_clause
+  has:
+    stopBy: end
+    kind: return_statement
+    has:
+      any:
+        - kind: null_literal
+        - kind: "true"
+        - kind: "false"
+        - kind: decimal_integer_literal
+        - kind: string_literal
+  not:
+    has:
+      stopBy: end
+      kind: throw_statement

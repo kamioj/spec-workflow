@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.2.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -52,6 +52,15 @@ $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
 claude plugin marketplace add kamioj/spec-workflow
 claude plugin install spec@spec-workflow
 ```
+
+**用 OpenAI Codex CLI？** 同一工作流以 Codex 插件形式从本仓库分发——同样的硬门、同样的工件，命令形式为 `$spec-*` 技能：
+
+```sh
+codex plugin marketplace add kamioj/spec-workflow
+codex plugin add spec@spec-workflow
+```
+
+完整 Codex 安装步骤（`$spec-setup` 补装 agents、一次性 hooks 信任）与已知差异见 [codex/README.md](codex/README.md)。
 
 ### 可选依赖（不会自动安装——不装也能完整跑通，插件优雅降级）
 
@@ -174,7 +183,10 @@ graph LR
 ├── .claude-plugin/
 │   ├── marketplace.json           # marketplace 清单（source: "./" 自指仓库根）
 │   └── plugin.json                # plugin 清单
-├── commands/                       # 11 个 slash 命令
+├── core/                           # 两端全部 markdown 的单一事实源
+├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
+├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
+├── commands/                       # 11 个 slash 命令——由 core/ 生成，勿手改
 ├── hooks/                          # 硬约束（pwsh 实现）
 │   ├── hooks.json
 │   ├── check-tbd.ps1
@@ -260,7 +272,7 @@ claude --plugin-dir .
 
 ## Limitations
 
-- **Windows-only**：hook 用 pwsh 写，目前只跑 Windows。跨平台需要 bash / sh 等价
+- **Claude Code 侧 hooks 仅限 Windows**：Claude 侧 hook 用 pwsh 写，跨平台需要 bash/sh 等价实现。（Codex 移植版的 4 个门已带 pwsh + POSIX sh 双实现）
 - **未做的扩展**：sdd-researcher / sdd-reviewer 专属 agent / MCP server
 
 ---

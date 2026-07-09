@@ -2,6 +2,7 @@
 description: Interrogates preference-driven decision points. Uses AskUserQuestion to work through each [TBD] in research.md one by one; answered items are moved to ## Decided. Can be triggered multiple times; new [TBD]s may surface during the process.
 allowed-tools: Read, Edit, AskUserQuestion
 ---
+<!-- GENERATED from core/commands/ask.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:ask
 

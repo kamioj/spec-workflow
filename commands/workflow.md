@@ -2,6 +2,7 @@
 description: Full SDD workflow, end to end. Runs everything from research through archive automatically; MUST stop at interrogation points and MUST stop at HARD GATE. Also accepts the legacy /sdd entry point. Trigger words: spec first / proposal / design first / draft a plan.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, Task
 ---
+<!-- GENERATED from core/commands/workflow.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:workflow
 

@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/design-spec.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # design.md spec
 
 `spec/changes/<change-name>/design.md` is the **optional technical-design artifact** of the sdd workflow. It is produced on demand by `/spec:design`, only for complex tasks / cross-stack collaboration.

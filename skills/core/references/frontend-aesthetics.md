@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/frontend-aesthetics.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # Frontend Anti-AI-Slop Principles (opt-in, not loaded by default)
 
 > ⚠️ **Important**: This file is **not auto-loaded by spec-dev (frontend scope)** — the bulk of everyday frontend work involves tooling UIs, admin panels, and debug pages where anti-slop would feel out of place.

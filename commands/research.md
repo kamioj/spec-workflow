@@ -2,6 +2,7 @@
 description: Dispatches a @researcher sub-agent to survey industry practices and key constraints, writing findings into research.md (single file; Open[TBD]/Decided maintained as before). Changing direction = snapshot the current research.md into the research/ discarded-draft pile first, then overwrite with the new direction; old drafts can be resurrected at any time.
 allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, date:*)
 ---
+<!-- GENERATED from core/commands/research.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:research
 

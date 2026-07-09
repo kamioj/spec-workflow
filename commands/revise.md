@@ -2,6 +2,7 @@
 description: Edit a single proposal.md section (why / what / how / risk). A full rewrite goes through /spec:propose. After editing, the HARD GATE must run again
 allowed-tools: Read, Edit
 ---
+<!-- GENERATED from core/commands/revise.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:revise
 

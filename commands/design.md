@@ -2,6 +2,7 @@
 description: Technical design elaboration. Trigger on demand — use when the architecture is complex, there are more than 3 interfaces, sequence/data-flow diagrams are needed, or a decision requires more than 300 words of deep argumentation. Produces design.md.
 allowed-tools: Read, Write, Edit, Glob
 ---
+<!-- GENERATED from core/commands/design.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:design
 

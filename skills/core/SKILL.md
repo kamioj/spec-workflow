@@ -2,6 +2,7 @@
 name: core
 description: Spec-driven development workflow overview. Load this skill when the user says "spec this first / draft a proposal / design first / write a proposal", or when a task is >150 lines / spans 3+ files / introduces a new dependency / involves an architecture choice — to learn the sdd plugin's 11 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
 ---
+<!-- GENERATED from core/skill.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # SDD Plugin Overview
 

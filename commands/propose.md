@@ -2,6 +2,7 @@
 description: Write or fully rewrite proposal.md (## Why / ## What / ## How / ## Risk). A pre-command hook forces research.md's [TBD] list to be empty. On completion, emit the HARD GATE and wait for user approval
 allowed-tools: Read, Write, Edit, Glob, Bash
 ---
+<!-- GENERATED from core/commands/propose.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:propose
 

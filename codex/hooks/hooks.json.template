@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh __SDD_HOOKS_DIR__/check-tbd.sh",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -File __SDD_HOOKS_DIR__/check-tbd.ps1",
+            "statusMessage": "SDD gate: propose ([TBD] cleared?)",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh __SDD_HOOKS_DIR__/check-gate.sh",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -File __SDD_HOOKS_DIR__/check-gate.ps1",
+            "statusMessage": "SDD gate: apply (proposal ready?)",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh __SDD_HOOKS_DIR__/check-archive.sh",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -File __SDD_HOOKS_DIR__/check-archive.ps1",
+            "statusMessage": "SDD gate: archive (flow honored?)",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh __SDD_HOOKS_DIR__/check-verify-reminder.sh",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -File __SDD_HOOKS_DIR__/check-verify-reminder.ps1",
+            "statusMessage": "SDD reminder: verification ledger",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/code-charter.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # Coding Charter (coding phase only · binding on everyone who writes code)
 
 > **Scope: only when writing code** — `/spec:apply` implementation (dev agent) + scripts / config the main conversation handles itself.

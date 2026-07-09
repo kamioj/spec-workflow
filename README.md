@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.2.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -52,6 +52,17 @@ $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxx"
 claude plugin marketplace add kamioj/spec-workflow
 claude plugin install spec@spec-workflow
 ```
+
+**Using OpenAI Codex CLI instead?** The same workflow ships as a Codex plugin from this
+repo — same gates, same artifacts, `$spec-*` skills instead of `/spec:*` commands:
+
+```sh
+codex plugin marketplace add kamioj/spec-workflow
+codex plugin add spec@spec-workflow
+```
+
+Full Codex install steps (agent bootstrap via `$spec-setup`, one-time hook trust) and the
+known differences live in [codex/README.md](codex/README.md).
 
 ### Optional dependencies (not auto-installed — the plugin degrades gracefully without them)
 
@@ -174,7 +185,10 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── .claude-plugin/
 │   ├── marketplace.json           # marketplace manifest (source: "./" — points back at the repo root)
 │   └── plugin.json                # plugin manifest
-├── commands/                       # 11 slash commands
+├── core/                           # SINGLE SOURCE for all shipped markdown (both plugins)
+├── tools/generate.mjs              # emits commands/ skills/ rules/ agents/ AND codex/skills|agents from core/; --check = drift guard
+├── codex/                          # OpenAI Codex CLI port (same workflow + gates; see codex/README.md)
+├── commands/                       # 11 slash commands — GENERATED from core/, do not hand-edit
 ├── hooks/                          # hard constraints (pwsh)
 │   ├── hooks.json
 │   ├── check-tbd.ps1
@@ -260,7 +274,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 
 ## Limitations
 
-- **Windows-only.** Hooks are written in pwsh and run on Windows for now; going cross-platform needs a bash/sh equivalent.
+- **Claude Code hooks are Windows-only.** The Claude-side hooks are pwsh; going cross-platform there needs a bash/sh equivalent. (The Codex port already ships pwsh + POSIX sh twins for all four gates.)
 - **Not built yet.** Dedicated sdd-researcher / sdd-reviewer agents, an MCP server.
 
 ---

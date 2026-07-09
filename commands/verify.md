@@ -2,6 +2,7 @@
 description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across three dimensions + charter audit; --codex adds a heterogeneous Codex peer review (read-only); --codex --fix lets Codex apply fixes directly. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
 allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 ---
+<!-- GENERATED from core/commands/verify.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:verify
 

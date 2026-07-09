@@ -18,3 +18,6 @@ desktop.ini
 # Local artifacts (not part of the plugin)
 demo/
 serving-dev.zip
+
+# SDD dogfood artifacts (local iteration records, not part of the shipped plugin)
+spec/

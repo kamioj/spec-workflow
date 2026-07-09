@@ -1,0 +1,15 @@
+{
+  "name": "spec-workflow",
+  "plugins": [
+    {
+      "name": "spec",
+      "source": {
+        "source": "local",
+        "path": "./codex"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      }
+    }
+  ]
+}

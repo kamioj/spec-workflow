@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/tasks-spec.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # tasks.md spec
 
 `spec/changes/<change-name>/tasks.md` is the **optional** task-tracking artifact of the sdd workflow. Produced only for cross-stack work, multi-executor collaboration, or when a task splits into >5 independent subtasks.

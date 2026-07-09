@@ -1,0 +1,8 @@
+id: ts-empty-catch
+language: typescript
+severity: warning
+message: "Empty catch block — the error is swallowed silently (charter: failure must be loud)"
+rule:
+  pattern:
+    context: "try {} catch ($E) {}"
+    selector: catch_clause

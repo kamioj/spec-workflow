@@ -1,0 +1,132 @@
+---
+name: spec-propose
+description: Write or fully rewrite proposal.md (## Why / ## What / ## How / ## Risk). A pre-command hook forces research.md's [TBD] list to be empty. On completion, emit the HARD GATE and wait for user approval.
+---
+<!-- GENERATED from core/commands/propose.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
+
+# $spec-propose
+
+## Pre-checks
+
+The hook already scanned research.md before the command. If the hook blocks (outputs `{"decision":"block"}` to stdout, codex/hooks/) → switch to `$spec-ask` to resolve the [TBD] items.
+
+Stay disciplined at the prompt level too:
+
+- `spec/changes/<name>/research.md` must exist
+- `## Open [TBD]` must be empty
+
+## Flow
+
+1. Read research.md: read `## Decided` + `## Practices` / `## Constraints` (the research conclusions for the current direction; `research/` drafts don't participate unless already revived into research.md)
+2. Read design.md (if it exists)
+3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). Two later stages consume these: `$spec-verify` checks Completeness against the `verify:` clauses; the HARD GATE shows Not-in-this-change as the approval boundary
+4. **Emit the HARD GATE closing block**
+
+**Full format + HARD GATE approval-marker rules + revision flow** → [`../spec-core/references/proposal-spec.md`](../spec-core/references/proposal-spec.md)
+
+## When to also generate tasks.md
+
+**The generation decision is declared at the gate, never silently attached**: the user must see which trigger fired and how the work was split (the gate template's tasks line carries trigger + split), so they can veto the need or the granularity before $spec-apply.
+
+When any one condition holds, **the propose stage generates** `spec/changes/<name>/tasks.md` as well:
+
+- Cross-stack project (in the apply stage, two spec-dev instances — frontend + backend scope — are dispatched concurrently to build in parallel)
+- The task splits into >5 independent subtasks (a large linear change)
+- Multi-executor collaboration (needs the owner field — assigning to different agents / people)
+
+**Simple single-threaded implementation gets none** — apply advances straight down the proposal `## What` list.
+
+### tasks.md generation steps
+
+1. **Source the information** (by priority):
+   - Primary: proposal.md `## What` — each What item → one level-1 task node
+   - Cross-stack: design.md `## Interfaces` lands the **contract task** (must precede all implementation tasks)
+   - Decision detail: research.md `## Decided` is reflected in the concrete actions of the subtasks
+
+2. **Splitting granularity**:
+   - Level 1 = the module corresponding to a What item (e.g. "user authentication module", "frontend", "integration")
+   - Level 2 = an independently completable sub-action (e.g. "DB schema design", "interface contract OpenAPI")
+   - Granularity test: a single subtask **takes an estimated 10 minutes – 1 hour**. Too small, merge; too large, keep splitting
+
+3. **owner assignment**:
+   - Cross-stack: mark subtasks `owner: frontend` / `owner: backend`
+   - Single executor: no owner
+   - Interface contract / DB migration / integration tests often carry **no owner** (main conversation or shared)
+
+4. **deps derivation**:
+   - Omitted = sequential (don't write deps)
+   - **High-fan-out node** (interface contract / DB migration) → every subtask that depends on it gets an explicit `deps: <node>`
+   - **Cross-branch parallel** (frontend mock depends on the backend contract task) → explicit deps skipping the intervening tasks
+   - **Terminal integration / e2e tests** → deps list all prerequisites
+
+5. **Execution**: the **main conversation** (not a dispatched dev agent) writes `spec/changes/<name>/tasks.md`, produced in the same propose stage as proposal.md
+
+**Full format + field rules + completion marking + lifecycle** → [`../spec-core/references/tasks-spec.md`](../spec-core/references/tasks-spec.md)
+
+> Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
+
+## HARD GATE output (fixed closing)
+
+After writing proposal.md (+ possibly tasks.md), you **MUST emit**:
+
+```
+<HARD-GATE>
+=== Proposal ready ===
+Path: spec/changes/<name>/proposal.md
+(if tasks.md was generated too → declare the decision, not just the fact:
+ + tasks.md — trigger: <cross-stack / >5 subtasks / multi-executor>; split: <N> groups — <one-line group list>
+   disagree with the need or the split → say so now, before $spec-apply)
+
+Changes — the explanation layer for the decision-maker. proposal.md stays compressed for
+the executor; this block is where it gets explained. NEVER paste proposal lines verbatim.
+One block per key decision (3–6):
+
+  1. <the decision, one plain sentence>
+     Scenario: <the concrete situation where the problem bites — who does what, what goes wrong>
+     Avoided by: <how this decision prevents that, in plain words>
+     Cost: <the price paid — dependency / latency / limitation / rework>
+
+Register test: a smart reader who has never seen this codebase can approve or veto every
+point without a follow-up question. Define each domain term at first use; a line only an
+insider can parse must be rewritten around its scenario.
+
+Decided without asking: <factual [TBD]s resolved autonomously, one line each + the evidence
+used; "none" if none — mandatory line, it lets the user catch a misclassified preference>
+Not in this change: <mirror What's "Not in this change" list — what approval does NOT cover>
+
+Next:
+  ✅ Looks good → run $spec-apply to start implementing
+     apply will automatically append the <!-- APPROVED: ... --> marker to the end of proposal.md
+  🔧 Tweak one section → $spec-revise [why | what | how | risk]
+  💭 Want to talk the direction over → $spec-chat
+  🔄 Research needs redoing → $spec-research "<new direction>"
+</HARD-GATE>
+```
+
+**After emitting the HARD GATE, NEVER write code** — wait for the user to run `$spec-apply` or another command.
+
+The `<!-- APPROVED: ... -->` marker is **appended automatically by `$spec-apply` before it runs** (treating the user's deliberate invocation as the act of approval) — the propose command does not append it directly. This design removes a redundant "reply go" step from the UX.
+
+User rejects → go through `$spec-revise [section]` (local) or `$spec-chat` (rethink the direction).
+
+## Handling rejection
+
+| User reaction | Handling |
+|---|---|
+| Same goal, minor tweak ("change X to Y") | `$spec-revise [section]`, re-run the HARD GATE |
+| Goal / direction changed | `$spec-chat` to talk it through, then decide between `$spec-research <new direction>` and a `$spec-revise` tweak |
+| Vague / unclear | Ask "a local tweak or a change of direction", don't guess |
+
+## Anti-patterns
+
+- ❌ Writing code (NEVER Write/Edit project source before the HARD GATE is approved)
+- ❌ Starting the proposal while research.md still has [TBD]
+- ❌ `## How` copying research.md `## Decided` verbatim (distill, don't transport)
+- ❌ Bursting the proposal sections with content (it should move to design)
+- ❌ A `## What` item without a `verify:` clause (leaves $spec-verify's Completeness check nothing falsifiable)
+- ❌ Translating section headers (e.g. `## 为什么（Why）`) — headers are always `## Why / ## What / ## How / ## Risk`; `$spec-revise` targets sections by English name
+- ❌ Gate Changes written in insider shorthand ("three-layer CAS idempotency guarantee (DEC-8/9/11)") — that is executor register; the gate is decision-maker register (Scenario / Avoided by / Cost)
+- ❌ **During the HARD GATE wait**, adding the APPROVED marker yourself without user confirmation (that is "approving on the user's behalf")
+- ❌ Keeping the old APPROVED when the user rejects / revises (it should be actively removed by `$spec-revise`)
+
+The full anti-pattern lists for proposal.md / tasks.md are in their respective spec files.

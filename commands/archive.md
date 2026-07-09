@@ -2,6 +2,7 @@
 description: Archives the current change to spec/archive/YYYY-MM-DD-<name>/. Only invoked when the user explicitly says "archive". Writes an archive-stage retrospect, checks for uncommitted code, and is guarded by the check-archive hook.
 allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
 ---
+<!-- GENERATED from core/commands/archive.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
 # /spec:archive
 

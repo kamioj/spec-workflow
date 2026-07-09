@@ -1,3 +1,4 @@
+<!-- GENERATED from core/references/proposal-spec.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 # proposal.md spec
 
 `spec/changes/<change-name>/proposal.md` is the **final-solution artifact** of the sdd workflow. Produced by `/spec:propose`, it carries the HARD GATE approval marker.
