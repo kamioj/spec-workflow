@@ -4,117 +4,140 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-This is a **Claude Code plugin marketplace** housing the `sdd` (spec-driven development) plugin. **There is no application code, no compile/build/test runner** — the "source" is markdown commands, JSON manifests, PowerShell hook scripts, and ast-grep rule packs (`rules/`, consumed by the spec-verifier's charter audit). Edits take effect immediately; "testing" means loading the plugin and actually running the commands.
+A **dual-host plugin marketplace** shipping the same sdd (spec-driven development) workflow to two hosts: a **Claude Code plugin** (repo root, `/spec:x` commands) and an **OpenAI Codex CLI plugin** (`codex/`, `$spec-x` skills). **There is no application code, no compile/build/test runner** — the deliverables are markdown prompts, JSON/TOML manifests, hook scripts, and ast-grep rule packs. "Testing" means regenerating, loading the plugin in the real host, and watching a gate actually block.
 
-Manifest layout: `.claude-plugin/` holds both `marketplace.json` (`source: "./"`, pointing back at the repo root) and `plugin.json` (the plugin itself) — this is the source-self-referencing single-plugin layout, where the repo root is the plugin root. When changing plugin metadata, **keep both manifests in sync** (name / version / description).
+**This repo dogfoods sdd on itself**: large changes go through the full research → propose → HARD GATE → apply → verify → archive flow. The resulting `spec/` artifacts are **gitignored** (local iteration records, never shipped or committed).
 
-## Single-source layout (edit core/, never the generated trees)
+## Single source of truth: core/ (edit core/, never the generated trees)
 
 All shipped markdown in BOTH plugins is generated from **`core/`** by `node tools/generate.mjs`:
-`core/commands|references|rules|agents|skill.md` → the Claude tree (`commands/`, `skills/core/`, `rules/`, `agents/`) near-identity, and the Codex tree (`codex/skills/`, `codex/agents/`) via six mechanical rules (sigil `/spec:x`→`$spec-x`, frontmatter mapping, path rewrite, `--codex` section drop, host-marker selection, agent md→TOML). Generated files carry a first-line `GENERATED from core/...` marker — **hand edits there are overwritten by the next generate**. Host-divergent passages in core use paired `<!-- host:claude -->` / `<!-- host:codex -->` … `<!-- /host -->` blocks (no nesting; unclosed = generator hard error). NOT generator-owned (hand-maintained): all hooks (`hooks/`, `codex/hooks/`), both plugin manifests, READMEs, install scripts, `codex/skills/spec-setup`.
 
-## Dev loop (no build/test — load and run for real)
+| core/ source | Claude tree (near-identity) | Codex tree (6-rule transform) |
+|---|---|---|
+| core/commands/*.md | commands/*.md | codex/skills/spec-*/SKILL.md |
+| core/skill.md | skills/core/SKILL.md | codex/skills/spec-core/SKILL.md |
+| core/references/* | skills/core/references/* | codex/skills/spec-core/references/* |
+| core/rules/* | rules/* | codex/skills/spec-core/rules/* |
+| core/agents/*.md | agents/*.md | codex/agents/*.toml |
+
+- The six mechanical Codex rules: sigil `/spec:x`→`$spec-x` · frontmatter mapping (drop `allowed-tools`/`model`/`color`/`tools`, add `name`) · reference-path rewrite · `--codex` section drop · host-marker selection · agent md→TOML (`developer_instructions = '''body'''`).
+- Host-divergent passages use paired `<!-- host:claude -->` / `<!-- host:codex -->` … `<!-- /host -->` blocks (no nesting; unclosed marker or a `'''` in an agent body = generator **hard error**, never a silent skip — same for a missing core source file).
+- Generated files carry a first-line/post-frontmatter `GENERATED from core/...` marker. The marker sits **after** YAML frontmatter in .md files (before it would break frontmatter parsing on both hosts) and as a `#` comment on line 1 of .toml/.yml.
+- **NOT generator-owned** (hand-maintained): all hooks (`hooks/`, `codex/hooks/`), all manifests, READMEs, install scripts, `codex/skills/spec-setup`, `scripts/`.
+
+## Dev loop (no build/test — regenerate, load, run for real)
 
 ```pwsh
-# Edit core/, regenerate both trees, then load the source copy directly
+# 1. Edit core/ (or a hand-maintained file), regenerate both trees
 node tools/generate.mjs
+# 2. Local Claude testing: the source copy wins over the marketplace cache
 claude --plugin-dir .
-
-# Release loop: drift check, then sync the cache after pushing
-node tools/generate.mjs --check   # nonzero exit = a generated file was hand-edited or core changed without regenerating
+# 3. Release: drift check → bump versions in THREE manifests → push
+node tools/generate.mjs --check   # nonzero = hand-edit in a generated file or core changed without regenerating
+#    .claude-plugin/plugin.json + .claude-plugin/marketplace.json + codex/.codex-plugin/plugin.json
+#    (version drives cache refresh on BOTH hosts — Codex caches under <name>/<version>/)
 git add . ; git commit -m "..." ; git push
+# 4. Update local installs
 claude plugin marketplace update spec-workflow
-# Codex side (local-path marketplaces don't support `upgrade` — that's Git-only):
-codex plugin remove spec@spec-workflow ; codex plugin add spec@spec-workflow
+codex plugin marketplace upgrade spec-workflow    # Git-marketplace installs; local-path installs need remove+add instead
 ```
 
-**Key: changing anything under `hooks/` (hooks.json or .ps1) requires restarting Claude to take effect** — commands / skills / agents hot-reload, hooks don't. This is the easiest trap: edit a hook without restarting and you're testing the old behavior.
+- **Claude hooks require restarting Claude to take effect** — commands / skills / agents hot-reload, hooks don't. Easiest trap in the repo: edit a hook without restarting and you're testing the old behavior.
+- **Codex hooks require re-trusting in the TUI whenever hooks.json changes** (trust is recorded per hook-definition hash). Untrusted hooks are **silently skipped** — no error, no log. After any hook-affecting update, verify the gate bites: in a project with no `spec/changes/`, send `$spec-apply` — it must come back blocked.
+- Codex agents aren't plugin-bundled (no such mechanism); `$spec-setup` copies the shipped TOMLs to `~/.codex/agents/` — re-run it after agent changes.
 
-Validate all JSON manifests (no CI — run it by hand):
+Validate all JSON manifests (no CI — run by hand):
 ```pwsh
 Get-ChildItem -Recurse -Filter *.json | ForEach-Object { Get-Content $_.FullName -Raw | ConvertFrom-Json | Out-Null; "OK: $($_.Name)" }
 ```
 
-Test a single hook in isolation (a hook reads JSON from stdin, exit 2 = block, exit 0 = allow):
+## Manifests (four, roles differ)
+
+- `.claude-plugin/marketplace.json` (`source: "./"` — repo root IS the Claude plugin root) + `.claude-plugin/plugin.json` — the Claude pair, keep name/version/description in sync.
+- `.agents/plugins/marketplace.json` — the Codex marketplace (plugin `spec` → `./codex`).
+- `codex/.codex-plugin/plugin.json` — the Codex plugin (bundles `skills` + `hooks` keys; Codex also falls back to reading `.claude-plugin/plugin.json`, but we ship both explicitly).
+
+## Big picture: soft vs hard constraints
+
+The whole design centers on "**stopping for real where you have to stop**":
+
+1. **Soft constraints** (prompt text saying "you must do X") — the model can violate them.
+2. **Hard constraints** (hook scripts that intercept) — a 0% violation rate.
+
+Four hooks, same semantics on both hosts: three UserPromptSubmit gates match the command **invocation at line start** (never a mention — "what does /spec:apply do?" passes) + one Stop-event reminder:
+
+| Gate | Matches | Blocks when |
+|---|---|---|
+| check-tbd | propose | research.md still has `[TBD-N]` outside `## Decided` |
+| check-gate | apply | proposal.md absent / missing any of the four sections / ≠1 active change. **Deliberately does NOT require the APPROVED marker** — apply appends it after this hook fires (requiring it here = happy-path deadlock, the pre-0.2.3 bug); check-archive enforces it at archive time |
+| check-archive | archive | flow was bypassed (no APPROVED / unchecked tasks / no proposal); override = prompt contains `force` or `abandon(ed)` — **matched against the prompt value only**, never the whole stdin JSON (a cwd containing "force" must not bypass; that was finding V-1) |
+| check-verify-reminder | Stop event | single active change has an APPROVED proposal but no verify.md ledger; `stop_hook_active` loop-guards (one nudge per stop) |
+
+**The two hook implementations are different platforms, not copies** — each host's contract was probe-verified and they disagree with each other AND with the docs:
+
+| | Claude Code (`hooks/*.ps1`) | Codex CLI (`codex/hooks/*` — see `codex/hooks/SCHEMA.md`, the evidence file) |
+|---|---|---|
+| stdin user-input field | `user_prompt` | `prompt` |
+| blocking mechanism | `exit 2` + stderr | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
+| invocation anchor | `^\s*/spec:x` | `^\s*\$spec-x` |
+| languages | pwsh only | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
+| config trap | — | an unknown top-level key in hooks.json (e.g. `description`) makes the whole file **silently ignored** |
+
+Shared conventions across both: **fail-open** (hook internal error → allow; a hook bug must never block normal flow); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
+
+**After ANY Codex gate edit**: `sh codex/hooks/run-fixtures.sh` must pass (currently 40 cases, both twins on the same stdin fixtures — the sync contract between pwsh and sh). Test a Claude hook in isolation:
 ```pwsh
 '{"user_prompt":"/spec:apply","cwd":"D:\\path\\to\\test-project"}' | pwsh -NoProfile -File hooks/check-gate.ps1 ; "exit=$LASTEXITCODE"
 ```
 
 ## Platform constraints
 
-**Windows-only**: hooks are written in pwsh (PowerShell 7). **Always use `pwsh`, never `powershell`** — PS 5.1 defaults to GBK encoding, which corrupts Chinese in pipelines. The hook scripts explicitly set UTF-8 stdin/stdout in their headers; cross-platform support needs an equivalent bash/sh rewrite (the README "Limitations" notes this as a known gap).
+**Always `pwsh` (PowerShell 7), never `powershell`** — PS 5.1 defaults to GBK and corrupts Chinese in pipelines; hook scripts set UTF-8 stdin/stdout in their headers. Claude-side hooks are pwsh/Windows-only (README Limitations); Codex-side gates ship pwsh + sh and run cross-platform (`commandWindows` in hooks.json overrides `command` on Windows — binary-verified field, not in the official docs).
 
-## Big picture: soft vs hard constraints
+## Big picture: commands + agents + artifacts
 
-The whole design of sdd centers on "**stopping for real where you have to stop**", via two layers:
+**11 independent commands** (`core/commands/*.md` → both hosts), each re-entrant and re-runnable — the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (rigid 9 steps). Typical flow: `research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`; `workflow` runs end-to-end, `status` reports position.
 
-1. **Soft constraints** (the command / agent markdown prompts saying "you must do X") — the model can violate them.
-2. **Hard constraints** (`hooks/*.ps1` shell scripts that intercept) — a 0% violation rate.
+**The HARD GATE mechanism**:
+- propose/revise end by emitting the fixed `<HARD-GATE>` block, then stop. The gate's Changes block is the **explanation layer** (Scenario / Avoided by / Cost per decision, plus "Decided without asking" and "Not in this change") — decision-maker register, never proposal lines pasted verbatim.
+- The `<!-- APPROVED: -->` marker is appended **by apply before it runs** (deliberate invocation = the act of approval) — not by propose, and no "reply go" is needed. Don't reintroduce a "reply go" step.
+- After emitting the HARD GATE, **never write project source**; wait for the next command.
 
-The three gate hooks are attached to the `UserPromptSubmit` event (see `hooks/hooks.json`) and decide whether to intervene by **regex-matching the command name at the start of a line in the user input** (invocation, not mention — "what does /spec:apply do?" must pass through); a fourth, `check-verify-reminder.ps1`, is attached to the **Stop** event (a reminder, not a gate):
+**spec-dev** (dev agent, `core/agents/spec-dev.md`): dispatched by scope at apply time; cross-stack = contract pinned in `design.md ## Interfaces` first, then **two instances dispatched concurrently in one message** (never serial).
 
-| Hook | Matches | Blocks | When unsatisfied |
-|---|---|---|---|
-| `check-tbd.ps1` | `/spec:propose` | research.md's `## Open [TBD]` section still has `[TBD-N]` | `exit 2`, points to `/spec:ask` |
-| `check-gate.ps1` | `/spec:apply` | prerequisites missing: proposal.md absent, or lacking any of the four sections, or ≠1 active change | `exit 2`, points to `/spec:propose` / `/spec:revise`. **Deliberately does NOT require the APPROVED marker** — apply appends it after the hook fires (requiring it here = happy-path deadlock, the pre-0.2.3 bug); `check-archive.ps1` enforces it at archive time |
-| `check-archive.ps1` | `/spec:archive` | the change bypassed the flow: proposal without APPROVED / tasks.md with unchecked items / no proposal.md | `exit 2`, lists the findings; deliberate override = the prompt contains `force` or `abandon(ed)` (the archive command then records the reason in retrospect.md) |
-| `check-verify-reminder.ps1` | Stop event (end of a Claude turn) | the single active change has an APPROVED proposal but no verify.md ledger — implementation ended without a closing verification | `exit 2`, nudges Claude to run the closing verification or state explicitly why it's pausing; `stop_hook_active` in stdin guards against loops (one nudge per stop cycle) |
+**spec-verifier** (verification agent): dispatched by verify with a **deliberately fresh context** — the implementing conversation never audits itself. Protocol: Iron Law (no pass without fresh evidence; self-reported success is a claim to re-run), evidence-or-drop (≤3 findings per dimension), refutation phase (a defense must cite a gate decision), ast-grep machine pass over the shipped rule pack (graceful `not run` declaration when absent).
 
-Hook conventions (must hold when editing hooks):
-- The stdin JSON field is named **`user_prompt`** (not `prompt`) + `cwd`. This was a trap we hit; the README records the evidence specifically.
-- **fail-open**: a hook erroring out goes to catch → `exit 0` (allow). A bug in a hook must never block the user's normal flow.
-- The APPROVED regex (in `check-archive.ps1` / `check-verify-reminder.ps1`) recognizes only the `<!-- APPROVED:` comment form (which is exactly what apply writes; bare text / headings are not recognized, to avoid the body text mentioning the word being misread as approval). When changing the marker format, change the regex together with it.
-- **Multiple active changes**: check-tbd and check-gate `exit 2` when there is >1 non-archive directory under `spec/changes/`, requiring you to archive down to a single change first (this workflow assumes a single active change, otherwise a draft change cross-blocks an approved one). check-archive deliberately does **not** block on multiple changes — archiving is exactly how you get back down to one.
+**opt-in flags** (`apply design solid verify`): no extra reference loads by default; `design`→frontend-aesthetics, `solid`→agent-principles §1, `verify`→agent-principles §2.
 
-## Big picture: commands + agent + artifacts
+## Artifact model (generated in the user's project)
 
-**11 independent slash commands** (`commands/*.md`), each independently triggerable, re-entrant, and re-runnable on its own — this is the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (a rigid 9-step flow). The typical flow:
-`research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`. `/spec:workflow` runs the whole flow end-to-end, `/spec:status` reports which step you're on.
-
-**The HARD GATE mechanism** (runs through propose/revise/apply):
-- propose/revise, after writing the proposal, **must emit the fixed `<HARD-GATE>` closing block**, then stop and wait for the user. The gate's Changes block is the **explanation layer**: scenario-based plain language for the decision-maker (Scenario / Avoided by / Cost per decision, plus "Decided without asking" and "Not in this change" lines) — proposal.md stays compressed for the executor; never paste its lines verbatim into the gate.
-- The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended by `/spec:apply` before it runs** (treating "the user deliberately invoking apply" as the act of approval) — **not** appended by propose, and **no** "reply go" from the user is needed. This is a redundancy recently refactored out (see git log `fix: simplify HARD GATE`); when changing this logic, take care not to add "reply go" back.
-- After emitting the HARD GATE, **NEVER write project source**; wait for the next command.
-
-**1 development agent** (`agents/spec-dev.md`), dispatched by scope in the `/spec:apply` stage (cross-stack = dispatch two concurrently in one message: frontend + backend scope):
-- Dispatched by the type of code the proposal `## What` involves (frontend UI/routing/components vs backend API/data-model/migration).
-- **Cross-stack = contract first + parallel**: the interface contract is pinned down in `design.md ## Interfaces` first, then **two agents are dispatched concurrently in one message** (not serial — serial wastes 50% of the time). The agent frontmatter uses `model: inherit`.
-
-**1 verification agent** (`agents/spec-verifier.md`), dispatched by `/spec:verify` with a **deliberately fresh context** — the implementing conversation never audits itself (anti self-review-bias; "be objective" instructions have near-zero measured effect, structural isolation works). Its protocol: Iron Law (no pass without fresh evidence; a dev agent's self-reported Evidence is a claim to re-run, not proof), evidence-or-drop finding format (no quotable code = not a finding, ≤3 findings per dimension), refutation phase (a defense must cite a gate decision — "looks intentional" doesn't count), and an ast-grep machine pass over `rules/sgconfig.yml` (graceful "not run" declaration when ast-grep isn't installed). The main loop copies its findings into the ledger verbatim; user-overruled false positives are distilled into `spec/knowledge.md`.
-
-**opt-in enhancement flags** (`/spec:apply design solid verify`, space-separated, combinable): by default **no** extra reference is loaded, to stay lean and avoid over-caution on tool-type UIs / internal pages / backend business. A flag has to hit before the agent reads the corresponding reference: `design`→frontend-aesthetics (anti-AI-slop), `solid`→agent-principles §1 (anti-laziness), `verify`→agent-principles §2 (anti-hallucination).
-
-## Artifact model (generated in the user's project, not in this repo)
-
-Running sdd produces, in the **target project**:
 ```
 <target-project>/spec/
-├── knowledge.md               project-level durable facts, cross-change (maintained by /spec:archive, read first by /spec:research; facts proven wrong are replaced, not appended-contradicted)
-├── changes/<change-name>/     active workspace
-│   ├── research.md  required  current research (Practices + Constraints + Open[TBD] + Decided, single file)
-│   ├── research/    optional  discarded-draft pile of research directions (research.md snapshots of abandoned directions, no markers/links, revivable)
-│   ├── design.md    optional  architecture / interface contract / data model
-│   ├── proposal.md  required  the final solution (four sections + APPROVED marker; What items carry `verify:` clauses + a closing **Not in this change** list)
-│   ├── tasks.md     optional  multi-executor collaboration list (owner + deps)
-│   ├── verify.md    at-verify verification ledger (stable V-N finding IDs + round diffing + unfixed-escalation; YAML frontmatter carries round/conclusion state)
-│   └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + verify Evidence + leftovers; YAML frontmatter carries the audit stats)
-└── archive/<YYYY-MM-DD-name>/  archived change
+├── knowledge.md               project-level durable facts (archive maintains, research reads first; wrong facts get replaced, not contradicted)
+├── changes/<name>/            active workspace
+│   ├── research.md  required  Practices + Constraints + Open[TBD] + Decided
+│   ├── research/    optional  discarded-draft pile (snapshots of abandoned directions, revivable)
+│   ├── design.md    optional  architecture / interface contract / key decisions
+│   ├── proposal.md  required  four sections + APPROVED marker; What items carry verify: clauses + Not in this change
+│   ├── tasks.md     optional  multi-executor list (owner + deps)
+│   ├── verify.md    at-verify verification ledger (stable V-N IDs, round diffing, unfixed-escalation)
+│   └── retrospect.md at-archive divergence review + Evidence + leftovers
+└── archive/<YYYY-MM-DD-name>/
 ```
-The hooks judge state from this: they scan the non-`archive` directories under `spec/changes/` as "active changes" (the archive target is the sibling `spec/archive/` directory; the `-ne 'archive'` in the hooks is only defending against the old "once archived into `spec/changes/archive/`" layout, which the current layout doesn't trigger).
 
-**The artifact set is fixed at these four + the discarded-draft pile + the verification ledger + the archive-stage retrospect + the project-level knowledge.md**; what each artifact "writes / doesn't write" and its soft budget live in SKILL § Phase Responsibility Matrix (the source of truth for cross-artifact de-duplication) — the model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) requires explicit user approval and is a common source of document bloat.
+Hooks judge state by scanning non-`archive` directories under `spec/changes/` as active changes. The artifact set is **fixed**; inventing extra files (app-current / decisions / migration-inventory…) requires explicit user approval — a known source of document bloat. Per-artifact write/don't-write boundaries live in SKILL § Phase Responsibility Matrix.
 
-## Writing conventions (follow when editing command/agent/reference)
+## Writing conventions (when editing core/ or hand-maintained files)
 
-- **Language**: all plugin content — command docs, the prose in references, agents, SKILL — is written in **native, idiomatic English**. This plugin is built to be shared broadly, so English is the product language. Section headers stay English (`## Why / ## What / ## How / ## Risk`) so hooks can regex-detect them and `/spec:revise <section>` can target them by name. The one maintained Chinese artifact is `README_cn.md`, a courtesy mirror of `README.md` kept in sync.
-- **proposal.md needs all four sections**: Why / What / How / Risk.
-- **command frontmatter**: `description` + `allowed-tools`. **agent frontmatter**: `name` / `description` / `model: inherit` / `color` / `tools`.
-- **Path variables**: hooks and agents reference in-plugin files via `${CLAUDE_PLUGIN_ROOT}/...`, never a hardcoded absolute path.
-- **references/ read on demand**: the agent detects the project stack (reading `package.json` / `pubspec.yaml` / `manifest.json`) and reads only the relevant stack's reference, not all of them — to avoid polluting the token budget.
-- **One rule scattered across multiple places must stay in sync**: the HARD GATE wording, the stuck-self-check template, and the anti-cheating clauses appear simultaneously in `SKILL.md`, the corresponding `commands/*.md`, and `references/*-spec.md`. When changing one, sweep the rest, otherwise the three fall out of sync. `references/*-spec.md` (proposal/design/tasks-spec) is the **single source of truth** for artifact format; command files point there with relative links. The research format is simple and lives directly in `commands/research.md`, with no separate spec file.
+- **Language**: all plugin content is native, idiomatic English (the product language; broad sharing). Section headers stay English (`## Why / ## What / ## How / ## Risk`) so hooks regex them and `revise` targets them by name. `README_cn.md` is the one maintained Chinese artifact, a courtesy mirror kept in sync with `README.md`.
+- **core is Claude-canonical**: write `/spec:x`, `AskUserQuestion`, `${CLAUDE_PLUGIN_ROOT}` paths in core; the Codex emitter transforms them. Reach for a host marker only when the hosts genuinely diverge beyond the six rules.
+- **Cross-host sync is automated; in-core sync is not**: the HARD GATE wording, stuck-self-check template, and anti-cheating clauses still appear in `core/skill.md`, the corresponding `core/commands/*.md`, and `core/references/*-spec.md` — changing one still means sweeping the others (the generator faithfully propagates inconsistencies to both hosts). `core/references/*-spec.md` remains the single source of truth for artifact formats.
+- **Command frontmatter** (core): `description` + `allowed-tools`. **Agent frontmatter** (core): `name` / `description` / `model: inherit` / `color` / `tools`. The Codex emitter maps/drops these automatically.
+- **references/ read on demand**: agents detect the project stack and read only the relevant reference — never all of them.
+- Public docs (READMEs) carry no iteration narrative and no private project details; process records live in the gitignored `spec/` and in commit messages.
 
-## Shared Principles (agents follow them by default, no opt-in needed — see SKILL.md § Shared Principles)
+## Shared Principles (agents follow by default — see core/skill.md § Shared Principles)
 
-- **Anti-Cheating**: a command/PoC that hasn't actually run must not be reported as "success"; mocking a fake response / changing an assert / patching a return of true must be stated plainly as "bypass, root cause unresolved"; hardcoding (offsets/hashes) must be flagged in a comment + a "applies to this case only" note in tasks.md; self-reported success from another agent or an earlier round is not verification — it gets independently re-run.
-- **Stuck Protection**: 3 consecutive failed fixes in the same direction → stop and emit the "Stuck Self-Check" block, wait for the user's decision, no endless patching. From the 2nd attempt on, each retry must state why the previous one failed (blind retries don't count as attempts).
-- **Halt on infeasible task**: finding the premise itself is wrong (contradiction / out of scope / tool incompatible) → stop and report immediately.
+- **Anti-Cheating**: nothing unrun is "success"; a bypass (mocked response / weakened assert / return-true patch) must be declared as a bypass; necessary hardcoding gets a code comment + "applies to this case only" note; self-reported success from another agent or an earlier round gets independently re-run.
+- **Stuck Protection**: 3 consecutive failed fixes in one direction → emit the Stuck Self-Check block and wait; from the 2nd attempt on, each retry must state why the previous failed (blind retries don't count).
+- **Halt on infeasible task**: a wrong premise (contradiction / out of scope / tool incompatible) → stop and report immediately.
