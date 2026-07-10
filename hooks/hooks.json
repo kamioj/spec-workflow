@@ -1,38 +1,47 @@
 {
-  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: prerequisites ready — proposal with all four sections + single active change; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger)",
+  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: prerequisites ready — proposal with all four sections + single active change; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger). Entry point is powershell.exe (guaranteed on every Windows box) hosting gate-launcher.ps1, which delegates to pwsh when resolvable and falls back to in-process 5.1 otherwise — Store-installed pwsh is not visible to the hook runner's PATH search.",
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh",
+            "command": "powershell.exe",
             "args": [
               "-NoProfile",
               "-NonInteractive",
+              "-ExecutionPolicy",
+              "Bypass",
               "-File",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
               "${CLAUDE_PLUGIN_ROOT}/hooks/check-tbd.ps1"
             ],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "pwsh",
+            "command": "powershell.exe",
             "args": [
               "-NoProfile",
               "-NonInteractive",
+              "-ExecutionPolicy",
+              "Bypass",
               "-File",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
               "${CLAUDE_PLUGIN_ROOT}/hooks/check-gate.ps1"
             ],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "pwsh",
+            "command": "powershell.exe",
             "args": [
               "-NoProfile",
               "-NonInteractive",
+              "-ExecutionPolicy",
+              "Bypass",
               "-File",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
               "${CLAUDE_PLUGIN_ROOT}/hooks/check-archive.ps1"
             ],
             "timeout": 10
@@ -45,11 +54,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh",
+            "command": "powershell.exe",
             "args": [
               "-NoProfile",
               "-NonInteractive",
+              "-ExecutionPolicy",
+              "Bypass",
               "-File",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
               "${CLAUDE_PLUGIN_ROOT}/hooks/check-verify-reminder.ps1"
             ],
             "timeout": 10

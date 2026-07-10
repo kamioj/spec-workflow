@@ -1,6 +1,6 @@
 {
   "name": "spec",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A Codex CLI port of the sdd spec-driven development plugin with the same workflow and hard-gate guarantees.",
   "interface": {
     "displayName": "SDD (spec-driven development)"

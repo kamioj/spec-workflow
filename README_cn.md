@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.3.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.3.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -272,7 +272,8 @@ claude --plugin-dir .
 
 ## Limitations
 
-- **Claude Code 侧 hooks 仅限 Windows**：Claude 侧 hook 用 pwsh 写，跨平台需要 bash/sh 等价实现。（Codex 移植版的 4 个门已带 pwsh + POSIX sh 双实现）
+- **Claude Code 侧 hooks 仅限 Windows**：Claude 侧门用 PowerShell 写，跨平台需要 bash/sh 等价实现。（Codex 移植版的 4 个门已带 pwsh + POSIX sh 双实现）
+  - 机器上**不要求装 PowerShell 7**：hook 入口是每台 Windows 都自带的 `powershell.exe`，由 `hooks/gate-launcher.ps1` 运行时探测 pwsh（PATH → MSI 默认目录 → Store 别名），找到就委托，找不到就在 5.1 进程内直接跑门。尤其是 Microsoft Store 版 PowerShell 7（其可执行文件只是每用户的应用执行别名，hook 进程的 PATH 查找看不见它）不再导致门失效。
 - **未做的扩展**：sdd-researcher / sdd-reviewer 专属 agent / MCP server
 
 ---

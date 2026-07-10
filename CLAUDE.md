@@ -80,7 +80,8 @@ Four hooks, same semantics on both hosts: three UserPromptSubmit gates match the
 | stdin user-input field | `user_prompt` | `prompt` |
 | blocking mechanism | `exit 2` + stderr | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
 | invocation anchor | `^\s*/spec:x` | `^\s*\$spec-x` |
-| languages | pwsh only | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
+| entry point | `powershell.exe` → `gate-launcher.ps1` (probes pwsh: PATH → MSI dir → Store alias; falls back to in-process 5.1 — bare `pwsh` in hooks.json breaks on Store-installed PS7, whose exe is a per-user alias invisible to the hook runner's PATH search) | `command` (sh) + `commandWindows` (pwsh) |
+| languages | PowerShell (**must stay 5.1-compatible** — the launcher fallback runs gates under 5.1) | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
 | config trap | — | an unknown top-level key in hooks.json (e.g. `description`) makes the whole file **silently ignored** |
 
 Shared conventions across both: **fail-open** (hook internal error → allow; a hook bug must never block normal flow); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
@@ -92,7 +93,7 @@ Shared conventions across both: **fail-open** (hook internal error → allow; a 
 
 ## Platform constraints
 
-**Always `pwsh` (PowerShell 7), never `powershell`** — PS 5.1 defaults to GBK and corrupts Chinese in pipelines; hook scripts set UTF-8 stdin/stdout in their headers. Claude-side hooks are pwsh/Windows-only (README Limitations); Codex-side gates ship pwsh + sh and run cross-platform (`commandWindows` in hooks.json overrides `command` on Windows — binary-verified field, not in the official docs).
+**Always `pwsh` (PowerShell 7), never `powershell`, for interactive/dev commands** — PS 5.1 defaults to GBK and corrupts Chinese in pipelines. **Exception: the Claude-side hook chain deliberately starts from `powershell.exe`** (`hooks/hooks.json` → `gate-launcher.ps1`), because `pwsh` is an optional install the hook runner may not resolve (Store-installed PS7 exposes only a per-user app-execution alias); the launcher delegates to pwsh when found, else runs the gate in-process under 5.1 — so **every gate script must stay PS 5.1-compatible** and set its own UTF-8 stdin/stdout in its header (they all do). Claude-side hooks are Windows-only (README Limitations); Codex-side gates ship pwsh + sh and run cross-platform (`commandWindows` in hooks.json overrides `command` on Windows — binary-verified field, not in the official docs).
 
 ## Big picture: commands + agents + artifacts
 
