@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.3.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.3.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -274,7 +274,8 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 
 ## Limitations
 
-- **Claude Code hooks are Windows-only.** The Claude-side hooks are pwsh; going cross-platform there needs a bash/sh equivalent. (The Codex port already ships pwsh + POSIX sh twins for all four gates.)
+- **Claude Code hooks are Windows-only.** The Claude-side gates are PowerShell; going cross-platform there needs a bash/sh equivalent. (The Codex port already ships pwsh + POSIX sh twins for all four gates.)
+  - PowerShell 7 is **not** required on the machine: the hook entry point is `powershell.exe` (present on every Windows box) hosting `hooks/gate-launcher.ps1`, which delegates to `pwsh` when it can find one (PATH → MSI default dir → Store alias) and otherwise runs the gate in-process under 5.1. In particular, a Microsoft Store-installed PowerShell 7 — whose executable is only a per-user app-execution alias invisible to the hook runner's PATH search — no longer breaks the gates.
 - **Not built yet.** Dedicated sdd-researcher / sdd-reviewer agents, an MCP server.
 
 ---

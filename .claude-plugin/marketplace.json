@@ -10,7 +10,7 @@
       "name": "spec",
       "source": "./",
       "description": "Spec-driven development plugin: the full research → ask → propose → HARD GATE → apply → verify → archive flow, enforced by 4 hooks (TBD scan / approval gate / archive audit / verify reminder), with scope-dispatched dev agents and a fresh-context verifier agent",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "author": {
         "name": "kamioj"
       },
