@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -307,6 +307,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.4.1** — Codex-side rule-pack path fix: the verifier's ast-grep instruction pointed at the pre-plugin script-install location only, so plugin installs silently lost the machine pass (declared `not run` in a live flight). The generated text now locates `sgconfig.yml` across both install roots (plugin cache + `~/.agents/skills`), verified on sh and pwsh; `codex/AGENTS.md` install paths made install-method-agnostic.
 - **0.4.0** — `/spec:workflow` becomes a true two-touchpoint autopilot:
   - open decisions are **triaged instead of asked**: evidence-backed ones decided, reversible preferences decided with an `auto` mark, irreversible / product-semantics ones decided provisionally with an `escalated` mark — pinned at the top of the HARD GATE, standing unless you overturn them, echoed again on apply's first line
   - a **critique panel** attacks every proposal before the gate: a chief *necessity* critic (four-question refutation; silent fallbacks with no real triggering scenario get deletion verdicts, loud invariant guards are judged by blast radius instead of incident history) plus regression-compat and testability lenses, security/performance joining by content; one refutation round, findings land in the ledger as round 0
