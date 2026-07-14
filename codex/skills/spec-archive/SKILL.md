@@ -44,6 +44,12 @@ description: Archives the current change to spec/archive/YYYY-MM-DD-<name>/. Onl
    ## Unfinished / deferred
    Unchecked tasks.md items, one line each on why deferred — or "all done".
 
+   ## Auto-decision calibration
+   Only for changes that carried auto/escalated decisions (workflow auto triage): how many
+   held up vs. were overturned (at the gate or later). Each misjudgment gets one line —
+   the pattern, not the instance — and is synced into spec/knowledge.md (step 3): that is
+   the only channel through which the triage rules learn this project. All held → "all held".
+
    ## Force / abandon note
    Only when archived via force/abandoned: one line on why.
    ```

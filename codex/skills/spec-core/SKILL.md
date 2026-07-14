@@ -54,7 +54,7 @@ spec/
 │       ├── design.md     optional    technical design (architecture / interfaces / data model)
 │       ├── proposal.md   required    the final solution (carries the HARD GATE approval marker)
 │       ├── tasks.md      optional    task list for multi-executor collaboration
-│       ├── verify.md     at-verify   verification ledger (stable V-N finding IDs + round history + Evidence; written by $spec-verify)
+│       ├── verify.md     at-propose+ verification ledger (stable V-N finding IDs + round history + Evidence; round 0 by propose's critique panel, rounds 1+ by $spec-verify)
 │       └── retrospect.md at-archive  written by $spec-archive right before the move (divergence review + evidence + leftovers)
 │
 └── archive/                          archive directory
@@ -73,7 +73,7 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 | design.md | Internal technical structure: architecture diagram (structure, no fields) / interface contract (precise schema) / data model / **deep argument for contested decisions only** | business motivation→proposal Why ｜ risk·rollback→proposal Risk ｜ full code·DDL→apply ｜ copying DEC-N conclusions (reference, don't transcribe) ｜ expanding non-contested decisions | **narrative/argument ≤150 lines** (contracts excluded, as precise as needed); split diagrams >20 nodes; expand 1–2 decisions, ≤12 lines each |
 | proposal.md | Decision record: Why / What (each item + `verify:` acceptance check, closing **Not in this change** list) / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section (`verify:` clauses + the Not-in-this-change block don't count) |
 | tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
-| verify.md | Verification ledger (written by $spec-verify only): findings with stable V-N IDs + severity + status (open/fixed/wontfix) + per-round Evidence | restating the fix → it lives in code ｜ restating the solution → proposal/design | one line per finding |
+| verify.md | Verification ledger — two writers, same table: round 0 (stage: propose) by $spec-propose's critique panel, rounds 1+ by $spec-verify; findings with stable V-N IDs + severity + status (open/fixed/wontfix) + per-round Evidence; acceptance-stage user evaluations enter as user-sourced findings | restating the fix → it lives in code ｜ restating the solution → proposal/design | one line per finding |
 | retrospect.md | Archive-stage audit (written by $spec-archive only): divergences found ("docs say A, code does B"), verify Evidence lines, unfinished/deferred items, force/abandon reason | restating the solution → point back to proposal/design | ≤40 lines |
 | knowledge.md (project-level, outside the change dir) | Durable cross-change facts: topology/ownership, verified mechanisms, gotchas — `<fact> \| evidence \| date (change)` | anything change-specific → stays in that change's artifacts ｜ a fact proven wrong is **replaced** (correction noted), never left contradicting | one line per fact |
 
@@ -98,21 +98,35 @@ Path: spec/changes/<name>/proposal.md
  + tasks.md — trigger: <cross-stack / >5 subtasks / multi-executor>; split: <N> groups — <one-line group list>
    disagree with the need or the split → say so now, before $spec-apply)
 
+Escalated decisions — pinned FIRST, never buried. Irreversible-class calls the agent made
+provisionally (data migration / schema / public API / new dependency / destructive op /
+user-visible product semantics). They stand by default: silence + $spec-apply = consent;
+overturn any with one line of reply. Omit the whole section when there are none.
+  E1. <decision> | basis: <evidence or default used> | if wrong: <blast radius + undo path>
+
 Changes — the explanation layer for the decision-maker. proposal.md stays compressed for
 the executor; this block is where it gets explained. NEVER paste proposal lines verbatim.
-One block per key decision (3–6):
+One block per key decision (3–6), each a before/after mirror of the SAME concrete scenario;
+Problem and After are ≤2 lines each (longer = you are explaining mechanism — that belongs
+in proposal/design, not here):
 
   1. <the decision, one plain sentence>
-     Scenario: <the concrete situation where the problem bites — who does what, what goes wrong>
-     Avoided by: <how this decision prevents that, in plain words>
-     Cost: <the price paid — dependency / latency / limitation / rework>
+     Problem: when <who does what concretely>, because <what is missing/wrong today>,
+              <the concrete bad outcome>.
+     After:   when <the same action>, because <what this change adds>, it <mechanism used>,
+              so <that bad outcome no longer happens>.
+     Cost:    <the price paid — dependency / latency / limitation / rework>
 
-Register test: a smart reader who has never seen this codebase can approve or veto every
-point without a follow-up question. Define each domain term at first use; a line only an
-insider can parse must be rewritten around its scenario.
+Register test: a reader who is NOT a developer can tell what problem every point solves
+and how. Define each domain term at first use; a line only an insider can parse must be
+rewritten around its scenario.
 
-Decided without asking: <factual [TBD]s resolved autonomously, one line each + the evidence
-used; "none" if none — mandatory line, it lets the user catch a misclassified preference>
+Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line each — the
+evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
+catch a misclassified preference>
+Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
+one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
+"none" if none>
 Not in this change: <mirror What's "Not in this change" list — what approval does NOT cover>
 
 Next:
@@ -123,6 +137,11 @@ Next:
   🔄 Research needs redoing → $spec-research "<new direction>"
 </HARD-GATE>
 ```
+
+The user's reply to a gate is an **evaluation, not a command sheet**: respond to every item
+explicitly — adopt / refute (with evidence or a Decided entry) / partial — one round, user
+has the final say; an insisted-on item after refutation is applied and recorded as a
+user-override in the ledger. Absorbing every point unexamined is sycophancy toward the user.
 
 `$spec-revise` uses the same structure, with the title changed to `=== Proposal revised (<section>) ===` and a note that "the old APPROVED marker has been removed".
 
@@ -139,6 +158,12 @@ The `codex/hooks/check-gate` hook checks the prerequisites before `$spec-apply` 
 - More than 4 options → split into "multi-level narrowing"
 - Unsure whether it's fact-type or preference-type → treat it as preference-type
 - At most 4 questions at a time
+- **Exception — inside the `$spec-workflow` orchestration**: the flow is two-touchpoint by
+  design (HARD GATE + acceptance), so preference points are NOT asked mid-flight — they are
+  triaged (see $spec-ask § Auto triage): decided with an `auto` or `escalated` mark and
+  surfaced at the HARD GATE (escalated ones pinned on top, standing unless overturned).
+  The user participates as an **evaluator**, and every evaluation gets a per-item
+  adopt / refute / partial response. Standalone `$spec-ask` keeps the interactive rules above.
 
 ### Stuck Protection
 

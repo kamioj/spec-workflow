@@ -35,7 +35,9 @@ Any revision must pass through the HARD GATE again:
 Path: spec/changes/<name>/proposal.md
 Changes — same explanation layer as propose's gate, scoped to the edit:
   <the revised decision in one plain sentence>
-  Scenario: <what concretely goes wrong without it> / Avoided by: <plain words> / Cost: <the price>
+  Problem: <when who does what, because of what, what goes wrong — ≤2 lines>
+  After:   <same action, with this edit, what mechanism, outcome avoided — ≤2 lines>
+  Cost:    <the price>
   (never paste the proposal line verbatim; define domain terms at first use)
 (the old APPROVED marker has been removed)
 

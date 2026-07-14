@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.3.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -86,6 +86,8 @@ Within a few minutes, `research.md` lands in `spec/changes/caffeine-vs-redis/`.
 
 From there, walk the flow: `/spec:ask` settles the open `[TBD]` decisions with you → `/spec:propose` writes the proposal and **stops at the HARD GATE for your approval** → `/spec:apply` implements → `/spec:verify` audits independently → say "archive" when you're done. Lost? `/spec:status` tells you exactly where you are and what to run next.
 
+Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and stops at exactly **two** points: the HARD GATE (review the proposal — decisions the agent made for you are disclosed, irreversible ones pinned on top) and acceptance (say "archive"). No mid-flight questions: open decisions are triaged internally, an adversarial critique panel attacks the proposal before it reaches you, and your feedback at either touchpoint drives unlimited improvement rounds — each reply answered point by point (adopt / refute with reasons / partial), never swallowed whole.
+
 ---
 
 ## Features
@@ -94,7 +96,7 @@ From there, walk the flow: `/spec:ask` settles the open `[TBD]` decisions with y
 
 | Category | Command | What it does |
 |---|---|---|
-| **Entry** | `/spec:workflow <task>` | run the whole flow end-to-end |
+| **Entry** | `/spec:workflow <task>` | run the whole flow end-to-end, fully delegated — decisions triaged internally, stops only at the HARD GATE + acceptance |
 |  | `/spec:status` | report where the current change stands |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
 |  | `/spec:ask` | work through the `[TBD]` questions with you |
@@ -305,6 +307,13 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.4.0** — `/spec:workflow` becomes a true two-touchpoint autopilot:
+  - open decisions are **triaged instead of asked**: evidence-backed ones decided, reversible preferences decided with an `auto` mark, irreversible / product-semantics ones decided provisionally with an `escalated` mark — pinned at the top of the HARD GATE, standing unless you overturn them, echoed again on apply's first line
+  - a **critique panel** attacks every proposal before the gate: a chief *necessity* critic (four-question refutation; silent fallbacks with no real triggering scenario get deletion verdicts, loud invariant guards are judged by blast radius instead of incident history) plus regression-compat and testability lenses, security/performance joining by content; one refutation round, findings land in the ledger as round 0
+  - the gate's Changes blocks switch to a **before/after mirror of the same concrete scenario** (Problem / After / Cost, each ≤2 lines) — readable by non-developers
+  - your feedback becomes a first-class loop: gate and acceptance evaluations get per-item adopt / refute / partial responses, accepted items enter the verification ledger as user-sourced findings, and improvement rounds are unlimited (agent-internal loops stay capped: one refutation round, two auto-fix rounds)
+  - `/spec:status` derives a milestone view (rounds, decisions, touchpoint position) from the artifacts on the spot — nothing new is stored, so it cannot drift; archive-stage retrospect gains an auto-decision calibration entry that feeds `spec/knowledge.md`
+- **0.3.0 – 0.3.3** — dual-host era: the whole workflow ships as an OpenAI Codex CLI plugin from the same repo (`codex/`, `$spec-x` skills, pwsh+sh twin gate hooks with a 40-case fixture suite); both plugin trees are generated from a single `core/` source (`tools/generate.mjs --check` guards drift); Claude-side hooks gain a `powershell.exe`-hosted launcher that probes for pwsh and falls back to in-process 5.1 — Store-installed PowerShell 7 no longer silently disables the gates (0.3.3); ask options lettered to avoid question-numbering collisions (0.3.2); agent dispatch contract fixes (0.3.1)
 - **0.2.1 – 0.2.3** — live-fire hardening from the first real runs and two independent audits:
   - verifier output enum discipline (0.2.1)
   - gate hooks trigger on invocation only, never on mention — "what does /spec:apply do?" passes through (0.2.2)

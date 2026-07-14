@@ -1,6 +1,6 @@
 ---
 name: spec-ask
-description: Interrogates preference-driven decision points. Works through each [TBD] in research.md one by one as numbered plain-text questions; answered items are moved to ## Decided. Can be triggered multiple times; new [TBD]s may surface during the process.
+description: Interrogates preference-driven decision points. Works through each [TBD] in research.md one by one as numbered plain-text questions; answered items are moved to ## Decided. Inside $spec-workflow it switches to auto triage (decide + mark, no questions). Can be triggered multiple times; new [TBD]s may surface during the process.
 ---
 <!-- GENERATED from core/commands/ask.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -43,6 +43,21 @@ description: Interrogates preference-driven decision points. Works through each 
      ```
 6. **New [TBD]s surface during the process** → proactively append them to `## Open`, announce "found M new TBDs", continue asking
 
+## Auto triage (workflow-invoked mode)
+
+When `$spec-workflow` orchestrates this stage, the flow is two-touchpoint by design (HARD GATE + acceptance): do **NOT** ask the user question by question. Triage every `[TBD]` instead — **all of them end up in `## Decided`** (the pre-propose hook still requires `## Open` to be empty; leaving escalated items Open would deadlock the flow):
+
+1. **Factual** (determinable from code / docs / spec/knowledge.md) → decide from evidence, exactly as in the interactive flow: `[DEC-N] <decision> | source [TBD-N] | decided from status quo: <evidence>`
+2. **Preference-driven, reversible and cheap** → decide the recommended option yourself: `[DEC-N] <decision> | source [TBD-N] | auto | <one-line rationale> | reversibility: <how to undo>`
+3. **Preference-driven, irreversible or product-semantics** — any of: data migration / schema change / public API surface / new dependency / destructive operation / user-visible product semantics; **when unsure, it is in this class** → still decide the recommended option, but mark it: `[DEC-N] <decision> | source [TBD-N] | escalated | <rationale> | if wrong: <blast radius>`
+
+Every `auto` / `escalated` decision runs the **four-question filter** first (SKILL "Claim Self-Review"): why needed / when favorable / cost / can it be cut — and **"don't do it / minimal" is ALWAYS among the candidates**. A measure that survives only because "it might help" does not survive.
+
+**Surfacing contract** (what makes self-deciding safe — the decisions are never silent):
+- `auto` decisions → listed at the HARD GATE under `Decided without asking` (one line each + reversibility)
+- `escalated` decisions → the HARD GATE's `Escalated decisions` section, **pinned at the top of the gate block**; they stand by default — silence + `$spec-apply` = consent; the user overturns any with one line of evaluation (applied via `$spec-revise`), and `$spec-apply` echoes them once more at its first line
+- Standalone user-invoked `$spec-ask` keeps the interactive flow above — this section changes nothing about it
+
 ## Stopping conditions
 
 | Situation | Action |
@@ -53,7 +68,7 @@ description: Interrogates preference-driven decision points. Works through each 
 
 ## Anti-patterns
 
-- ❌ Silently deciding a [TBD] based on assumed knowledge (MUST ask the user)
+- ❌ Silently deciding a [TBD] based on assumed knowledge (interactive mode: MUST ask the user; auto-triage mode: deciding is legal but MUST carry the `auto` / `escalated` mark — "silent" means unmarked, and an unmarked self-decision is a violation in both modes)
 - ❌ Treating a preference-driven point as factual and skipping it
 - ❌ Throwing 5+ questions at the user at once (violates the 2–4 options + max-4-questions-per-round rule)
 - ❌ Producing a "decision tree" artifact (creates a false sense of completeness)

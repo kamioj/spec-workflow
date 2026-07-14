@@ -169,6 +169,8 @@ Without flags, only the `[independent]` section (plus Evidence) is output. **Cor
 
 A stateless verify can pass the same broken change twice. Every run therefore writes/updates a ledger in the change directory — findings carry stable IDs, and the next round must face every still-open one before it may conclude.
 
+The ledger has **two writers, one table**: `/spec:propose`'s critique panel opens it with round 0 (stage: propose, pre-code findings), and `/spec:verify` owns every round after — so the round narrative runs unbroken from before the gate to acceptance, and `/spec:status` derives the milestone view from it without any extra file.
+
 Format (YAML frontmatter + findings table):
 
 ```markdown
@@ -193,11 +195,12 @@ not run: <check> — <reason>
 ```
 
 Round rules:
-1. **Read the previous ledger first** (if present): this run's `round` = previous + 1
+1. **Read the previous ledger first** (if present): this run's `round` = previous + 1. **Round 0 is legal**: `/spec:propose`'s critique panel writes its surviving findings as round 0 (stage: propose) before any code exists — the first verify run is then round 1, and it re-checks round 0's open findings like any others
 2. **Re-check every Status=open finding one by one** — fixed → `fixed(rN)`; still open → stays open and **escalates**: a critical/major finding open for 2+ rounds forces `conclusion: fail` and leads the user-facing output
 3. New findings take the next V-N ID; IDs are never reused or renumbered
 4. `wontfix` requires a written reason (inside `Not in this change` / explicit user decision) — silence is not a status
 5. Keep the latest round's Evidence in full; collapse earlier rounds' Evidence to one line each
+6. **User-sourced findings**: acceptance-stage user evaluations enter the ledger too — after the per-item adopt/refute/partial response (one round; the user has the final say), each accepted or insisted-on item becomes a finding row with the next V-N ID and `source: user` noted in the Finding column; an item applied over your refutation is additionally marked `user-override`. They then drive the next fix round exactly like verifier findings. A user-overruled false positive still follows rule "distill the lesson into spec/knowledge.md"
 
 The user-facing output ends with the round summary:
 

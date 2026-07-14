@@ -35,6 +35,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
    If the hook blocks (outputs `{"decision":"block"}` to stdout — no/incomplete proposal, multiple active changes) → handle per its error message, don't force a bypass.
 <!-- /host -->
 
+4. **Escalated echo**: if research.md `## Decided` contains `escalated`-marked entries, the **first line of this command's output** restates them — `Implementing with <N> escalated decisions: <one line each>` — before any implementation work. This is the second informed-consent point (the gate pinned them on top; apply echoes them once more) at zero interaction cost: the flow never pauses, but an irreversible call can no longer slip through unread. No escalated entries → no echo line.
+
 ## Scoping
 
 Read proposal.md's `## What`:
