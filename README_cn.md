@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.3.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -84,6 +84,8 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 接下来照流程走：`/spec:ask` 和你一起消化待决的 `[TBD]` → `/spec:propose` 写提案并**在 HARD GATE 停下等你批准** → `/spec:apply` 实施 → `/spec:verify` 独立审查 → 想收尾时说"归档"。迷路了就 `/spec:status`，它会告诉你在哪一步、下一步跑什么。
 
+想整体托管？`/spec:workflow <task>` 端到端自动跑，全程只在**两个点**停下：HARD GATE（审提案——代理替你做的决定全部亮明，不可逆的置顶）和验收（说"归档"）。中途零提问：待决点在内部分诊消化，提案出闸前先被对抗批评面板攻击一轮；你在两个触点给出的评价驱动不限轮数的改进——每条评价都会被逐条回应（采纳 / 有理由地反驳 / 部分采纳），绝不照单全收。
+
 ---
 
 ## Features
@@ -92,7 +94,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
-| **入口** | `/spec:workflow <task>` | 全流程一把梭 |
+| **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
 |  | `/spec:status` | 报告当前 change 在哪一步 |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
@@ -303,6 +305,13 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.4.0** — `/spec:workflow` 成为真正的两触点自动驾驶：
+  - 待决点**分诊代替提问**：有证据的直接定，可逆偏好自决并标 `auto`，不可逆/产品语义的临时拍板标 `escalated`——置顶 HARD GATE 亮明，沉默即默认生效，apply 开工首行再回显一次
+  - 提案出闸前先过**批评面板**：首席"必要性反驳"批评者（四问反驳；没有真实触发场景的静默兜底吃删除裁定，响亮的不变量护栏按爆炸半径评审而非历史事故）+ 回归兼容 + 可测性，安全/性能按内容加编；一轮反驳收敛，findings 以 round 0 落验证账本
+  - gate 的 Changes 块改为**同一具体场景的前后镜像**（Problem / After / Cost，各 ≤2 行）——非开发者也能读懂
+  - 你的反馈成为一等回路：闸口与验收的评价获得逐条采纳/反驳/部分采纳回应，被采纳项以 user-sourced findings 进账本，改进轮数不设上限（代理内循环仍封顶：反驳一轮、自动修复两轮）
+  - `/spec:status` 从工件现算里程碑视图（轮次、决策、触点位置）——零新增存储，永不漂移；归档 retrospect 增加自决校准项，反哺 `spec/knowledge.md`
+- **0.3.0 – 0.3.3** — 双端时代：同一套工作流以 OpenAI Codex CLI 插件形态从本仓发布（`codex/`、`$spec-x` skills、pwsh+sh 双胞胎门 hook + 40 用例夹具）；两棵插件树由单一 `core/` 源生成（`tools/generate.mjs --check` 防漂移）；Claude 侧 hook 换 `powershell.exe` 托管的探测降级 launcher——Store 版 PowerShell 7 不再静默瘫痪三道门（0.3.3）；ask 选项改字母编号避免与题号连读（0.3.2）；代理派发契约修正（0.3.1）
 - **0.2.1 – 0.2.3** — 首批真实运行 + 两轮独立审计的实战加固：
   - verifier 输出枚举纪律（0.2.1）
   - 门 hook 只在调用时触发、提及不拦——"apply 是干嘛的"这类提问正常放行（0.2.2）

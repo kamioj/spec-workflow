@@ -20,7 +20,8 @@ Stay disciplined at the prompt level too:
 1. Read research.md: read `## Decided` + `## Practices` / `## Constraints` (the research conclusions for the current direction; `research/` drafts don't participate unless already revived into research.md)
 2. Read design.md (if it exists)
 3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). Two later stages consume these: `$spec-verify` checks Completeness against the `verify:` clauses; the HARD GATE shows Not-in-this-change as the approval boundary
-4. **Emit the HARD GATE closing block**
+4. **Run the critique panel** (section below) — surviving findings land in the verification ledger as round 0
+5. **Emit the HARD GATE closing block**
 
 **Full format + HARD GATE approval-marker rules + revision flow** → [`../spec-core/references/proposal-spec.md`](../spec-core/references/proposal-spec.md)
 
@@ -63,6 +64,27 @@ When any one condition holds, **the propose stage generates** `spec/changes/<nam
 
 **Full format + field rules + completion marking + lifecycle** → [`../spec-core/references/tasks-spec.md`](../spec-core/references/tasks-spec.md)
 
+## Critique panel (runs after proposal.md is written, before the HARD GATE)
+
+The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` — never this conversation) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
+(`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references; both together is rejected.)
+
+| Lens | Locked stance | On |
+|---|---|---|
+| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | always |
+| **regression-compat** | what existing behavior, consumer, or installed user does this change break | always |
+| **testability** | is every What item's `verify:` clause actually falsifiable — could it pass while the feature is broken | always |
+| **security** | auth / permissions / external input / data-write paths | only when What/How touches those |
+| **performance** | hot paths / loops / batch queries / N+1 | only when What/How touches those |
+
+**Discipline** (reuses the spec-verifier protocol — the anti-sycophancy measures are structural, not tonal):
+- **evidence-or-drop**: a finding must cite the concrete proposal line + the concrete scenario where it bites; "this might be risky" is dropped unwritten
+- **≤3 findings per lens** — forced ranking, no noise dumps
+- **ONE refutation round**: the proposing conversation defends each finding citing evidence or a Decided entry; a finding neither refuted nor adopted stays open. No second debate round — multi-round agent-to-agent debate is measured net-negative (critics start conceding and flipping correct answers)
+- **Non-blocking**: the panel never vetoes. Open majors ride the gate's `Unresolved critique` line; the user is the judge
+
+**Ledger round 0**: write the panel's surviving findings to `spec/changes/<name>/verify.md` as **round 0 (stage: propose)** with stable V-N IDs, same table format as $spec-verify's rounds (create the file if absent). `$spec-verify`'s next round re-checks every still-open one. Adopted findings that changed the proposal are marked `fixed(r0)`.
+
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
 
 ## HARD GATE output (fixed closing)
@@ -77,21 +99,35 @@ Path: spec/changes/<name>/proposal.md
  + tasks.md — trigger: <cross-stack / >5 subtasks / multi-executor>; split: <N> groups — <one-line group list>
    disagree with the need or the split → say so now, before $spec-apply)
 
+Escalated decisions — pinned FIRST, never buried. Irreversible-class calls the agent made
+provisionally (data migration / schema / public API / new dependency / destructive op /
+user-visible product semantics). They stand by default: silence + $spec-apply = consent;
+overturn any with one line of reply. Omit the whole section when there are none.
+  E1. <decision> | basis: <evidence or default used> | if wrong: <blast radius + undo path>
+
 Changes — the explanation layer for the decision-maker. proposal.md stays compressed for
 the executor; this block is where it gets explained. NEVER paste proposal lines verbatim.
-One block per key decision (3–6):
+One block per key decision (3–6), each a before/after mirror of the SAME concrete scenario;
+Problem and After are ≤2 lines each (longer = you are explaining mechanism — that belongs
+in proposal/design, not here):
 
   1. <the decision, one plain sentence>
-     Scenario: <the concrete situation where the problem bites — who does what, what goes wrong>
-     Avoided by: <how this decision prevents that, in plain words>
-     Cost: <the price paid — dependency / latency / limitation / rework>
+     Problem: when <who does what concretely>, because <what is missing/wrong today>,
+              <the concrete bad outcome>.
+     After:   when <the same action>, because <what this change adds>, it <mechanism used>,
+              so <that bad outcome no longer happens>.
+     Cost:    <the price paid — dependency / latency / limitation / rework>
 
-Register test: a smart reader who has never seen this codebase can approve or veto every
-point without a follow-up question. Define each domain term at first use; a line only an
-insider can parse must be rewritten around its scenario.
+Register test: a reader who is NOT a developer can tell what problem every point solves
+and how. Define each domain term at first use; a line only an insider can parse must be
+rewritten around its scenario.
 
-Decided without asking: <factual [TBD]s resolved autonomously, one line each + the evidence
-used; "none" if none — mandatory line, it lets the user catch a misclassified preference>
+Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line each — the
+evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
+catch a misclassified preference>
+Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
+one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
+"none" if none>
 Not in this change: <mirror What's "Not in this change" list — what approval does NOT cover>
 
 Next:
@@ -102,6 +138,15 @@ Next:
   🔄 Research needs redoing → $spec-research "<new direction>"
 </HARD-GATE>
 ```
+
+**Evaluation response protocol** (how to receive the user's reply to this gate): the user's
+reply is an evaluation, not a command sheet. Respond to EVERY item in it explicitly —
+**adopt** (apply via $spec-revise) / **refute** (state the reason: evidence or a Decided
+entry) / **partial** (which half and why). One response round only; the user has the final
+say — an item the user insists on after your refutation is applied AND recorded in the
+ledger as a user-override (the lesson later lands in spec/knowledge.md at archive time).
+Absorbing every point without examination is sycophancy toward the user — the flow's
+quality depends on criticism running in both directions.
 
 **After emitting the HARD GATE, NEVER write code** — wait for the user to run `$spec-apply` or another command.
 
@@ -125,7 +170,9 @@ User rejects → go through `$spec-revise [section]` (local) or `$spec-chat` (re
 - ❌ Bursting the proposal sections with content (it should move to design)
 - ❌ A `## What` item without a `verify:` clause (leaves $spec-verify's Completeness check nothing falsifiable)
 - ❌ Translating section headers (e.g. `## 为什么（Why）`) — headers are always `## Why / ## What / ## How / ## Risk`; `$spec-revise` targets sections by English name
-- ❌ Gate Changes written in insider shorthand ("three-layer CAS idempotency guarantee (DEC-8/9/11)") — that is executor register; the gate is decision-maker register (Scenario / Avoided by / Cost)
+- ❌ Gate Changes written in insider shorthand ("three-layer CAS idempotency guarantee (DEC-8/9/11)") — that is executor register; the gate is decision-maker register (Problem / After / Cost, same-scenario mirror)
+- ❌ Skipping the critique panel, or running it and withholding open findings from the gate (the user judges with full information or the gate is theater)
+- ❌ Absorbing every user evaluation without a per-item adopt/refute/partial response (sycophancy toward the user is still sycophancy)
 - ❌ **During the HARD GATE wait**, adding the APPROVED marker yourself without user confirmation (that is "approving on the user's behalf")
 - ❌ Keeping the old APPROVED when the user rejects / revises (it should be actively removed by `$spec-revise`)
 

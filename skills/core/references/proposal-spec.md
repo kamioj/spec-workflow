@@ -37,6 +37,18 @@ Key technical decisions (distilled from research.md `## Decided`, **not copied v
 - `## How` distills `research.md ## Decided`, doesn't copy it verbatim
 - **What / How must pass question ④ (cut it)**: before committing a non-trivial What item / How decision, ask "what happens if I remove it" and don't write what makes no difference removed (SKILL § Claim Self-Review) — this is the precondition for the HARD GATE change points to let the user judge "approve or not" at a glance
 
+## HARD GATE block sections (order is contract)
+
+The gate block emitted by `/spec:propose` / `/spec:revise` (full template in propose.md, mirrored in SKILL § HARD GATE flow — keep the two verbatim-identical) presents, in this order:
+
+1. `Escalated decisions` — **always first when present** (irreversible-class provisional calls; they stand by default, silence + `/spec:apply` = consent, one reply line overturns; `/spec:apply` echoes them again at its first line)
+2. `Changes` — 3–6 key decisions, each a **same-scenario before/after mirror**: Problem / After / Cost, Problem and After ≤2 lines each; register test: a non-developer can tell what problem each point solves
+3. `Decided without asking` — factual + `auto` triage decisions, one line each + reversibility (mandatory line, "none" allowed)
+4. `Unresolved critique` — critique-panel findings still open after the one refutation round (they live as round-0 ledger findings)
+5. `Not in this change` — the approval boundary
+
+The user's reply is an evaluation: per-item adopt / refute (with reason) / partial, one response round, user final; insisted items are applied and ledger-marked `user-override`.
+
 ## HARD GATE approval marker
 
 The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by `/spec:apply` before it runs** (treating the user's deliberate invocation as the act of approval).

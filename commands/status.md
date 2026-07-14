@@ -15,9 +15,9 @@ Read the `spec/changes/` directory (excluding `archive/`) and output the current
 1. **Glob `spec/changes/*/`** to list all un-archived changes
 2. For each change, check artifact presence:
    - `research.md` (current research) + discarded drafts under `research/` (if any), `design.md`, `proposal.md`, `tasks.md`
-3. Read `research.md` to count `[TBD-N]` entries under `## Open [TBD]` and the number of `## Decided` entries; count discarded drafts under `research/` (if any)
+3. Read `research.md` to count `[TBD-N]` entries under `## Open [TBD]` and the number of `## Decided` entries — splitting Decided by mark: plain / `auto` / `escalated`; count discarded drafts under `research/` (if any)
 4. Read `proposal.md` to check whether the HARD GATE approval marker is present (`<!-- APPROVED: YYYY-MM-DD HH:mm -->`)
-5. Read `verify.md` (the verification ledger, if present): frontmatter `round` / `conclusion` + count of Status=open findings
+5. Read `verify.md` (the verification ledger, if present): frontmatter `round` / `conclusion` + count of Status=open findings, split by origin (round 0 = critique panel / verifier rounds / `source: user`)
 
 ## Output format
 
@@ -36,11 +36,15 @@ Artifacts:
   research.md ✓ (current research)
     Drafts:      <K> (under research/, if any)
     Open [TBD]:  <N>
-    Decided:     <M>
+    Decided:     <M> (<A> auto, <E> escalated — escalated stand unless overturned at the gate)
   design.md   <✓/✗> (note whether one is needed if absent)
   proposal.md ✓ (HARD GATE: <pending approval / approved / rejected>)
   tasks.md    <✓/✗>
-  verify.md   <✓/✗> (round <N>, <pass/fail>, <M> open findings)
+  verify.md   <✓/✗> (round <N>, <pass/fail>, <M> open — critique r0: <C> · verifier: <V> · user-sourced: <U>)
+
+Milestone (derived on the spot from the artifacts above — nothing is stored, so it cannot drift):
+  Rounds so far: <e.g. "critique r0 (2 findings, 1 fixed) → verify r1 (pass) → user eval r2 (1 open)">
+  Touchpoint position: <before HARD GATE / between gate and acceptance / at acceptance (loop ends when you say "archive")>
 
 Current stage: <determined by the state machine below>
 Recommended next step: <mapped from the state machine below — do not generate from memory>
