@@ -205,26 +205,52 @@ function transformSigils(text) {
   return text.replace(/(^|[^\w$])\/spec:([a-z][a-z-]*)\b/g, (_m, prefix, name) => `${prefix}$spec-${name}`);
 }
 
+// The rule pack has no fixed path on Codex: plugin installs live under a VERSIONED cache dir
+// (~/.codex/plugins/cache/<mkt>/<plugin>/<ver>/skills/spec-core/rules/), script installs under
+// ~/.agents/skills/spec-core/rules/ — so the text instructs the model to locate sgconfig.yml
+// across both roots first (sort puts the plugin cache last → newest plugin install wins).
+// A hardcoded single path here already failed once: a live verifier probed the wrong root and
+// declared ast-grep not-run while the rule pack sat installed in the other.
+const AST_GREP_FRAGMENT_CLAUDE =
+  "`ast-grep scan --config ${CLAUDE_PLUGIN_ROOT}/rules/sgconfig.yml <changed files>`";
+const AST_GREP_FRAGMENT_CODEX =
+  "`ast-grep scan --config <sdd-rules>/sgconfig.yml <changed files>` — resolve `<sdd-rules>` first " +
+  "(the installed sdd `spec-core/rules` directory; location depends on install method): " +
+  "`find ~/.codex/plugins/cache ~/.agents/skills -path '*spec-core/rules/sgconfig.yml' 2>/dev/null | sort | tail -1` " +
+  "(pwsh: `Get-ChildItem ~/.codex/plugins/cache, ~/.agents/skills -Recurse -Filter sgconfig.yml -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName`)";
+
+function transformRulePaths(text) {
+  const out = text.replaceAll(AST_GREP_FRAGMENT_CLAUDE, AST_GREP_FRAGMENT_CODEX);
+  if (out.includes("${CLAUDE_PLUGIN_ROOT}/rules/")) {
+    throw new Error(
+      "unhandled ${CLAUDE_PLUGIN_ROOT}/rules/ reference — extend AST_GREP_FRAGMENT mapping in generate.mjs"
+    );
+  }
+  return out;
+}
+
 function transformSkillPaths(text) {
-  return text
-    .replaceAll("${CLAUDE_PLUGIN_ROOT}/skills/core/references/", "../spec-core/references/")
-    .replaceAll("../skills/core/references/", "../spec-core/references/")
-    .replaceAll("skills/core/references/", "../spec-core/references/")
-    .replaceAll("skills/core/SKILL.md", "../spec-core/SKILL.md")
-    .replaceAll("${CLAUDE_PLUGIN_ROOT}/rules/", "~/.agents/skills/spec-core/rules/");
+  return transformRulePaths(
+    text
+      .replaceAll("${CLAUDE_PLUGIN_ROOT}/skills/core/references/", "../spec-core/references/")
+      .replaceAll("../skills/core/references/", "../spec-core/references/")
+      .replaceAll("skills/core/references/", "../spec-core/references/")
+      .replaceAll("skills/core/SKILL.md", "../spec-core/SKILL.md")
+  );
 }
 
 function transformAgentPaths(text) {
-  return text
-    .replaceAll(
-      "`${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`",
-      "Read `code-charter.md` under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)"
-    )
-    .replaceAll(
-      "All paths are relative to `${CLAUDE_PLUGIN_ROOT}/skills/core/references/`.",
-      "All reference files are under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)."
-    )
-    .replaceAll("${CLAUDE_PLUGIN_ROOT}/rules/", "~/.agents/skills/spec-core/rules/");
+  return transformRulePaths(
+    text
+      .replaceAll(
+        "`${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`",
+        "Read `code-charter.md` under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)"
+      )
+      .replaceAll(
+        "All paths are relative to `${CLAUDE_PLUGIN_ROOT}/skills/core/references/`.",
+        "All reference files are under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)."
+      )
+  );
 }
 
 function transformCodexMarkdown(text, context) {

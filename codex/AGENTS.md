@@ -25,6 +25,8 @@ Rules that bind you, the agent:
 - **Stuck Protection**: 3 consecutive failed fixes in one direction → emit the Stuck
   Self-Check block and wait; from the 2nd attempt on, state why the previous one failed.
 
-The gates are enforced by hooks (`~/.codex/sdd-hooks/`), not by this file — attempting to
-skip a step gets blocked with the reason. Details: the spec-core skill
-(`~/.agents/skills/spec-core/`).
+The gates are enforced by hooks, not by this file — attempting to skip a step gets blocked
+with the reason. (Plugin installs run them from the plugin bundle; script installs from
+`~/.codex/sdd-hooks/`.) Details: the `spec-core` skill — shipped inside the sdd plugin
+(`~/.codex/plugins/cache/.../skills/spec-core/`), or at `~/.agents/skills/spec-core/` for
+script installs.

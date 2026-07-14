@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -305,6 +305,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.4.1** — Codex 端规则包路径修复：verifier 的 ast-grep 指令只指向插件化之前的脚本安装位，插件安装的用户会静默失去机器扫描（真实飞行中以 `not run` 声明暴露）。生成文本现在跨两个安装根定位 `sgconfig.yml`（插件缓存 + `~/.agents/skills`），sh/pwsh 双平台实测通过；`codex/AGENTS.md` 的安装路径描述改为安装方式无关。
 - **0.4.0** — `/spec:workflow` 成为真正的两触点自动驾驶：
   - 待决点**分诊代替提问**：有证据的直接定，可逆偏好自决并标 `auto`，不可逆/产品语义的临时拍板标 `escalated`——置顶 HARD GATE 亮明，沉默即默认生效，apply 开工首行再回显一次
   - 提案出闸前先过**批评面板**：首席"必要性反驳"批评者（四问反驳；没有真实触发场景的静默兜底吃删除裁定，响亮的不变量护栏按爆炸半径评审而非历史事故）+ 回归兼容 + 可测性，安全/性能按内容加编；一轮反驳收敛，findings 以 round 0 落验证账本
