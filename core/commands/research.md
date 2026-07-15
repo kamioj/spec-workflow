@@ -23,7 +23,7 @@ spec/changes/<name>/
 
 - **research.md** is the **current** research — single file, all content inline. `## Open [TBD]` / `## Decided` are maintained the same way as before.
 - **research/** holds **discarded drafts only** — when you change direction, the old research.md is moved here in its entirety. **No cross-linking**: research.md does not link to them, and drafts carry no status markers.
-- Want to go back to an old direction? **Resurrect** the relevant draft by pulling it back into research.md. Drafts belong to this change and travel with it at archive time.
+- Drafts belong to this change and travel with it at archive time.
 
 ## research.md format
 

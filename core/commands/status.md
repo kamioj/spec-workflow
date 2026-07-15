@@ -41,7 +41,7 @@ Artifacts:
   tasks.md    <✓/✗>
   verify.md   <✓/✗> (round <N>, <pass/fail>, <M> open — critique r0: <C> · verifier: <V> · user-sourced: <U>)
 
-Milestone (derived on the spot from the artifacts above — nothing is stored, so it cannot drift):
+Milestone:
   Rounds so far: <e.g. "critique r0 (2 findings, 1 fixed) → verify r1 (pass) → user eval r2 (1 open)">
   Touchpoint position: <before HARD GATE / between gate and acceptance / at acceptance (loop ends when you say "archive")>
 
