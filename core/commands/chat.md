@@ -17,10 +17,6 @@ Everything the user says during this mode **is treated as thinking material — 
 
 May Read existing artifacts for discussion context.
 
-## Value
-
-Makes "discussion mode" an explicit state. Prevents Claude from automatically editing documents when you share feedback — this is the SDD workflow's "safe pause zone".
-
 ## Exit conditions
 
 The user issues a clear command to switch to another mode:
