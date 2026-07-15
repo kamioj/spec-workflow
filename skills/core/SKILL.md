@@ -145,7 +145,7 @@ user-override in the ledger. Absorbing every point unexamined is sycophancy towa
 
 The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by `/spec:apply` before it runs** (treating the user's deliberate invocation as the act of approval) — propose / revise **do not append it** (see proposal-spec.md).
 
-The `check-gate.ps1` hook checks the prerequisites before `/spec:apply` runs (proposal.md exists with all four sections + a single active change). It deliberately does **not** require the marker — apply appends the marker after the hook fires (requiring it there would deadlock the flow); the marker is enforced at archive time by `check-archive.ps1`.
+The `check-gate.sh` hook checks the prerequisites before `/spec:apply` runs (proposal.md exists with all four sections + a single active change). It deliberately does **not** require the marker — apply appends the marker after the hook fires (requiring it there would deadlock the flow); the marker is enforced at archive time by `check-archive.sh`.
 
 ### Interrogation rules (in the spirit of grill-me)
 
@@ -204,10 +204,10 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 
 | Hook script | Trigger command | Effect |
 |---|---|---|
-| `hooks/check-tbd.ps1` | before `/spec:propose` | refuses to run if research.md still contains `[TBD]`, points to `/spec:ask` |
-| `hooks/check-gate.ps1` | before `/spec:apply` | refuses to run if prerequisites are missing: no/incomplete proposal.md (four sections) or ≠1 active change. Deliberately does NOT require the APPROVED marker — apply appends it after the hook fires; `check-archive.ps1` enforces it |
-| `hooks/check-archive.ps1` | before `/spec:archive` | refuses to run if the change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
-| `hooks/check-verify-reminder.ps1` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
+| `hooks/check-tbd.sh` | before `/spec:propose` | refuses to run if research.md still contains `[TBD]`, points to `/spec:ask` |
+| `hooks/check-gate.sh` | before `/spec:apply` | refuses to run if prerequisites are missing: no/incomplete proposal.md (four sections) or ≠1 active change. Deliberately does NOT require the APPROVED marker — apply appends it after the hook fires; `check-archive.sh` enforces it |
+| `hooks/check-archive.sh` | before `/spec:archive` | refuses to run if the change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
+| `hooks/check-verify-reminder.sh` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
 
 check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive the rest before continuing). check-archive deliberately does **not** block on multiple changes: archiving is exactly how you get back down to one.
 
@@ -215,7 +215,7 @@ check-tbd / check-gate also `exit 2` when **more than one active change** exists
 - Soft constraint (prompt): the model may violate it; the violation rate depends on the model's quality
 - Hard constraint (hook): a shell script blocks it; a 0% violation rate
 
-The PowerShell scripts under `hooks/` are registered by `hooks/hooks.json`: the three gates to the `UserPromptSubmit` event, the verify reminder to the `Stop` event.
+The POSIX sh scripts under `hooks/` are registered by `hooks/hooks.json` (shell form — sh on macOS/Linux, Git Bash on Windows): the three gates to the `UserPromptSubmit` event, the verify reminder to the `Stop` event.
 
 ## references loading strategy
 

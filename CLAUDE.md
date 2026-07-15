@@ -42,7 +42,7 @@ claude plugin marketplace update spec-workflow
 codex plugin marketplace upgrade spec-workflow    # Git-marketplace installs; local-path installs need remove+add instead
 ```
 
-- **Claude hooks require restarting Claude to take effect** — commands / skills / agents hot-reload, hooks don't. Easiest trap in the repo: edit a hook without restarting and you're testing the old behavior.
+- **Claude hooks reload via `/reload-plugins`** (verified for the UserPromptSubmit gates + Stop reminder; monitors are the documented exception needing a restart). Commands / skills / agents hot-reload on their own. The old "hooks need a full restart" doctrine is obsolete for current Claude Code — but sessions started BEFORE a plugin update still run the old hook config until `/reload-plugins` or restart, which is the easiest trap in the repo.
 - **Codex hooks require re-trusting in the TUI whenever hooks.json changes** (trust is recorded per hook-definition hash). Untrusted hooks are **silently skipped** — no error, no log. After any hook-affecting update, verify the gate bites: in a project with no `spec/changes/`, send `$spec-apply` — it must come back blocked.
 - Codex agents aren't plugin-bundled (no such mechanism); `$spec-setup` copies the shipped TOMLs to `~/.codex/agents/` — re-run it after agent changes.
 
@@ -73,27 +73,28 @@ Four hooks, same semantics on both hosts: three UserPromptSubmit gates match the
 | check-archive | archive | flow was bypassed (no APPROVED / unchecked tasks / no proposal); override = prompt contains `force` or `abandon(ed)` — **matched against the prompt value only**, never the whole stdin JSON (a cwd containing "force" must not bypass; that was finding V-1) |
 | check-verify-reminder | Stop event | single active change has an APPROVED proposal but no verify.md ledger; `stop_hook_active` loop-guards (one nudge per stop) |
 
-**The two hook implementations are different platforms, not copies** — each host's contract was probe-verified and they disagree with each other AND with the docs:
+**The two hook implementations share the sh language but not the contract** — each host's contract was probe-verified and they disagree with each other AND with the docs:
 
-| | Claude Code (`hooks/*.ps1`) | Codex CLI (`codex/hooks/*` — see `codex/hooks/SCHEMA.md`, the evidence file) |
+| | Claude Code (`hooks/*.sh`) | Codex CLI (`codex/hooks/*` — see `codex/hooks/SCHEMA.md`, the evidence file) |
 |---|---|---|
-| stdin user-input field | `user_prompt` | `prompt` |
-| blocking mechanism | `exit 2` + stderr | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
+| stdin user-input field | `prompt` (**probe-verified against real stdin 2026-07-15** — the older `user_prompt` lore was wrong for current Claude Code, which means the pre-0.4.2 ps1 gates had been silently dead on this axis) | `prompt` |
+| blocking mechanism | `exit 2` + stderr (**stdout must stay empty** — codex-style stdout JSON does NOT block on Claude; the fixture canary enforces this) | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
 | invocation anchor | `^\s*/spec:x` | `^\s*\$spec-x` |
-| entry point | `powershell.exe` → `gate-launcher.ps1` (probes pwsh: PATH → MSI dir → Store alias; falls back to in-process 5.1 — bare `pwsh` in hooks.json breaks on Store-installed PS7, whose exe is a per-user alias invisible to the hook runner's PATH search) | `command` (sh) + `commandWindows` (pwsh) |
-| languages | PowerShell (**must stay 5.1-compatible** — the launcher fallback runs gates under 5.1) | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
+| project dir | `$CLAUDE_PROJECT_DIR` env only — **never parsed from stdin JSON** (sed can't decode `\uXXXX`; a non-ASCII project path would silently kill the gate) | stdin JSON `cwd` (sed parse + un-escape) |
+| entry point | hooks.json **shell form**: `sh "$CLAUDE_PLUGIN_ROOT/hooks/check-x.sh"` — runs under sh (macOS/Linux) or Git Bash (Windows); `$CLAUDE_PLUGIN_ROOT` expanded by the shell from the exported env | `command` (sh) + `commandWindows` (pwsh) |
+| languages | single POSIX sh implementation, all platforms | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
 | config trap | — | an unknown top-level key in hooks.json (e.g. `description`) makes the whole file **silently ignored** |
 
-Shared conventions across both: **fail-open** (hook internal error → allow; a hook bug must never block normal flow); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
+Shared conventions across both: **fail-open** (hook internal error / missing `$CLAUDE_PROJECT_DIR` → allow; a hook bug must never block normal flow); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
 
-**After ANY Codex gate edit**: `sh codex/hooks/run-fixtures.sh` must pass (currently 40 cases, both twins on the same stdin fixtures — the sync contract between pwsh and sh). Test a Claude hook in isolation:
-```pwsh
-'{"user_prompt":"/spec:apply","cwd":"D:\\path\\to\\test-project"}' | pwsh -NoProfile -File hooks/check-gate.ps1 ; "exit=$LASTEXITCODE"
+**After ANY gate edit, run the matching fixture suite** — Claude side: `sh hooks/run-fixtures.sh` (43 cases: 20 scenarios name-synced against the codex set + unicode-path + env-missing fail-open + wrong-contract canary; run it on Git Bash AND `wsl sh hooks/run-fixtures.sh` for a real-POSIX pass). Codex side: `sh codex/hooks/run-fixtures.sh` (40 cases, both twins). Test a Claude hook in isolation:
+```sh
+printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CLAUDE_PROJECT_DIR="D:/path/to/test-project" sh hooks/check-gate.sh ; echo "exit=$?"
 ```
 
 ## Platform constraints
 
-**Always `pwsh` (PowerShell 7), never `powershell`, for interactive/dev commands** — PS 5.1 defaults to GBK and corrupts Chinese in pipelines. **Exception: the Claude-side hook chain deliberately starts from `powershell.exe`** (`hooks/hooks.json` → `gate-launcher.ps1`), because `pwsh` is an optional install the hook runner may not resolve (Store-installed PS7 exposes only a per-user app-execution alias); the launcher delegates to pwsh when found, else runs the gate in-process under 5.1 — so **every gate script must stay PS 5.1-compatible** and set its own UTF-8 stdin/stdout in its header (they all do). Claude-side hooks are Windows-only (README Limitations); Codex-side gates ship pwsh + sh and run cross-platform (`commandWindows` in hooks.json overrides `command` on Windows — binary-verified field, not in the official docs).
+**Always `pwsh` (PowerShell 7), never `powershell`, for interactive/dev commands** — PS 5.1 defaults to GBK and corrupts Chinese in pipelines. **Both hook stacks are cross-platform sh since 0.4.2**: Claude-side gates are single POSIX sh implementations run via hooks.json shell form (sh on macOS/Linux, Git Bash on Windows — Git for Windows is a prerequisite Claude Code's own Bash tool already imposes; a Windows box without it gets fail-open gates plus non-blocking hook errors, see README Troubleshooting); Codex-side gates ship pwsh + sh twins (`commandWindows` in hooks.json overrides `command` on Windows — binary-verified field, not in the official docs).
 
 ## Big picture: commands + agents + artifacts
 

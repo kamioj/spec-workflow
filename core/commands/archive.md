@@ -8,7 +8,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
 ## Pre-flight checks
 
 <!-- host:claude -->
-0. **Hook layer**: `check-archive.ps1` has already screened this invocation — it blocks (`exit 2`) when the change bypassed the flow: proposal.md without the APPROVED marker / tasks.md with unchecked items / no proposal.md at all. Deliberate override: the user says `force` (archive as-is) or `abandoned` (drop the direction). When an override passed through, the reason **MUST be recorded in retrospect.md** (Process step 2).
+0. **Hook layer**: `check-archive.sh` has already screened this invocation — it blocks (`exit 2`) when the change bypassed the flow: proposal.md without the APPROVED marker / tasks.md with unchecked items / no proposal.md at all. Deliberate override: the user says `force` (archive as-is) or `abandoned` (drop the direction). When an override passed through, the reason **MUST be recorded in retrospect.md** (Process step 2).
 <!-- /host -->
 <!-- host:codex -->
 0. **Hook layer**: `codex/hooks/check-archive` has already screened this invocation — it blocks (outputs `{"decision":"block"}` to stdout) when the change bypassed the flow: proposal.md without the APPROVED marker / tasks.md with unchecked items / no proposal.md at all. Deliberate override: the user says `force` (archive as-is) or `abandoned` (drop the direction). When an override passed through, the reason **MUST be recorded in retrospect.md** (Process step 2).

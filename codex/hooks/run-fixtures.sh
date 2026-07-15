@@ -145,8 +145,15 @@ run_case reminder-loop-guard       check-verify-reminder allow "$(json_stop "$P"
 
 P=$(mkproj rem-ledger); mkdir -p "$P/spec/changes/c"
 printf '%s\n<!-- APPROVED: 2026-07-08 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"
-printf '# ledger\n' > "$P/spec/changes/c/verify.md"
+printf -- '---\nround: 1\nconclusion: pass\n---\n# ledger\n' > "$P/spec/changes/c/verify.md"
 run_case reminder-ledger-satisfied check-verify-reminder allow "$(json_stop "$P" false)"
+
+# 0.4.x regression guard: a round-0 (propose-stage critique) ledger must NOT satisfy the
+# reminder -- the implementation window still needs its own verification round
+P=$(mkproj rem-round0); mkdir -p "$P/spec/changes/c"
+printf '%s\n<!-- APPROVED: 2026-07-08 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"
+printf -- '---\nround: 0\nstage: propose\nconclusion: pass\n---\n# ledger\n' > "$P/spec/changes/c/verify.md"
+run_case reminder-round0-nudges    check-verify-reminder block "$(json_stop "$P" false)"
 
 P=$(mkproj rem-unapproved); mkdir -p "$P/spec/changes/c"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"

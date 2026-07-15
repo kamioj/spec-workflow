@@ -52,13 +52,21 @@ try {
     # Same marker contract as check-gate: implementation window = APPROVED present
     if ($content -notmatch '(?i)<!--\s*APPROVED\s*[:>]') { exit 0 }
 
+    # A ledger only counts once it has an implementation round (round >= 1). Round 0 is the
+    # propose-stage critique panel (written BEFORE any code exists) -- treating it as
+    # "verified" would disarm this reminder for the whole implementation window, letting
+    # premature turn-endings mid-apply pass silently.
     $ledgerPath = Join-Path $change.FullName 'verify.md'
-    if (Test-Path $ledgerPath) { exit 0 }
+    if (Test-Path $ledgerPath) {
+        $ledger = Get-Content $ledgerPath -Raw -Encoding UTF8
+        if ($ledger -match '(?m)^round:\s*[1-9]') { exit 0 }
+    }
 
     $lines = @(
-        "SDD: change '$($change.Name)' has an approved proposal but no verification ledger (verify.md).",
+        "SDD: change '$($change.Name)' has an approved proposal but no implementation-round verification (verify.md absent, or holds only the round-0 critique).",
+        'If implementation is unfinished (unchecked tasks.md items / What items not landed): CONTINUE implementing -- do not end the turn.',
         'If implementation just finished: run the closing three-dimension verification now and write the ledger round (see $spec-verify -- findings with V-N IDs + Evidence).',
-        'If you are deliberately pausing (stuck self-check / awaiting a user decision / mid-implementation): say so explicitly to the user, then stop.'
+        'If you are deliberately pausing (stuck self-check / awaiting a user decision): say so explicitly to the user, then stop.'
     )
     Block ($lines -join "`n")
 } catch {

@@ -6,8 +6,8 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](https://github.com/kamioj/spec-workflow)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -114,10 +114,10 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 | Hook | Fires on | What it does |
 |---|---|---|
-| `check-tbd.ps1` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
-| `check-gate.ps1` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
-| `check-archive.ps1` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
-| `check-verify-reminder.ps1` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
+| `check-tbd.sh` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
+| `check-gate.sh` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
+| `check-archive.sh` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
+| `check-verify-reminder.sh` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
 
@@ -191,12 +191,12 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── tools/generate.mjs              # emits commands/ skills/ rules/ agents/ AND codex/skills|agents from core/; --check = drift guard
 ├── codex/                          # OpenAI Codex CLI port (same workflow + gates; see codex/README.md)
 ├── commands/                       # 11 slash commands — GENERATED from core/, do not hand-edit
-├── hooks/                          # hard constraints (pwsh)
+├── hooks/                          # hard constraints (POSIX sh, all platforms) + fixture suite
 │   ├── hooks.json
-│   ├── check-tbd.ps1
-│   ├── check-gate.ps1
-│   ├── check-archive.ps1
-│   └── check-verify-reminder.ps1
+│   ├── check-tbd.sh
+│   ├── check-gate.sh
+│   ├── check-archive.sh
+│   └── check-verify-reminder.sh
 ├── agents/
 │   ├── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
 │   └── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify
@@ -276,8 +276,8 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 
 ## Limitations
 
-- **Claude Code hooks are Windows-only.** The Claude-side gates are PowerShell; going cross-platform there needs a bash/sh equivalent. (The Codex port already ships pwsh + POSIX sh twins for all four gates.)
-  - PowerShell 7 is **not** required on the machine: the hook entry point is `powershell.exe` (present on every Windows box) hosting `hooks/gate-launcher.ps1`, which delegates to `pwsh` when it can find one (PATH → MSI default dir → Store alias) and otherwise runs the gate in-process under 5.1. In particular, a Microsoft Store-installed PowerShell 7 — whose executable is only a per-user app-execution alias invisible to the hook runner's PATH search — no longer breaks the gates.
+- **Claude Code gates run everywhere sh runs** (0.4.2+): a single POSIX sh implementation per gate, executed via hooks.json shell form — `sh` on macOS/Linux, **Git Bash on Windows**. Git for Windows is the one Windows prerequisite, and Claude Code's own Bash tool already requires it.
+  - Troubleshooting: non-blocking `UserPromptSubmit hook error` lines mentioning `sh` on Windows mean Git Bash is missing — install [Git for Windows](https://git-scm.com/download/win); the gates fail open (never block your normal flow) until then. Hook errors mentioning `powershell.exe`/`pwsh` mean the session is still running a pre-0.4.2 plugin — run `/reload-plugins` or restart.
 - **Not built yet.** Dedicated sdd-researcher / sdd-reviewer agents, an MCP server.
 
 ---
@@ -298,7 +298,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 | Item | Verdict | Evidence |
 |---|---|---|
-| `user_prompt` field name | ✅ correct | hookify/core/rule_engine.py lines 226–228 read `input_data.get('user_prompt', '')` |
+| stdin user-input field name | ⚠️ corrected 2026-07-15: the UserPromptSubmit envelope field is **`prompt`** | raw stdin captured by a probe hook in a live session: `{"hook_event_name":"UserPromptSubmit",...,"prompt":"/spec:apply"}`. The earlier `user_prompt` verdict (based on hookify/core/rule_engine.py reading `input_data.get('user_prompt', '')`) described hookify's own permissive reader, not the envelope Claude Code actually sends |
 | how to invoke a plugin agent | ✅ use the agent name directly (`spec-dev`) — no plugin prefix | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
 | required agent frontmatter | ✅ name / description / model / color all present | plugin-dev/skills/agent-development/SKILL.md § Frontmatter Fields |
 | agent model strategy | ✅ `inherit` (takes the parent conversation's model — the official recommendation) | plugin-dev/skills/agent-development/SKILL.md § model |
@@ -307,6 +307,11 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.4.2** — Claude-side gates go cross-platform (macOS / Linux / Windows):
+  - the four PowerShell hooks are **replaced** by single POSIX sh implementations, run via hooks.json shell form (`sh` on unix, Git Bash on Windows — the prerequisite Claude Code's own Bash tool already imposes); the 0.3.3 powershell.exe launcher machinery retires with them
+  - gates now read the project dir from `$CLAUDE_PROJECT_DIR` instead of parsing stdin JSON — non-ASCII project paths (e.g. Chinese) can no longer silently disable a gate
+  - new Claude-side fixture suite (43 cases): scenario-name-synced against the Codex set, plus a unicode-path case, an env-missing fail-open case, and a wrong-contract canary that fails the run if a gate ever "blocks" codex-style (stdout JSON) instead of Claude-style (exit 2 + stderr); green on Git Bash and WSL
+  - doctrine update: plugin hook changes reload via `/reload-plugins` (no full restart; monitors excepted per official docs)
 - **0.4.1** — Codex-side rule-pack path fix: the verifier's ast-grep instruction pointed at the pre-plugin script-install location only, so plugin installs silently lost the machine pass (declared `not run` in a live flight). The generated text now locates `sgconfig.yml` across both install roots (plugin cache + `~/.agents/skills`), verified on sh and pwsh; `codex/AGENTS.md` install paths made install-method-agnostic.
 - **0.4.0** — `/spec:workflow` becomes a true two-touchpoint autopilot:
   - open decisions are **triaged instead of asked**: evidence-backed ones decided, reversible preferences decided with an `auto` mark, irreversible / product-semantics ones decided provisionally with an `escalated` mark — pinned at the top of the HARD GATE, standing unless you overturn them, echoed again on apply's first line
@@ -324,7 +329,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
   - proposal `## What`: every item carries a `verify:` acceptance check; the section closes with an explicit **Not in this change** boundary that flows into agent dispatch prompts and verify exclusion zones
   - `/spec:verify` now dispatches an independent fresh-context `spec-verifier` agent (evidence-or-drop findings, refutation phase, optional ast-grep machine pass via `rules/dirty-data/`) and writes a verification ledger `verify.md` (stable finding IDs, round diffing, unfixed findings escalate to fail)
   - Charter audit: fallback / degrade / compat paths must trace to a gate decision — untraceable ones are findings (critical on data-write paths); the spec-dev summary must disclose every fallback and carry an Evidence block
-  - Two new hooks: `check-archive.ps1` (blocks archiving a change that bypassed the flow; override with `force`/`abandoned`) and `check-verify-reminder.ps1` (Stop event: a turn can't quietly end with an approved proposal and no verification ledger)
+  - Two new hooks: `check-archive.sh` (blocks archiving a change that bypassed the flow; override with `force`/`abandoned`) and `check-verify-reminder.sh` (Stop event: a turn can't quietly end with an approved proposal and no verification ledger)
   - New artifacts: archive-stage `retrospect.md` (divergence review + evidence) and project-level `spec/knowledge.md` (durable cross-change facts; archive maintains, research reads first)
   - tasks.md generation is declared at the gate (trigger + split), never silently attached
 - **0.1.0** — first release: 11 commands, 2 hooks, 1 agent; migrated from an earlier skill-only form.
