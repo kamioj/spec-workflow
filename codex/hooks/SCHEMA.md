@@ -27,7 +27,7 @@ codex exec --skip-git-repo-check --dangerously-bypass-hook-trust "reply pong onl
 }
 ```
 
-**The user-input field is `prompt`** — not `user_prompt` as in Claude Code. Same trap
+**The user-input field is `prompt`** — same name as Claude Code, as it turned out: the old belief that Claude Code uses `user_prompt` was corrected 2026-07-15 by a live stdin capture (see the repo CLAUDE.md hook-contract table). Same trap
 class as the Claude-side incident recorded in the root README; the name differs per host.
 
 ## Stop stdin (observed verbatim)

@@ -56,7 +56,7 @@ The timestamp uses the current ISO local time.
 
 This marker is simultaneously:
 <!-- host:claude -->
-- the contract `check-archive.ps1` enforces at archive time (a change without it = flow bypassed) and `check-verify-reminder.ps1` uses to detect the implementation window
+- the contract `check-archive.sh` enforces at archive time (a change without it = flow bypassed) and `check-verify-reminder.sh` uses to detect the implementation window
 <!-- /host -->
 <!-- host:codex -->
 - the contract `codex/hooks/check-archive` enforces at archive time (a change without it = flow bypassed) and `codex/hooks/check-verify-reminder` uses to detect the implementation window
@@ -64,7 +64,7 @@ This marker is simultaneously:
 - an **audit record**: git log shows when it was approved
 
 <!-- host:claude -->
-(`check-gate.ps1` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow.)
+(`check-gate.sh` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow.)
 <!-- /host -->
 <!-- host:codex -->
 (`codex/hooks/check-gate` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow. Hooks signal blocking via stdout `{"decision":"block"}`.)

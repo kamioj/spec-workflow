@@ -6,8 +6,8 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](https://github.com/kamioj/spec-workflow)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20pwsh-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -112,10 +112,10 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 | Hook | 何时触发 | 做什么 |
 |---|---|---|
-| `check-tbd.ps1` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.ps1` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
-| `check-archive.ps1` | `/spec:archive` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
-| `check-verify-reminder.ps1` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
+| `check-tbd.sh` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
+| `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
+| `check-archive.sh` | `/spec:archive` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
+| `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
 
@@ -189,12 +189,12 @@ graph LR
 ├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
 ├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
 ├── commands/                       # 11 个 slash 命令——由 core/ 生成，勿手改
-├── hooks/                          # 硬约束（pwsh 实现）
+├── hooks/                          # 硬约束（POSIX sh,全平台）+ 夹具套件
 │   ├── hooks.json
-│   ├── check-tbd.ps1
-│   ├── check-gate.ps1
-│   ├── check-archive.ps1
-│   └── check-verify-reminder.ps1
+│   ├── check-tbd.sh
+│   ├── check-gate.sh
+│   ├── check-archive.sh
+│   └── check-verify-reminder.sh
 ├── agents/
 │   ├── spec-dev.md                 # 按 scope（frontend/backend）派遣；跨栈并发派两个
 │   └── spec-verifier.md            # /spec:verify 派遣的全新上下文验证者
@@ -274,8 +274,8 @@ claude --plugin-dir .
 
 ## Limitations
 
-- **Claude Code 侧 hooks 仅限 Windows**：Claude 侧门用 PowerShell 写，跨平台需要 bash/sh 等价实现。（Codex 移植版的 4 个门已带 pwsh + POSIX sh 双实现）
-  - 机器上**不要求装 PowerShell 7**：hook 入口是每台 Windows 都自带的 `powershell.exe`，由 `hooks/gate-launcher.ps1` 运行时探测 pwsh（PATH → MSI 默认目录 → Store 别名），找到就委托，找不到就在 5.1 进程内直接跑门。尤其是 Microsoft Store 版 PowerShell 7（其可执行文件只是每用户的应用执行别名，hook 进程的 PATH 查找看不见它）不再导致门失效。
+- **Claude Code 侧硬门全平台可用**（0.4.2+）：每个门是单一 POSIX sh 实现，经 hooks.json shell form 执行——macOS/Linux 走 `sh`，**Windows 走 Git Bash**。Windows 上唯一前置是 Git for Windows,而 Claude Code 自身的 Bash 工具本来就需要它。
+  - 排障：Windows 上出现提到 `sh` 的非阻断 `UserPromptSubmit hook error` = 缺 Git Bash——装 [Git for Windows](https://git-scm.com/download/win) 即可,装好前门只是失效(fail-open),不会拦你正常流程;报错提到 `powershell.exe`/`pwsh` = 会话还在跑 0.4.2 之前的旧插件——`/reload-plugins` 或重启。
 - **未做的扩展**：sdd-researcher / sdd-reviewer 专属 agent / MCP server
 
 ---
@@ -296,7 +296,7 @@ claude --plugin-dir .
 
 | 项 | 结论 | 证据 |
 |---|---|---|
-| `user_prompt` 字段名 | ✅ 正确 | hookify/core/rule_engine.py 第 226-228 行实际访问 `input_data.get('user_prompt', '')` |
+| stdin 用户输入字段名 | ⚠️ 2026-07-15 订正:UserPromptSubmit 信封字段实为 **`prompt`** | 真实会话探针捕获的原始 stdin:`{"hook_event_name":"UserPromptSubmit",...,"prompt":"/spec:apply"}`。早先"`user_prompt` 正确"的裁定依据(hookify 读 `input_data.get('user_prompt','')`)描述的是 hookify 自己的宽松读取器,不是 Claude Code 实际发送的信封 |
 | plugin agent 调用方式 | ✅ 直接用 agent name（`spec-dev`），无需 plugin 前缀 | plugin-dev/skills/agent-development/SKILL.md § Namespacing |
 | agent frontmatter 必填字段 | ✅ name / description / model / color 全部就位 | plugin-dev/skills/agent-development/SKILL.md § Frontmatter Fields |
 | agent model 策略 | ✅ `inherit`（继承父对话模型，官方推荐） | plugin-dev/skills/agent-development/SKILL.md § model |
@@ -305,6 +305,12 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.4.2** — Claude 侧硬门全平台化（macOS / Linux / Windows）：
+  - 四个 PowerShell hook 被单一 POSIX sh 实现**整体替换**，经 hooks.json shell form 执行（unix 走 `sh`，Windows 走 Git Bash——Claude Code 自身 Bash 工具本就要求它）；0.3.3 的 powershell.exe launcher 机关随之退役
+  - 门改读 `$CLAUDE_PROJECT_DIR` 而非解析 stdin JSON——中文等非 ASCII 项目路径不再可能静默瘫痪硬门
+  - 实施期探针实证修正一条祖传契约：Claude 侧 stdin 字段实为 `prompt`（旧知识 `user_prompt` 有误，旧 ps1 门在该轴上早已静默失效）
+  - 新增 Claude 侧夹具套件（43 用例）：与 Codex 集按场景名同步、中文路径用例、env 缺失 fail-open 用例、以及"错误契约金丝雀"（门若以 codex 式 stdout JSON 假阻断，夹具当场红）；Git Bash 与 WSL 双环境全绿
+  - 教条修订：插件 hook 变更用 `/reload-plugins` 即可生效（无需重启会话；monitors 按官方文档除外）
 - **0.4.1** — Codex 端规则包路径修复：verifier 的 ast-grep 指令只指向插件化之前的脚本安装位，插件安装的用户会静默失去机器扫描（真实飞行中以 `not run` 声明暴露）。生成文本现在跨两个安装根定位 `sgconfig.yml`（插件缓存 + `~/.agents/skills`），sh/pwsh 双平台实测通过；`codex/AGENTS.md` 的安装路径描述改为安装方式无关。
 - **0.4.0** — `/spec:workflow` 成为真正的两触点自动驾驶：
   - 待决点**分诊代替提问**：有证据的直接定，可逆偏好自决并标 `auto`，不可逆/产品语义的临时拍板标 `escalated`——置顶 HARD GATE 亮明，沉默即默认生效，apply 开工首行再回显一次
@@ -322,7 +328,7 @@ claude --plugin-dir .
   - proposal `## What` 每项带 `verify:` 验收条，节尾必有 **Not in this change** 范围边界，且贯穿到 agent 派单与 verify 排除区
   - `/spec:verify` 改为派遣独立全新上下文的 `spec-verifier` agent（证据先行、反驳轮、可选 ast-grep 机器扫描 `rules/dirty-data/`），并落盘验证账本 `verify.md`（稳定发现编号 + 轮次对比 + 未修复项升级为 fail）
   - charter 审计：兜底/降级/兼容路径必须溯源到 gate 决策，溯源不到即缺陷（数据写路径为 critical）；spec-dev 汇报强制披露每个 fallback 与 Evidence
-  - 新增两个 hook：`check-archive.ps1`（拦截绕流程归档，`force`/`abandoned` 显式放行）、`check-verify-reminder.ps1`（Stop 事件：回合不能在"已批准但无验证账本"状态下静默结束）
+  - 新增两个 hook：`check-archive.sh`（拦截绕流程归档，`force`/`abandoned` 显式放行）、`check-verify-reminder.sh`（Stop 事件：回合不能在"已批准但无验证账本"状态下静默结束）
   - 新增工件：归档复盘 `retrospect.md`（偏差审查 + 证据）、项目级 `spec/knowledge.md`（跨 change 沉淀，archive 维护、research 先读）
   - tasks.md 的生成决策在 gate 上显式声明（触发条件 + 拆分），不再静默附带
 - **0.1.0** — 首版：11 命令 + 2 hook + 1 agent，从 skill 形态迁移而来

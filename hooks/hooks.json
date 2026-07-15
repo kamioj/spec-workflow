@@ -1,49 +1,22 @@
 {
-  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: prerequisites ready — proposal with all four sections + single active change; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger). Entry point is powershell.exe (guaranteed on every Windows box) hosting gate-launcher.ps1, which delegates to pwsh when resolvable and falls back to in-process 5.1 otherwise — Store-installed pwsh is not visible to the hook runner's PATH search.",
+  "description": "SDD hooks: 3 UserPromptSubmit gates (propose: [TBD] cleared; apply: prerequisites ready — proposal with all four sections + single active change; archive: flow wasn't bypassed) + 1 Stop reminder (turn ended with approved proposal but no verification ledger). Shell-form entries: Claude Code runs the command string under sh on macOS/Linux and Git Bash on Windows, so ONE POSIX sh implementation serves every platform (Git Bash ships with Git for Windows, which Claude Code's own Bash tool already requires). $CLAUDE_PLUGIN_ROOT is expanded by the shell from the exported environment; the gates read the project dir from $CLAUDE_PROJECT_DIR and the user input from the stdin JSON `prompt` field (probe-verified against real stdin, 2026-07-15).",
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe",
-            "args": [
-              "-NoProfile",
-              "-NonInteractive",
-              "-ExecutionPolicy",
-              "Bypass",
-              "-File",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/check-tbd.ps1"
-            ],
+            "command": "sh \"$CLAUDE_PLUGIN_ROOT/hooks/check-tbd.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "powershell.exe",
-            "args": [
-              "-NoProfile",
-              "-NonInteractive",
-              "-ExecutionPolicy",
-              "Bypass",
-              "-File",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/check-gate.ps1"
-            ],
+            "command": "sh \"$CLAUDE_PLUGIN_ROOT/hooks/check-gate.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "powershell.exe",
-            "args": [
-              "-NoProfile",
-              "-NonInteractive",
-              "-ExecutionPolicy",
-              "Bypass",
-              "-File",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/check-archive.ps1"
-            ],
+            "command": "sh \"$CLAUDE_PLUGIN_ROOT/hooks/check-archive.sh\"",
             "timeout": 10
           }
         ]
@@ -54,16 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe",
-            "args": [
-              "-NoProfile",
-              "-NonInteractive",
-              "-ExecutionPolicy",
-              "Bypass",
-              "-File",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/gate-launcher.ps1",
-              "${CLAUDE_PLUGIN_ROOT}/hooks/check-verify-reminder.ps1"
-            ],
+            "command": "sh \"$CLAUDE_PLUGIN_ROOT/hooks/check-verify-reminder.sh\"",
             "timeout": 10
           }
         ]

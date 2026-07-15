@@ -20,7 +20,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
      Timestamp uses the current ISO local time
    - Already has an APPROVED marker (from the `/spec:workflow` flow or a previous apply) → don't append again
 
-3. **Hook check**: `check-gate.ps1` fires at the `UserPromptSubmit` moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections, single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `check-archive.ps1` audits it at archive time.
+3. **Hook check**: `check-gate.sh` fires at the `UserPromptSubmit` moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections, single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `check-archive.sh` audits it at archive time.
 
    If the hook blocks (no/incomplete proposal, multiple active changes) → handle per its error message, don't force a bypass.
 
@@ -117,7 +117,7 @@ The main conversation only steps in when dispatch fails / cross-executor coordin
 - Advance by deps, touching only tasks whose deps are done
 - Multiple deps satisfied and independent → **prefer dispatching two dedicated agents concurrently** (if frontend and backend are independent)
 - After finishing each node (or a group of parallel ones) → run that node's own checks close by (compile / tests for the node), **don't save them for the end**. These are working checks — they do NOT write ledger rounds
-- **Closing verification is part of apply, not optional**: after the last What item / task lands, **dispatch the `spec-verifier` agent** (the same fresh-context, evidence-or-drop protocol `/spec:verify` uses — the conversation that just implemented MUST NOT write the closing round from its own self-review, that is exactly the bias the verifier exists to remove) and write its results as a ledger round to `spec/changes/<name>/verify.md` **before reporting implementation complete** — "done" without an independent ledger round covering the final state is not done. The Stop-event reminder hook (`check-verify-reminder.ps1`) backstops this: ending a turn with an approved proposal and no ledger gets nudged back.
+- **Closing verification is part of apply, not optional**: after the last What item / task lands, **dispatch the `spec-verifier` agent** (the same fresh-context, evidence-or-drop protocol `/spec:verify` uses — the conversation that just implemented MUST NOT write the closing round from its own self-review, that is exactly the bias the verifier exists to remove) and write its results as a ledger round to `spec/changes/<name>/verify.md` **before reporting implementation complete** — "done" without an independent ledger round covering the final state is not done. The Stop-event reminder hook (`check-verify-reminder.sh`) backstops this: ending a turn with an approved proposal and no ledger gets nudged back.
 - Mark finished tasks `[x]` in tasks.md — **whoever finishes it marks it**: the dev agent marks the subtasks it owns; the main conversation marks the items it handles itself (config / scripts / cross-module coordination)
 
 ## Failure triage

@@ -56,10 +56,10 @@ The `<!-- APPROVED: YYYY-MM-DD HH:mm -->` marker is **appended automatically by 
 The timestamp uses the current ISO local time.
 
 This marker is simultaneously:
-- the contract `check-archive.ps1` enforces at archive time (a change without it = flow bypassed) and `check-verify-reminder.ps1` uses to detect the implementation window
+- the contract `check-archive.sh` enforces at archive time (a change without it = flow bypassed) and `check-verify-reminder.sh` uses to detect the implementation window
 - an **audit record**: git log shows when it was approved
 
-(`check-gate.ps1` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow.)
+(`check-gate.sh` deliberately does **not** require it — that hook fires before apply runs, and apply is what appends the marker; requiring it there would deadlock the flow.)
 
 **propose does not append APPROVED directly** — the HARD GATE is the user's decision point, and APPROVED is apply's contract action. Separating them spares the flow a redundant "reply go" step.
 
