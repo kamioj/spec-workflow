@@ -184,10 +184,10 @@ lesson; next A-1
 ## Lessons
 '
 
-# run_driver_case <name> <expected: reinject|notice|quiet> <project> <state: - = none> <stdin>
+# run_driver_case <name> <expected: reinject|notice|quiet> <project> <state: - = none> <stdin> [require] [forbid]
 # The state file is reset before EACH twin so both implementations see identical input.
 run_driver_case() {
-    name=$1; expected=$2; proj=$3; state=$4; stdin=$5
+    name=$1; expected=$2; proj=$3; state=$4; stdin=$5; require=${6:-}; forbid=${7:-}
     sdir="$proj/spec/changes/g"
     for impl in sh ps1; do
         [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
@@ -208,6 +208,12 @@ run_driver_case() {
                 *)                      got=unexpected-output ;;
             esac
         fi
+        if [ -n "$forbid" ]; then
+            case "$out" in *"$forbid"*) got=forbidden-leak ;; esac
+        fi
+        if [ -n "$require" ] && [ "$got" = "$expected" ]; then
+            case "$out" in *"$require"*) : ;; *) got="missing-required-text" ;; esac
+        fi
         if [ "$got" = "$expected" ]; then
             PASS=$((PASS+1)); echo "PASS  $name [$impl]"
         else
@@ -215,6 +221,16 @@ run_driver_case() {
             [ -n "$out" ] && echo "      stdout: $out" | head -2
         fi
     done
+}
+
+# run_assert <name> <shell-function> — generic named assertion, participates in name sync.
+run_assert() {
+    name=$1; fn=$2
+    if "$fn" >/dev/null 2>&1; then
+        PASS=$((PASS+1)); echo "PASS  $name"
+    else
+        FAIL=$((FAIL+1)); echo "FAIL  $name  (assertion function $fn returned nonzero)"
+    fi
 }
 
 P=$(mkproj loop-none); mkdir -p "$P/spec/changes/g"
@@ -269,23 +285,95 @@ P=$(mkproj loop-remind); mkdir -p "$P/spec/changes/g"
 printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
 run_case loop-dir-reminder-allows  check-verify-reminder allow "$(json_stop "$P" false)"
 
-# V-11 canary: ledger text with quotes/backslashes must never leak into the driver's JSON
+# V-11 canary — now a framework case (forbid arg), so the scenario-name sync guard sees it
 P=$(mkproj loop-escape); mkdir -p "$P/spec/changes/g"
 printf '%s' "$LOOP_RUNNING" | sed 's/^goal: g$/goal: EVILCANARY"quote\\\\backslash/' > "$P/spec/changes/g/loop.md"
-for impl in sh ps1; do
-    [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
-    rm -f "$P/spec/changes/g/.loop-state"
-    if [ "$impl" = "sh" ]; then
-        out=$(printf '%s' "$(json_stop "$P" false)" | sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
-    else
-        out=$(printf '%s' "$(json_stop "$P" false)" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" 2>/dev/null)
-    fi
-    case "$out" in
-        *EVILCANARY*) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary [$impl]  ledger text leaked into driver JSON" ;;
-        *'"decision":"block"'*) PASS=$((PASS+1)); echo "PASS  loop-json-escaping-canary [$impl]" ;;
-        *) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary [$impl]  expected reinject got: $out" ;;
-    esac
-done
+run_driver_case loop-json-escaping-canary reinject "$P" - "$(json_stop "$P" false)" '' EVILCANARY
+
+# ---- 0.5.1 hardening cases (names mirrored on the Claude side) ----
+
+P=$(mkproj loop-comment); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: running        # running | paused | done | aborted/' \
+    -e 's/^max_rounds: 10$/max_rounds: 10         # plain integer/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-commented-frontmatter-reinjects reinject "$P" - "$(json_stop "$P" false)"
+
+P=$(mkproj loop-fuse0); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^max_rounds: 10$/max_rounds: 10\nno_progress_fuse: 0/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-fuse-zero-corrupt-notice notice "$P" - "$(json_stop "$P" false)" 'no_progress_fuse must be an integer'
+
+P=$(mkproj loop-noacc); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^## Acceptance$/## Goals/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-acceptance-missing-corrupt-notice notice "$P" - "$(json_stop "$P" false)" 'no checkbox found'
+
+P=$(mkproj loop-headvar); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^## Acceptance$/## Acceptance Criteria/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-heading-variant-corrupt-notice notice "$P" - "$(json_stop "$P" false)" 'no checkbox found'
+
+P=$(mkproj loop-dupacc); mkdir -p "$P/spec/changes/g"
+{ printf '%s' "$LOOP_RUNNING" | sed 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/'
+  printf '## Acceptance\n- [ ] FAKE quoted item (verify: x)\n'; } > "$P/spec/changes/g/loop.md"
+run_driver_case loop-dup-acceptance-reinjects reinject "$P" - "$(json_stop "$P" false)" 'final acceptance'
+
+P=$(mkproj loop-capdone); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-cap-boundary-acceptance-reinjects reinject "$P" 'session_id=s
+rounds_injected=10
+retro_reinjects=0
+checked_history=2,2
+tree_fp_history=na,na
+' "$(json_stop "$P" false)" 'final acceptance'
+run_driver_case loop-over-cap-acceptance-notice notice "$P" 'session_id=s
+rounds_injected=11
+retro_reinjects=0
+checked_history=2,2,2
+tree_fp_history=na,na,na
+' "$(json_stop "$P" false)" 'max_rounds reached'
+
+# DEC-7: fingerprint includes HEAD — verified for BOTH twins (each computes its own format)
+assert_head_fp_changes() {
+    for impl in sh ps1; do
+        [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
+        gp="$TMP_ROOT/git-real-$impl"; rm -rf "$gp"; mkdir -p "$gp/spec/changes/g"
+        printf '%s' "$LOOP_RUNNING" > "$gp/spec/changes/g/loop.md"
+        ( cd "$gp" && git init -q && git add -A && git -c user.email=f@x -c user.name=f commit -qm i ) || return 1
+        if [ "$impl" = "sh" ]; then
+            printf '%s' "$(json_stop "$gp" false)" | sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
+        else
+            printf '%s' "$(json_stop "$gp" false)" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" >/dev/null 2>&1
+        fi
+        ( cd "$gp" && git -c user.email=f@x -c user.name=f commit -qm r2 --allow-empty ) || return 1
+        if [ "$impl" = "sh" ]; then
+            printf '%s' "$(json_stop "$gp" false)" | sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
+        else
+            printf '%s' "$(json_stop "$gp" false)" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" >/dev/null 2>&1
+        fi
+        f2=$(sed -n 's/^tree_fp_history=//p' "$gp/spec/changes/g/.loop-state")
+        case "$f2" in *,*) : ;; *) return 1 ;; esac
+        last=${f2##*,}; prev=${f2%,*}; prev=${prev##*,}
+        [ "$last" != "na" ] && [ "$prev" != "na" ] && [ "$last" != "$prev" ] || return 1
+    done
+    return 0
+}
+run_assert loop-git-head-fingerprint-changes assert_head_fp_changes
+
+# DEC-4: check-archive understands loop changes — done+fully-checked passes, running blocks
+P=$(mkproj arch-loop-done); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: done/' \
+    -e 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' > "$P/spec/changes/g/loop.md"
+run_case archive-loop-done-allows   check-archive allow "$(json "$P" '$spec-archive')"
+P=$(mkproj arch-loop-run); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+run_case archive-loop-running-blocks check-archive block "$(json "$P" '$spec-archive')"
+run_case archive-loop-force-overrides check-archive allow "$(json "$P" '$spec-archive force')"
+
+# DEC-2: the documented resume re-bind command performs surgery on session_id ONLY
+assert_resume_rebind() {
+    rs="$TMP_ROOT/rebind"; mkdir -p "$rs"
+    printf 'session_id=OLD\nrounds_injected=3\nretro_reinjects=1\nchecked_history=1,2\ntree_fp_history=na,na\n' > "$rs/.loop-state"
+    ( cd "$rs" && awk -v s="NEWSESS" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s} 1' .loop-state > .loop-state.tmp && mv .loop-state.tmp .loop-state ) || return 1
+    grep -q '^session_id=NEWSESS$' "$rs/.loop-state" && grep -q '^rounds_injected=3$' "$rs/.loop-state" && grep -q '^retro_reinjects=1$' "$rs/.loop-state"
+}
+run_assert loop-resume-rebind-cmd assert_resume_rebind
 
 echo "----"
 echo "pass=$PASS fail=$FAIL"

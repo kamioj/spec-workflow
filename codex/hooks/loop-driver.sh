@@ -6,9 +6,14 @@
 # turn's input (probe: RESUMED-OK). {"systemMessage":...} on allow is best-effort (harmless
 # if the host ignores it). cwd is parsed from stdin JSON (no $CLAUDE_PROJECT_DIR on Codex).
 # stop_hook_active is deliberately NOT an exit condition (true on every driver-continued
-# stop); the loop is bounded by ledger state only. Write ownership: loop.md model-only,
-# .loop-state driver-only; all signals mechanical. Output discipline: fixed literals +
-# driver-computed integers only. Fail direction: any doubt -> exit 0, loop ends.
+# stop); the loop is bounded by ledger state only (the final acceptance may overrun the
+# round cap exactly once). Write ownership: loop.md model-only, .loop-state driver-only
+# (plus the documented cold-start/resume session_id line). All signals mechanical;
+# frontmatter values tolerate a trailing "# comment"; section headings must be exact
+# (first ## Acceptance section only). Output discipline: fixed literals + driver-computed
+# integers only. KEEP THE REINJECT TEMPLATES IN SYNC with core/commands/loop.md
+# (Round protocol / Final acceptance) and both twins. Fail direction: any doubt ->
+# exit 0, loop ends.
 
 set -u
 
@@ -21,13 +26,17 @@ CWD=$(printf '%s' "$STDIN" | sed -n 's/.*"cwd":"\([^"]*\)".*/\1/p' | sed 's/\\\\
 CHANGES_DIR="$CWD/spec/changes"
 [ -d "$CHANGES_DIR" ] || exit 0
 
+fm_get() { # $1=ledger-file $2=key
+    sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1 | sed 's/#.*//' | tr -d '[:space:]'
+}
+
 set --
 for d in "$CHANGES_DIR"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [ "$name" = "archive" ] && continue
     [ -f "$d/loop.md" ] || continue
-    grep -Eq '^status:[[:space:]]*running[[:space:]]*$' "$d/loop.md" && set -- "$@" "$d"
+    [ "$(fm_get "$d/loop.md" status)" = "running" ] && set -- "$@" "$d"
 done
 [ $# -eq 1 ] || exit 0
 CHANGE=$1
@@ -52,6 +61,12 @@ state_write() {
     printf 'session_id=%s\nrounds_injected=%s\nretro_reinjects=%s\nchecked_history=%s\ntree_fp_history=%s\n' \
         "$1" "$2" "$3" "$4" "$5" > "$STATE" 2>/dev/null || true
 }
+trunc_csv() {
+    printf '%s' "$1" | awk -F, -v k="$2" '{
+        s = (NF > k) ? NF - k + 1 : 1; o = ""
+        for (i = s; i <= NF; i++) { if (i > s) o = o ","; o = o $i }
+        printf "%s", o }'
+}
 
 STDIN_SESSION=$(printf '%s' "$STDIN" | sed -n 's/.*"session_id":"\([^"]*\)".*/\1/p')
 SESSION=$(state_get session_id '')
@@ -65,8 +80,8 @@ RETROS=$(state_get retro_reinjects 0)
 CHECKED_HIST=$(state_get checked_history '')
 FP_HIST=$(state_get tree_fp_history '')
 
-MAX_ROUNDS=$(sed -n 's/^max_rounds:[[:space:]]*//p' "$LEDGER" | head -1 | tr -d '[:space:]')
-FUSE_N=$(sed -n 's/^no_progress_fuse:[[:space:]]*//p' "$LEDGER" | head -1 | tr -d '[:space:]')
+MAX_ROUNDS=$(fm_get "$LEDGER" max_rounds)
+FUSE_N=$(fm_get "$LEDGER" no_progress_fuse)
 [ -n "$FUSE_N" ] || FUSE_N=3
 for v in "$MAX_ROUNDS" "$FUSE_N" "$ROUNDS" "$RETROS"; do
     case "$v" in
@@ -75,24 +90,31 @@ for v in "$MAX_ROUNDS" "$FUSE_N" "$ROUNDS" "$RETROS"; do
             ;;
     esac
 done
+if [ "$FUSE_N" -lt 1 ]; then
+    allow_notice 'SPEC-LOOP halted: ledger corrupt -- no_progress_fuse must be an integer >= 1 (0 would blow the fuse unconditionally on round 2). Fix the frontmatter, then resume with $spec-loop.'
+fi
+
+ACC=$(awk '/^## Acceptance[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$LEDGER")
+UNCHECKED=$(printf '%s\n' "$ACC" | grep -c '^- \[ \]')
+CHECKED=$(printf '%s\n' "$ACC" | grep -c '^- \[[xX]\]')
+
+if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -eq 0 ]; then
+    allow_notice 'SPEC-LOOP halted: ledger corrupt -- no checkbox found under an exact ## Acceptance heading in the running loop.md (heading variants are not recognized). Fix the ledger per loop-spec, then resume with $spec-loop.'
+fi
+
+if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -ge 1 ] && [ "$ROUNDS" -le "$MAX_ROUNDS" ]; then
+    state_write "$SESSION" $((ROUNDS + 1)) "$RETROS" "$CHECKED_HIST" "$FP_HIST"
+    reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause, report the results to the user, and only if verification holds set status: done in the loop.md frontmatter. Do not end the turn before the report is written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
+fi
 
 if [ "$ROUNDS" -ge "$MAX_ROUNDS" ]; then
     allow_notice 'SPEC-LOOP fuse: max_rounds reached. The loop stopped at its round budget. Review the ledger (spec/changes/*/loop.md); raise max_rounds and resume with $spec-loop, or close out with $spec-archive.'
 fi
 
-ACC=$(awk '/^## Acceptance/{f=1;next} /^## /{f=0} f' "$LEDGER")
-UNCHECKED=$(printf '%s\n' "$ACC" | grep -c '^- \[ \]')
-CHECKED=$(printf '%s\n' "$ACC" | grep -c '^- \[[xX]\]')
-
-if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -ge 1 ]; then
-    state_write "$SESSION" $((ROUNDS + 1)) "$RETROS" "$CHECKED_HIST" "$FP_HIST"
-    reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause, report the results to the user, and only if verification holds set status: done in the loop.md frontmatter. Do not end the turn before the report is written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
-fi
-
 LAST_ROUND=$(awk '/^### Round /{buf=""} /^### Round /,0{if($0 ~ /^## /){exit}; buf=buf $0 "\n"} END{printf "%s", buf}' "$LEDGER")
 RETRO_OK=0
 if [ -n "$LAST_ROUND" ]; then
-    RETRO_BODY=$(printf '%s' "$LAST_ROUND" | awk '/^#### Retrospect/{on=1;next} /^#### /{on=0} on{print}' | grep -c '[^[:space:]]') || RETRO_BODY=0
+    RETRO_BODY=$(printf '%s' "$LAST_ROUND" | awk '/^#### Retrospect[[:space:]]*$/{on=1;next} /^#### /{on=0} on{print}' | grep -c '[^[:space:]]') || RETRO_BODY=0
     [ "$RETRO_BODY" -ge 1 ] && RETRO_OK=1
 fi
 if [ "$RETRO_OK" -eq 0 ]; then
@@ -106,11 +128,15 @@ fi
 FP=na
 if command -v git >/dev/null 2>&1 && git -C "$CWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     if command -v timeout >/dev/null 2>&1; then
-        FP=$(timeout 5 git -C "$CWD" status --porcelain 2>/dev/null | cksum | tr -d ' \t') || FP=na
+        PORC=$(timeout 5 git -C "$CWD" status --porcelain 2>/dev/null); PORC_RC=$?
     else
-        FP=$(git -C "$CWD" status --porcelain 2>/dev/null | cksum | tr -d ' \t') || FP=na
+        PORC=$(git -C "$CWD" status --porcelain 2>/dev/null); PORC_RC=$?
     fi
-    [ -n "$FP" ] || FP=na
+    if [ "$PORC_RC" -eq 0 ]; then
+        HEAD_SHA=$(git -C "$CWD" rev-parse HEAD 2>/dev/null) || HEAD_SHA=none
+        FP=$(printf '%s\n%s' "$HEAD_SHA" "$PORC" | cksum | tr -d ' \t')
+        [ -n "$FP" ] || FP=na
+    fi
 fi
 tail_all_equal() {
     printf '%s' "$1" | awk -F, -v k="$2" -v cur="$3" '
@@ -124,13 +150,13 @@ if [ -n "$CHECKED_HIST" ]; then
     F_STALE=1
     [ "$FP" != "na" ] && F_STALE=$(tail_all_equal "$FP_HIST" "$FUSE_N" "$FP")
     if [ "${C_STALE:-0}" = "1" ] && [ "${F_STALE:-0}" = "1" ]; then
-        allow_notice 'SPEC-LOOP fuse: no measurable progress for no_progress_fuse consecutive rounds (acceptance checkbox count and worktree fingerprint both unchanged). The loop stopped early. Review the ledger Lessons, adjust the plan or the acceptance list, then resume with $spec-loop.'
+        allow_notice 'SPEC-LOOP fuse: no measurable progress for no_progress_fuse consecutive rounds (acceptance checkbox count and worktree+HEAD fingerprint both unchanged). The loop stopped early. Review the ledger Lessons, adjust the plan or the acceptance list, then resume with $spec-loop.'
     fi
 fi
 
 ROUND_COUNT=$(grep -c '^### Round ' "$LEDGER") || ROUND_COUNT=0
 NEXT=$((ROUND_COUNT + 1))
-CH="$CHECKED"; [ -n "$CHECKED_HIST" ] && CH="$CHECKED_HIST,$CHECKED"
-FH="$FP"; [ -n "$FP_HIST" ] && FH="$FP_HIST,$FP"
+CH="$CHECKED"; [ -n "$CHECKED_HIST" ] && CH=$(trunc_csv "$CHECKED_HIST,$CHECKED" "$FUSE_N")
+FH="$FP"; [ -n "$FP_HIST" ] && FH=$(trunc_csv "$FP_HIST,$FP" "$FUSE_N")
 state_write "$SESSION" $((ROUNDS + 1)) 0 "$CH" "$FH"
 reinject "SPEC-LOOP: start round $NEXT of $MAX_ROUNDS. Read the running loop ledger (spec/changes/*/loop.md, status: running) in full -- Acceptance, the latest Retrospect, Lessons. Pick exactly ONE next item from the last retrospect plan (or the first unchecked Acceptance item). Search the ledger and the codebase before assuming anything is unimplemented. Then implement it, verify through the spec-verifier agent (self-review does not count), check off any Acceptance item only with verifier evidence, and write this round's ### Round $NEXT section with a non-empty #### Retrospect before ending the turn. To pause the loop instead, set status: paused in loop.md frontmatter." "SPEC-LOOP: round $NEXT of $MAX_ROUNDS injected"

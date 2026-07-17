@@ -24,7 +24,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 - **Fast lane** — start coding right away and let hooks catch the mistakes (hookify, or a stripped-down superpowers brainstorm).
 - **Heavy lane** — spec everything up front, but down a rigid track (OpenSpec's 4 commands, superpowers brainstorm's 9 steps).
 
-**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 11 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification.
+**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 12 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification; a Stop-event driver turns `/spec:loop`'s autonomous rounds into a hard mechanism.
 
 ### Comparison
 
@@ -32,7 +32,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 |---|---|---|---|
 | Stage gating | explicit HARD GATE + hook enforcement | loose, advisory warnings | rigid 9-step track |
 | Open questions `[TBD]` | allowed, but a hook forces them closed | Open Questions can linger | banned — resolve on the spot |
-| Command granularity | 11 independent commands | 4 commands, all-in-one | one skill-based flow |
+| Command granularity | 12 independent commands | 4 commands, all-in-one | one skill-based flow |
 | Mid-flow re-entry | call any stage on its own | `/opsx:continue` to advance | start over |
 | Anti-cheating | two layers (command + agent) + opt-in flags | none | implicit |
 
@@ -194,13 +194,14 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── core/                           # SINGLE SOURCE for all shipped markdown (both plugins)
 ├── tools/generate.mjs              # emits commands/ skills/ rules/ agents/ AND codex/skills|agents from core/; --check = drift guard
 ├── codex/                          # OpenAI Codex CLI port (same workflow + gates; see codex/README.md)
-├── commands/                       # 11 slash commands — GENERATED from core/, do not hand-edit
+├── commands/                       # 12 slash commands — GENERATED from core/, do not hand-edit
 ├── hooks/                          # hard constraints (POSIX sh, all platforms) + fixture suite
 │   ├── hooks.json
 │   ├── check-tbd.sh
 │   ├── check-gate.sh
 │   ├── check-archive.sh
-│   └── check-verify-reminder.sh
+│   ├── check-verify-reminder.sh
+│   └── loop-driver.sh              # Stop-event driver for /spec:loop
 ├── agents/
 │   ├── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
 │   └── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify

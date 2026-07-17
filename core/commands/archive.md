@@ -61,16 +61,17 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
    Why the divergence review earns its cost: "docs say A, code does B" is precisely the defect class that implementation and verify most often both miss — the archive review is the last set of eyes on it.
 3. **Maintain `spec/knowledge.md`** (project-level, lives OUTSIDE the change dir so it survives archiving; create on first use):
    - Extract from this change the durable facts future changes will need: topology / table ownership ("ICMP and mallcoo share one physical DB"), verified mechanisms, hard-won gotchas
+   - **For a `/spec:loop` change, `loop.md ## Lessons` is a primary input to this step** — its durable operational lessons (correct build/verify commands, known traps) are exactly knowledge.md material; read it here, before the move
    - One line per fact: `<fact> | evidence: <source> | <YYYY-MM-DD> (<change-name>)`
    - **Correct, don't contradict**: a recorded fact this change proved wrong is replaced (correction noted), never left standing next to its refutation
    - Change-specific details stay in the change's artifacts; nothing durable to record → skip, never pad
 4. Compute the archive path: `spec/archive/<YYYY-MM-DD>-<name>/` (use today's date — it is already in context; no shell call needed)
-5. If the change was a `/spec:loop` run: delete `.loop-state` (the driver's machine state — dead weight once archived; loop.md itself travels with the directory), and durable `## Lessons` entries feed step 3's knowledge.md pass
+5. If the change was a `/spec:loop` run: delete `.loop-state` (the driver's machine state — dead weight once archived; loop.md itself travels with the directory; its Lessons were already consumed by step 3)
 6. `mv` the entire directory there
 7. Output a summary:
    ```
    Archived: spec/archive/YYYY-MM-DD-<name>/
-   Artifacts included: research.md, research/ (if present), design.md, proposal.md, tasks.md, verify.md, retrospect.md
+   Artifacts included: research.md, research/ (if present), design.md, proposal.md, tasks.md, verify.md, loop.md (if present), retrospect.md
    Retrospect: divergences <N / none> · evidence <attached / not verified> · deferred <M items / none>
    Knowledge: <K facts added/corrected in spec/knowledge.md / nothing durable>
    ```

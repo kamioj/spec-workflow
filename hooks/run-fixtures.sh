@@ -176,13 +176,20 @@ lesson; next A-1
 ## Lessons
 '
 
-# run_driver_case <name> <expected: reinject|notice|quiet> <project> <state: - = none> <stdin>
+# run_driver_case <name> <expected: reinject|notice|quiet> <project> <state: - = none> <stdin> [require] [forbid] [pathprefix]
+#   require    = stdout must contain this substring (distinguishes e.g. final-acceptance vs continue)
+#   forbid     = stdout must NOT contain this substring (JSON-escaping canaries)
+#   pathprefix = dir prepended to PATH (command shims, e.g. a failing git)
 run_driver_case() {
-    name=$1; expected=$2; proj=$3; state=$4; stdin=$5
+    name=$1; expected=$2; proj=$3; state=$4; stdin=$5; require=${6:-}; forbid=${7:-}; pathpre=${8:-}
     sdir="$proj/spec/changes/g"
     if [ "$state" = "-" ]; then rm -f "$sdir/.loop-state" 2>/dev/null
     else printf '%s' "$state" > "$sdir/.loop-state"; fi
-    out=$(printf '%s' "$stdin" | CLAUDE_PROJECT_DIR="$proj" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
+    if [ -n "$pathpre" ]; then
+        out=$(printf '%s' "$stdin" | PATH="$pathpre:$PATH" CLAUDE_PROJECT_DIR="$proj" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
+    else
+        out=$(printf '%s' "$stdin" | CLAUDE_PROJECT_DIR="$proj" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
+    fi
     code=$?
     if [ "$code" -ne 0 ]; then got="exit-$code"
     else
@@ -193,11 +200,28 @@ run_driver_case() {
             *)                      got=unexpected-output ;;
         esac
     fi
+    if [ -n "$forbid" ]; then
+        case "$out" in *"$forbid"*) got=forbidden-leak ;; esac
+    fi
+    if [ -n "$require" ] && [ "$got" = "$expected" ]; then
+        case "$out" in *"$require"*) : ;; *) got="missing-required-text" ;; esac
+    fi
     if [ "$got" = "$expected" ]; then
         PASS=$((PASS+1)); echo "PASS  $name"
     else
         FAIL=$((FAIL+1)); echo "FAIL  $name  expected=$expected got=$got"
         [ -n "$out" ] && echo "      stdout: $out" | head -2
+    fi
+}
+
+# run_assert <name> <shell-function> — generic named assertion; the function returns 0 on pass.
+# Named cases (run_case / run_driver_case / run_assert) all participate in scenario-name sync.
+run_assert() {
+    name=$1; fn=$2
+    if "$fn" >/dev/null 2>&1; then
+        PASS=$((PASS+1)); echo "PASS  $name"
+    else
+        FAIL=$((FAIL+1)); echo "FAIL  $name  (assertion function $fn returned nonzero)"
     fi
 }
 
@@ -253,15 +277,116 @@ P=$(mkproj loop-remind); mkdir -p "$P/spec/changes/g"
 printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
 run_case loop-dir-reminder-allows  check-verify-reminder allow "$P" "$(json_stop false)"
 
-# V-11 canary: ledger text with quotes/backslashes must never leak into the driver's JSON
+# V-11 canary — now a framework case (forbid arg), so the scenario-name sync guard sees it
 P=$(mkproj loop-escape); mkdir -p "$P/spec/changes/g"
 printf '%s' "$LOOP_RUNNING" | sed 's/^goal: g$/goal: EVILCANARY"quote\\\\backslash/' > "$P/spec/changes/g/loop.md"
-out=$(printf '%s' "$(json_stop false)" | CLAUDE_PROJECT_DIR="$P" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
-case "$out" in
-    *EVILCANARY*) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary  ledger text leaked into driver JSON" ;;
-    *'"decision":"block"'*) PASS=$((PASS+1)); echo "PASS  loop-json-escaping-canary" ;;
-    *) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary  expected reinject got: $out" ;;
+run_driver_case loop-json-escaping-canary reinject "$P" - "$(json_stop false)" '' EVILCANARY
+
+# ---- 0.5.1 hardening cases ----
+
+# authoritative-template regression: inline # comments in frontmatter must not silence the driver
+P=$(mkproj loop-comment); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: running        # running | paused | done | aborted/' \
+    -e 's/^max_rounds: 10$/max_rounds: 10         # plain integer/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-commented-frontmatter-reinjects reinject "$P" - "$(json_stop false)"
+
+P=$(mkproj loop-fuse0); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^max_rounds: 10$/max_rounds: 10\nno_progress_fuse: 0/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-fuse-zero-corrupt-notice notice "$P" - "$(json_stop false)" 'no_progress_fuse must be an integer'
+
+P=$(mkproj loop-noacc); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^## Acceptance$/## Goals/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-acceptance-missing-corrupt-notice notice "$P" - "$(json_stop false)" 'no checkbox found'
+
+P=$(mkproj loop-headvar); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^## Acceptance$/## Acceptance Criteria/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-heading-variant-corrupt-notice notice "$P" - "$(json_stop false)" 'no checkbox found'
+
+# first exact section only: a second "## Acceptance" (e.g. quoted in a round) must not pollute counts
+P=$(mkproj loop-dupacc); mkdir -p "$P/spec/changes/g"
+{ printf '%s' "$LOOP_RUNNING" | sed 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/'
+  printf '## Acceptance\n- [ ] FAKE quoted item (verify: x)\n'; } > "$P/spec/changes/g/loop.md"
+run_driver_case loop-dup-acceptance-reinjects reinject "$P" - "$(json_stop false)" 'final acceptance'
+
+# DEC-8 both directions: at the cap with all checked -> final acceptance; one past it -> cap notice
+P=$(mkproj loop-capdone); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-cap-boundary-acceptance-reinjects reinject "$P" 'session_id=s
+rounds_injected=10
+retro_reinjects=0
+checked_history=2,2
+tree_fp_history=na,na
+' "$(json_stop false)" 'final acceptance'
+run_driver_case loop-over-cap-acceptance-notice notice "$P" 'session_id=s
+rounds_injected=11
+retro_reinjects=0
+checked_history=2,2,2
+tree_fp_history=na,na,na
+' "$(json_stop false)" 'max_rounds reached'
+
+# V-fix (pipeline exit code): a git whose status fails must yield fp=na, never a constant checksum
+SHIM="$TMP_ROOT/git-shim"; mkdir -p "$SHIM"
+cat > "$SHIM/git" <<'EOF'
+#!/bin/sh
+for a in "$@"; do
+    case "$a" in
+        rev-parse) ;;
+        status) exit 1 ;;
+    esac
+done
+case "$*" in
+    *--is-inside-work-tree*) echo true; exit 0 ;;
+    *"rev-parse HEAD"*) echo deadbeef; exit 0 ;;
 esac
+exit 0
+EOF
+chmod +x "$SHIM/git"
+P=$(mkproj loop-gitfail); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+run_driver_case loop-git-status-fails-reinjects reinject "$P" 'session_id=s
+rounds_injected=1
+retro_reinjects=0
+checked_history=0,2
+tree_fp_history=na,na
+' "$(json_stop false)" '' '' "$SHIM"
+assert_gitfail_fp_na() { grep -q 'tree_fp_history=.*na$' "$P/spec/changes/g/.loop-state"; }
+run_assert loop-git-status-fails-fp-na assert_gitfail_fp_na
+
+# DEC-7: fingerprint includes HEAD — a per-round-committing workflow still registers progress
+assert_head_fp_changes() {
+    gp="$TMP_ROOT/git-real"; rm -rf "$gp"; mkdir -p "$gp/spec/changes/g"
+    printf '%s' "$LOOP_RUNNING" > "$gp/spec/changes/g/loop.md"
+    ( cd "$gp" && git init -q && git add -A && git -c user.email=f@x -c user.name=f commit -qm i ) || return 1
+    printf '%s' "$(json_stop false)" | CLAUDE_PROJECT_DIR="$gp" sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
+    f1=$(sed -n 's/^tree_fp_history=//p' "$gp/spec/changes/g/.loop-state")
+    ( cd "$gp" && git -c user.email=f@x -c user.name=f commit -qm r2 --allow-empty ) || return 1
+    printf '%s' "$(json_stop false)" | CLAUDE_PROJECT_DIR="$gp" sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
+    f2=$(sed -n 's/^tree_fp_history=//p' "$gp/spec/changes/g/.loop-state")
+    # after two runs with a commit in between, the last two fingerprints must be real and distinct
+    case "$f2" in *,*) : ;; *) return 1 ;; esac
+    last=${f2##*,}; prev=${f2%,*}; prev=${prev##*,}
+    [ "$last" != "na" ] && [ "$prev" != "na" ] && [ "$last" != "$prev" ]
+}
+run_assert loop-git-head-fingerprint-changes assert_head_fp_changes
+
+# DEC-4: check-archive understands loop changes — done+fully-checked passes, running blocks
+P=$(mkproj arch-loop-done); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: done/' \
+    -e 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' > "$P/spec/changes/g/loop.md"
+run_case archive-loop-done-allows   check-archive allow "$P" "$(json '/spec:archive')"
+P=$(mkproj arch-loop-run); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+run_case archive-loop-running-blocks check-archive block "$P" "$(json '/spec:archive')"
+run_case archive-loop-force-overrides check-archive allow "$P" "$(json '/spec:archive force')"
+
+# DEC-2: the documented resume re-bind command performs surgery on session_id ONLY
+assert_resume_rebind() {
+    rs="$TMP_ROOT/rebind"; mkdir -p "$rs"
+    printf 'session_id=OLD\nrounds_injected=3\nretro_reinjects=1\nchecked_history=1,2\ntree_fp_history=na,na\n' > "$rs/.loop-state"
+    ( cd "$rs" && awk -v s="NEWSESS" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s} 1' .loop-state > .loop-state.tmp && mv .loop-state.tmp .loop-state ) || return 1
+    grep -q '^session_id=NEWSESS$' "$rs/.loop-state" && grep -q '^rounds_injected=3$' "$rs/.loop-state" && grep -q '^retro_reinjects=1$' "$rs/.loop-state"
+}
+run_assert loop-resume-rebind-cmd assert_resume_rebind
 
 # ---- Claude-specific extras ----
 
@@ -293,8 +418,9 @@ fi
 # ---- scenario-name sync against the codex fixture set (V-3/V-6 drift guard) ----
 CODEX_RUNNER="$HOOKS_DIR/../codex/hooks/run-fixtures.sh"
 if [ -f "$CODEX_RUNNER" ]; then
-    for n in $(sed -n 's/^run_\(driver_\)\{0,1\}case[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\2/p' "$CODEX_RUNNER"); do
-        if grep -Eq "run_(driver_)?case $n " "$0"; then
+    for n in $(sed -n -e 's/^run_\(driver_\)\{0,1\}case[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\2/p' \
+                      -e 's/^run_assert[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\1/p' "$CODEX_RUNNER"); do
+        if grep -Eq "run_((driver_)?case|assert) $n " "$0"; then
             PASS=$((PASS+1)); echo "PASS  scenario-sync:$n"
         else
             FAIL=$((FAIL+1)); echo "FAIL  scenario-sync:$n  codex case has no Claude mirror"
