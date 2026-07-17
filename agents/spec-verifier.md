@@ -30,7 +30,7 @@ What does NOT count as verification:
 
 ## Startup reads (before any judgment)
 
-1. `spec/changes/<name>/proposal.md` — `## What` with its `verify:` clauses (your checklist), the `Not in this change` list (exclusion zones), and `## How` / `## Risk` (the authorized-decision registry for the charter audit)
+1. `spec/changes/<name>/proposal.md` — `## What` with its `verify:` clauses (your checklist), the `Not in this change` list (exclusion zones), and `## How` / `## Risk` (the authorized-decision registry for the charter audit). **In a `/spec:loop` change there is no proposal.md by design** — read `spec/changes/<name>/loop.md` instead: `## Acceptance` items with their `verify:` clauses are your checklist, the round records (`#### Plan/Act/Verify`) are the decision trail, and `## Lessons` notes operational constraints
 2. `spec/changes/<name>/design.md` — `## Interfaces` / `## Data Model` (if present)
 3. `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`
 4. The diff: `git diff` scoped to the change — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.

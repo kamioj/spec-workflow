@@ -64,30 +64,32 @@ The whole design centers on "**stopping for real where you have to stop**":
 1. **Soft constraints** (prompt text saying "you must do X") — the model can violate them.
 2. **Hard constraints** (hook scripts that intercept) — a 0% violation rate.
 
-Four hooks, same semantics on both hosts: three UserPromptSubmit gates match the command **invocation at line start** (never a mention — "what does /spec:apply do?" passes) + one Stop-event reminder:
+Five hooks, same semantics on both hosts: three UserPromptSubmit gates match the command **invocation at line start** (never a mention — "what does /spec:apply do?" passes), one Stop-event reminder, and one Stop-event **driver** (loop-driver — re-injects /spec:loop rounds; a driver, not a gate):
 
-| Gate | Matches | Blocks when |
+| Hook | Matches | Blocks / drives when |
 |---|---|---|
 | check-tbd | propose | research.md still has `[TBD-N]` outside `## Decided` |
 | check-gate | apply | proposal.md absent / missing any of the four sections / ≠1 active change. **Deliberately does NOT require the APPROVED marker** — apply appends it after this hook fires (requiring it here = happy-path deadlock, the pre-0.2.3 bug); check-archive enforces it at archive time |
-| check-archive | archive | flow was bypassed (no APPROVED / unchecked tasks / no proposal); override = prompt contains `force` or `abandon(ed)` — **matched against the prompt value only**, never the whole stdin JSON (a cwd containing "force" must not bypass; that was finding V-1) |
+| check-archive | archive | flow was bypassed (no APPROVED / unchecked tasks / no proposal); **loop changes are audited differently** (loop.md with status: done + fully checked Acceptance = flow honored — no proposal.md exists by design); override = prompt contains `force` or `abandon(ed)` — **matched against the prompt value only**, never the whole stdin JSON (a cwd containing "force" must not bypass; that was finding V-1) |
 | check-verify-reminder | Stop event | single active change has an APPROVED proposal but no verify.md ledger; `stop_hook_active` loop-guards (one nudge per stop) |
+| loop-driver | Stop event, exactly one `running` loop.md | re-injects the next /spec:loop round via the Stop JSON contract, or releases with a distinct notice (acceptance met → final-acceptance injection, ≤1 cap overrun / round cap / no-progress / refusal-to-retrospect / corrupt ledger). Deliberately **ignores `stop_hook_active`** (it is true on every driver-continued stop) — bounded by ledger state instead |
 
-**The two hook implementations share the sh language but not the contract** — each host's contract was probe-verified and they disagree with each other AND with the docs:
+**Blocking contracts are PER-EVENT, and were probe-verified per host** (they disagree with each other AND with older docs):
 
 | | Claude Code (`hooks/*.sh`) | Codex CLI (`codex/hooks/*` — see `codex/hooks/SCHEMA.md`, the evidence file) |
 |---|---|---|
 | stdin user-input field | `prompt` (**probe-verified against real stdin 2026-07-15** — the older `user_prompt` lore was wrong for current Claude Code, which means the pre-0.4.2 ps1 gates had been silently dead on this axis) | `prompt` |
-| blocking mechanism | `exit 2` + stderr (**stdout must stay empty** — codex-style stdout JSON does NOT block on Claude; the fixture canary enforces this) | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
+| UserPromptSubmit blocking | `exit 2` + stderr (**stdout must stay empty** — stdout JSON does NOT block this event on Claude; the fixture canary enforces this) | stdout `{"decision":"block","reason":...}` + exit 0 (**exit 2 does NOT block on Codex**) |
+| **Stop-event blocking / re-injection** | stdout `{"decision":"block","reason":<next input>}` + exit 0 **re-injects `reason` as the next turn's input** (probe-verified on 2.1.208, 2026-07-17 — evidence in `hooks/loop-driver.sh` header); `{"systemMessage":...}` without decision = allow + notice; the reminder's `exit 2` + stderr is the other legal Stop form (blocks, cannot carry a re-injection prompt) | identical stdout-JSON re-injection semantics (re-probed on codex-cli 0.144.3 — evidence in SCHEMA.md "Stop re-injection") |
 | invocation anchor | `^\s*/spec:x` | `^\s*\$spec-x` |
 | project dir | `$CLAUDE_PROJECT_DIR` env only — **never parsed from stdin JSON** (sed can't decode `\uXXXX`; a non-ASCII project path would silently kill the gate) | stdin JSON `cwd` (sed parse + un-escape) |
 | entry point | hooks.json **shell form**: `sh "$CLAUDE_PLUGIN_ROOT/hooks/check-x.sh"` — runs under sh (macOS/Linux) or Git Bash (Windows); `$CLAUDE_PLUGIN_ROOT` expanded by the shell from the exported env | `command` (sh) + `commandWindows` (pwsh) |
 | languages | single POSIX sh implementation, all platforms | pwsh + POSIX sh **twin pairs** — the pair is the unit of change |
 | config trap | — | an unknown top-level key in hooks.json (e.g. `description`) makes the whole file **silently ignored** |
 
-Shared conventions across both: **fail-open** (hook internal error / missing `$CLAUDE_PROJECT_DIR` → allow; a hook bug must never block normal flow); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
+Shared conventions across both: **fail-open** (hook internal error / missing `$CLAUDE_PROJECT_DIR` → allow; a hook bug must never block normal flow — for the loop driver, fail-open means the loop *ends*, never that the user is trapped); the APPROVED regex recognizes only the `<!-- APPROVED:` comment form (what apply writes — bare text mentioning the word must not read as approval); check-tbd/check-gate block on >1 active change, check-archive deliberately doesn't (archiving is how you get back to one).
 
-**After ANY gate edit, run the matching fixture suite** — Claude side: `sh hooks/run-fixtures.sh` (43 cases: 20 scenarios name-synced against the codex set + unicode-path + env-missing fail-open + wrong-contract canary; run it on Git Bash AND `wsl sh hooks/run-fixtures.sh` for a real-POSIX pass). Codex side: `sh codex/hooks/run-fixtures.sh` (40 cases, both twins). Test a Claude hook in isolation:
+**After ANY gate/driver edit, run BOTH fixture suites and read their own pass counts** (don't trust any number written in prose — including here; counts drift, suite output doesn't): Claude side `sh hooks/run-fixtures.sh` (scenario names synced against the codex set via `run_case`/`run_driver_case`/`run_assert`; run on Git Bash AND `wsl sh hooks/run-fixtures.sh` for a real-POSIX pass — wsl is slow, minutes-level, run it in background). Codex side: `sh codex/hooks/run-fixtures.sh` (both twins). Test a Claude hook in isolation:
 ```sh
 printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CLAUDE_PROJECT_DIR="D:/path/to/test-project" sh hooks/check-gate.sh ; echo "exit=$?"
 ```
@@ -98,7 +100,7 @@ printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CL
 
 ## Big picture: commands + agents + artifacts
 
-**11 independent commands** (`core/commands/*.md` → both hosts), each re-entrant and re-runnable — the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (rigid 9 steps). Typical flow: `research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`; `workflow` runs end-to-end, `status` reports position.
+**12 independent commands** (`core/commands/*.md` → both hosts), each re-entrant and re-runnable — the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (rigid 9 steps). Typical flow: `research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`; `workflow` runs end-to-end, `status` reports position, `loop` runs goal-driven autonomous rounds (two touchpoints, Stop-driver enforced).
 
 **The HARD GATE mechanism**:
 - propose/revise end by emitting the fixed `<HARD-GATE>` block, then stop. The gate's Changes block is the **explanation layer** (Scenario / Avoided by / Cost per decision, plus "Decided without asking" and "Not in this change") — decision-maker register, never proposal lines pasted verbatim.
@@ -133,7 +135,7 @@ Hooks judge state by scanning non-`archive` directories under `spec/changes/` as
 
 - **Language**: all plugin content is native, idiomatic English (the product language; broad sharing). Section headers stay English (`## Why / ## What / ## How / ## Risk`) so hooks regex them and `revise` targets them by name. `README_cn.md` is the one maintained Chinese artifact, a courtesy mirror kept in sync with `README.md`.
 - **core is Claude-canonical**: write `/spec:x`, `AskUserQuestion`, `${CLAUDE_PLUGIN_ROOT}` paths in core; the Codex emitter transforms them. Reach for a host marker only when the hosts genuinely diverge beyond the six rules.
-- **Cross-host sync is automated; in-core sync is not**: the HARD GATE wording, stuck-self-check template, and anti-cheating clauses still appear in `core/skill.md`, the corresponding `core/commands/*.md`, and `core/references/*-spec.md` — changing one still means sweeping the others (the generator faithfully propagates inconsistencies to both hosts). `core/references/*-spec.md` remains the single source of truth for artifact formats.
+- **Cross-host sync is automated; in-core sync is not**: the HARD GATE wording, stuck-self-check template, anti-cheating clauses, **and the /spec:loop reinject templates** (the driver's runtime prompts in `hooks/loop-driver.sh` + `codex/hooks/loop-driver.{sh,ps1}` mirror `core/commands/loop.md` § Round protocol / § Final acceptance — four places, annotated `KEPT IN SYNC` at each) still appear in `core/skill.md`, the corresponding `core/commands/*.md`, and `core/references/*-spec.md` — changing one still means sweeping the others (the generator faithfully propagates inconsistencies to both hosts). `core/references/*-spec.md` remains the single source of truth for artifact formats.
 - **Command frontmatter** (core): `description` + `allowed-tools`. **Agent frontmatter** (core): `name` / `description` / `model: inherit` / `color` / `tools`. The Codex emitter maps/drops these automatically.
 - **references/ read on demand**: agents detect the project stack and read only the relevant reference — never all of them.
 - Public docs (READMEs) carry no iteration narrative and no private project details; process records live in the gitignored `spec/` and in commit messages.

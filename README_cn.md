@@ -24,7 +24,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 11 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，外加 1 个 Stop 提醒 hook 让"实施收尾必有验证"。
+**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 12 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
 
 ### Comparison
 
@@ -32,7 +32,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
-| 命令粒度 | 11 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
+| 命令粒度 | 12 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
 | 中途重入 | 每阶段独立调用 | `/opsx:continue` 推进 | 重头来 |
 | 反作弊精神 | 命令 + agent 双层 + opt-in flag | 无 | 隐含 |
 
@@ -192,13 +192,14 @@ graph LR
 ├── core/                           # 两端全部 markdown 的单一事实源
 ├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
 ├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
-├── commands/                       # 11 个 slash 命令——由 core/ 生成，勿手改
+├── commands/                       # 12 个 slash 命令——由 core/ 生成，勿手改
 ├── hooks/                          # 硬约束（POSIX sh,全平台）+ 夹具套件
 │   ├── hooks.json
 │   ├── check-tbd.sh
 │   ├── check-gate.sh
 │   ├── check-archive.sh
-│   └── check-verify-reminder.sh
+│   ├── check-verify-reminder.sh
+│   └── loop-driver.sh              # /spec:loop 的 Stop 事件驱动器
 ├── agents/
 │   ├── spec-dev.md                 # 按 scope（frontend/backend）派遣；跨栈并发派两个
 │   └── spec-verifier.md            # /spec:verify 派遣的全新上下文验证者

@@ -51,6 +51,26 @@ fi
 
 change=$1
 name=$(basename "$change")
+
+# /spec:loop change: no proposal.md by design — the ledger is the flow record. Trust
+# model (0.5.1): status: done is written by the final-acceptance turn, the same class of
+# flow-moment anchor as the APPROVED marker (both are model-written text; this gate
+# guards against a bypassed flow, not against forgery).
+if [ -f "$change/loop.md" ]; then
+    lstatus=$(sed -n 's/^status:[[:space:]]*//p' "$change/loop.md" | head -1 | sed 's/#.*//' | tr -d '[:space:]')
+    lacc=$(awk '/^## Acceptance[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$change/loop.md")
+    lunchecked=$(printf '%s\n' "$lacc" | grep -c '^- \[ \]')
+    lchecked=$(printf '%s\n' "$lacc" | grep -c '^- \[[xX]\]')
+    if [ "$lstatus" = "done" ] && [ "$lunchecked" -eq 0 ] && [ "$lchecked" -ge 1 ]; then
+        exit 0
+    fi
+    block "SDD: archive blocked for '$name' -- the loop is not finished:
+  - loop.md must have status: done AND a fully checked ## Acceptance list (run the final acceptance via /spec:loop)
+Or archive deliberately:
+  \"/spec:archive force\"     -- archive as-is; the reason gets recorded in retrospect.md
+  \"/spec:archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"
+fi
+
 findings=''
 
 proposal="$change/proposal.md"

@@ -2,7 +2,7 @@
 # Codex port of the /spec:archive gate: the change must not have bypassed the flow.
 # Trigger: UserPromptSubmit hook (Codex CLI).
 # Codex-specific contract (see SCHEMA.md, probe-verified on codex-cli 0.142.1):
-#   - stdin field is `prompt` (Claude Code uses `user_prompt`)
+#   - stdin field is `prompt` (same field name as Claude Code — corrected 2026-07-15)
 #   - blocking = stdout {"decision":"block","reason":...} + exit 0 (exit 2 does NOT block on Codex)
 #   - invocation form is `$spec-archive` (Codex skills), not `/spec:archive`
 # Audits the single active change:
@@ -55,6 +55,26 @@ try {
     if ($changes.Count -gt 1) { exit 0 }
 
     $change = $changes[0]
+
+    # $spec-loop change: no proposal.md by design — the ledger is the flow record. Trust
+    # model (0.5.1): status: done is written by the final-acceptance turn, the same class
+    # of flow-moment anchor as the APPROVED marker.
+    $loopPath = Join-Path $change.FullName 'loop.md'
+    if (Test-Path $loopPath) {
+        $loop = Get-Content $loopPath -Raw -Encoding UTF8
+        $lstatus = if ($loop -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
+        $lacc = [regex]::Match($loop, '(?ms)^## Acceptance\s*?$(.*?)(?=^## |\z)').Groups[1].Value
+        $lunchecked = [regex]::Matches($lacc, '(?m)^- \[ \]').Count
+        $lchecked = [regex]::Matches($lacc, '(?m)^- \[[xX]\]').Count
+        if ($lstatus -eq 'done' -and $lunchecked -eq 0 -and $lchecked -ge 1) { exit 0 }
+        $lines = @("SDD: archive blocked for '$($change.Name)' -- the loop is not finished:")
+        $lines += '  - loop.md must have status: done AND a fully checked ## Acceptance list (run the final acceptance via $spec-loop)'
+        $lines += 'Or archive deliberately:'
+        $lines += '  "$spec-archive force"     -- archive as-is; the reason gets recorded in retrospect.md'
+        $lines += '  "$spec-archive abandoned" -- drop the direction; archived as *-abandoned with ABANDONED.md'
+        Block ($lines -join "`n")
+    }
+
     $findings = @()
 
     $proposalPath = Join-Path $change.FullName 'proposal.md'
