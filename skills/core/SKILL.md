@@ -1,6 +1,6 @@
 ---
 name: core
-description: Spec-driven development workflow overview. Load this skill when the user says "spec this first / draft a proposal / design first / write a proposal", or when a task is >150 lines / spans 3+ files / introduces a new dependency / involves an architecture choice — to learn the sdd plugin's 11 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
+description: Spec-driven development workflow overview. Load this skill when the user says "spec this first / draft a proposal / design first / write a proposal", or when a task is >150 lines / spans 3+ files / introduces a new dependency / involves an architecture choice — to learn the sdd plugin's 12 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
 ---
 <!-- GENERATED from core/skill.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -29,6 +29,7 @@ Spec-driven development workflow: research → interrogate → propose → HARD 
 | Category | Command | Responsibility |
 |---|---|---|
 | Entry | `/spec:workflow <task>` | run the whole flow end-to-end; back-compatible with the old /sdd |
+|  | `/spec:loop <goal>` | goal-driven autonomous round loop (goal known, path unknown): two touchpoints — goal confirmation + final acceptance — with Stop-hook-driven rounds and a cross-round ledger in between |
 |  | `/spec:status` | report the current stage |
 | Gather | `/spec:research <direction>` | survey industry practice + key constraints |
 |  | `/spec:ask` | interrogate and resolve `[TBD]` items |
@@ -53,13 +54,15 @@ spec/
 │       ├── proposal.md   required    the final solution (carries the HARD GATE approval marker)
 │       ├── tasks.md      optional    task list for multi-executor collaboration
 │       ├── verify.md     at-propose+ verification ledger (stable V-N finding IDs + round history + Evidence; round 0 by propose's critique panel, rounds 1+ by /spec:verify)
+│       ├── loop.md       at-loop     round ledger of a /spec:loop run (goal + acceptance checklist + rounds + lessons; model-written, driver-read — see references/loop-spec.md)
+│       ├── .loop-state   at-loop     the loop driver's own state (driver-written ONLY — never edit)
 │       └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + evidence + leftovers)
 │
 └── archive/                          archive directory
     └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
-**The artifact set is fixed at these four + the discarded-draft pile + the verification ledger + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
+**The artifact set is fixed at these four + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
@@ -72,6 +75,7 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 | proposal.md | Decision record: Why / What (each item + `verify:` acceptance check, closing **Not in this change** list) / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section (`verify:` clauses + the Not-in-this-change block don't count) |
 | tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
 | verify.md | Verification ledger — two writers, same table: round 0 (stage: propose) by /spec:propose's critique panel, rounds 1+ by /spec:verify; findings with stable V-N IDs + severity + status (open/fixed/wontfix) + per-round Evidence; acceptance-stage user evaluations enter as user-sourced findings | restating the fix → it lives in code ｜ restating the solution → proposal/design | one line per finding |
+| loop.md | /spec:loop round ledger: goal + Acceptance checklist (checkboxes ONLY here; checked only with verifier evidence) / round records (Plan·Act·Verify·Retrospect) / Lessons — **model-written only**; the driver reads mechanical counts and owns `.loop-state` | proposal-grade solution records → the loop's own artifacts stay in loop.md; durable lessons → knowledge.md at archive | one round section per round; Lessons one line each |
 | retrospect.md | Archive-stage audit (written by /spec:archive only): divergences found ("docs say A, code does B"), verify Evidence lines, unfinished/deferred items, force/abandon reason | restating the solution → point back to proposal/design | ≤40 lines |
 | knowledge.md (project-level, outside the change dir) | Durable cross-change facts: topology/ownership, verified mechanisms, gotchas — `<fact> \| evidence \| date (change)` | anything change-specific → stays in that change's artifacts ｜ a fact proven wrong is **replaced** (correction noted), never left contradicting | one line per fact |
 
@@ -208,6 +212,7 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 | `hooks/check-gate.sh` | before `/spec:apply` | refuses to run if prerequisites are missing: no/incomplete proposal.md (four sections) or ≠1 active change. Deliberately does NOT require the APPROVED marker — apply appends it after the hook fires; `check-archive.sh` enforces it |
 | `hooks/check-archive.sh` | before `/spec:archive` | refuses to run if the change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
 | `hooks/check-verify-reminder.sh` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
+| `hooks/loop-driver.sh` | Stop event, when exactly one `running` loop.md exists | **driver, not gate**: re-injects the next /spec:loop round (stdout `{"decision":"block","reason":...}` — the Stop-event JSON contract, probe-verified, NOT the gates' exit-2 contract) until acceptance is met or a fuse blows (round cap / no-progress / refusal-to-retrospect / corrupt ledger — four distinct notices); deliberately ignores `stop_hook_active`, bounded by ledger state instead |
 
 check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive the rest before continuing). check-archive deliberately does **not** block on multiple changes: archiving is exactly how you get back down to one.
 
@@ -215,7 +220,7 @@ check-tbd / check-gate also `exit 2` when **more than one active change** exists
 - Soft constraint (prompt): the model may violate it; the violation rate depends on the model's quality
 - Hard constraint (hook): a shell script blocks it; a 0% violation rate
 
-The POSIX sh scripts under `hooks/` are registered by `hooks/hooks.json` (shell form — sh on macOS/Linux, Git Bash on Windows): the three gates to the `UserPromptSubmit` event, the verify reminder to the `Stop` event.
+The POSIX sh scripts under `hooks/` are registered by `hooks/hooks.json` (shell form — sh on macOS/Linux, Git Bash on Windows): the three gates to the `UserPromptSubmit` event, the loop driver and the verify reminder to the `Stop` event.
 
 ## references loading strategy
 

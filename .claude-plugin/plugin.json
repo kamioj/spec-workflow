@@ -1,7 +1,7 @@
 {
   "name": "spec",
-  "version": "0.4.2",
-  "description": "Spec-driven development plugin: research → ask → propose → HARD GATE → apply → verify → archive, enforced by 4 hooks (TBD scan / approval gate / archive audit / verify reminder), with scope-dispatched dev agents and a fresh-context verifier agent",
+  "version": "0.5.0",
+  "description": "Spec-driven development plugin: research → ask → propose → HARD GATE → apply → verify → archive, plus a goal-driven autonomous loop (/spec:loop) — enforced by 5 hooks (TBD scan / approval gate / archive audit / verify reminder / loop driver), with scope-dispatched dev agents and a fresh-context verifier agent",
   "author": {
     "name": "kamioj"
   },

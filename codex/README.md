@@ -31,10 +31,18 @@ $spec-setup
 overwriting existing different files.
 
 **Then one manual step: trust the hooks.** Plugin-bundled hooks are still non-managed
-hooks, so Codex requires one TUI approval. Open the `codex` TUI once and approve the SDD
-hooks in the hooks browser. Verify the gate actually bites before relying on it: in a
-project with no `spec/changes/`, send `$spec-apply` — it must come back blocked with an
-SDD message. An installed-but-silent gate is the worst failure mode this port has.
+hooks, so Codex requires one TUI approval — **again after every upgrade that touches
+hooks.json** (trust is per hook-definition hash; untrusted hooks are silently skipped).
+Open the `codex` TUI once and approve the SDD hooks in the hooks browser. Then verify each
+event path actually bites — an installed-but-silent hook is the worst failure mode this
+port has:
+
+- **Gates** (UserPromptSubmit): in a project with no `spec/changes/`, send `$spec-apply` —
+  it must come back blocked with an SDD message.
+- **Loop driver** (Stop — the gate recipe does NOT exercise this path): start a throwaway
+  `$spec-loop` in a scratch project — after round 1 ends you must see the next round get
+  re-injected (`hook: Stop Blocked`) rather than the session simply stopping. A silently
+  skipped driver makes every loop "finish" after one round, indistinguishable from success.
 
 ### Fallback: script installer
 
@@ -69,6 +77,7 @@ slash commands):
 | `/spec:apply` | `$spec-apply` |
 | `/spec:verify` | `$spec-verify` |
 | `/spec:archive` | `$spec-archive` |
+| `/spec:loop <goal>` | `$spec-loop <goal>` |
 | `/spec:status` / `chat` / `revise` / `workflow` | `$spec-status` / `$spec-chat` / `$spec-revise` / `$spec-workflow` |
 
 The flow, the artifact model (`spec/changes/<name>/research.md` → `proposal.md` →

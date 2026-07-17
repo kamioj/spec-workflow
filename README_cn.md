@@ -90,11 +90,12 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 ## Features
 
-### 11 个独立 slash 命令
+### 12 个独立 slash 命令
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
 | **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
+|  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
 |  | `/spec:status` | 报告当前 change 在哪一步 |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
@@ -106,9 +107,9 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（三维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:archive` | 归档当前 change |
 
-### 4 个 Hook——3 个硬门 + 1 个提醒
+### 5 个 Hook——3 个硬门 + 1 个提醒 + 1 个循环驱动器
 
-`UserPromptSubmit` 事件上 **shell 脚本拦截**违反流程的命令；`Stop` 事件上一个提醒 hook 兜住"实施结束没验证"：
+`UserPromptSubmit` 事件上 **shell 脚本拦截**违反流程的命令；`Stop` 事件上一个提醒 hook 兜住"实施结束没验证"，一个**驱动器**把 `/spec:loop` 的"下一轮"从提示词纪律变成硬机制：
 
 | Hook | 何时触发 | 做什么 |
 |---|---|---|
@@ -116,8 +117,11 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
 | `check-archive.sh` | `/spec:archive` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
 | `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
+| `loop-driver.sh` | Stop，且恰好存在 1 份 `running` 状态的循环账本时 | 再注入 `/spec:loop` 的下一轮（Stop 事件 JSON 契约，探针实证）——或按**四种互异的终止说明**放行：验收达成 / 轮次上限 / 无进展 / 拒写复盘 / 账本损坏。所有熔断信号全部机械（checkbox 计数、工作树指纹），从不采信模型自报"有进展" |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
+
+**`/spec:loop` vs 裸自喂循环**（ralph 式）：驱动机制相同，但多了验收清单作为成功出口、每轮独立 fresh-context 验证（自评永远打不了勾）、跨轮账本（`loop.md`：轮次+经验库）、多层保险丝。**不要与其它 Stop 驱动的循环器（如官方 ralph-loop 插件）在同一会话同时运行**——两个驱动器抢同一个 Stop 事件的合并语义未定义。
 
 ### 1 个开发 Agent（按 scope 派遣）
 
@@ -305,6 +309,10 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.5.0** — `/spec:loop`：目标驱动的自主循环，钩子驱动：
+  - 新命令 + 轮次账本（`loop.md`：目标 / 验收清单 / 轮次记录 / 经验库；`.loop-state` 是驱动器私有状态——永远不要手改）：批准一次目标，之后每轮都经独立验证，直到验收达成或触发保险丝
+  - 双宿主新增 Stop 事件钩子 `loop-driver`：经 Stop JSON 契约再注入下一轮（Claude Code 2.1.208 与 codex-cli 0.144.3 双探针实证，原始捕获见 `hooks/loop-driver.sh` 头注与 `codex/hooks/SCHEMA.md`）；熔断全机械（轮次上限 / checkbox 计数+工作树指纹的无进展判定 / 拒写复盘 / 账本损坏），各有互异的终止说明
+  - fixture 套件扩至 68（Claude）/ 66（Codex）案，含 JSON 转义 canary（账本文本绝不泄入驱动器 JSON）与 reminder 不变量钉
 - **0.4.2** — Claude 侧硬门全平台化（macOS / Linux / Windows）：
   - 四个 PowerShell hook 被单一 POSIX sh 实现**整体替换**，经 hooks.json shell form 执行（unix 走 `sh`，Windows 走 Git Bash——Claude Code 自身 Bash 工具本就要求它）；0.3.3 的 powershell.exe launcher 机关随之退役
   - 门改读 `$CLAUDE_PROJECT_DIR` 而非解析 stdin JSON——中文等非 ASCII 项目路径不再可能静默瘫痪硬门
