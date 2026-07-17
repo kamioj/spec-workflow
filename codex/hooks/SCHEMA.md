@@ -44,6 +44,20 @@ Same envelope, plus:
 
 `stop_hook_active` loop-guard semantics match Claude Code.
 
+### Stop re-injection (re-probed on codex-cli 0.144.3, 2026-07-17)
+
+Envelope on 0.144.3 is unchanged from 0.142.1 (verbatim capture, ids anonymized):
+
+```json
+{"session_id":"019f6ded-...","turn_id":"019f6ded-...","transcript_path":"C:\\Users\\...\\rollout-....jsonl","cwd":"C:\\Users\\...\\probe-codex","hook_event_name":"Stop","model":"gpt-5.6-sol","permission_mode":"bypassPermissions","stop_hook_active":false,"last_assistant_message":"pong"}
+```
+
+Blocking a Stop with stdout `{"decision":"block","reason":"Reply with exactly this single word: RESUMED-OK"}` + exit 0
+**re-injects the `reason` as the next turn's input**: the model replied `RESUMED-OK`, and the subsequent
+Stop arrived with `stop_hook_active:true` (a driver that loops on purpose must therefore bound itself by
+its own state, never by `stop_hook_active`). This is the contract the spec-loop driver builds on; identical
+behavior was probe-verified the same day on Claude Code 2.1.208 (see `hooks/loop-driver.sh` header).
+
 ## Blocking semantics (the finding that contradicts the docs)
 
 | Mechanism | Docs say | Observed on 0.142.1 |

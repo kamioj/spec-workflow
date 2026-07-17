@@ -61,8 +61,9 @@ description: Archives the current change to spec/archive/YYYY-MM-DD-<name>/. Onl
    - **Correct, don't contradict**: a recorded fact this change proved wrong is replaced (correction noted), never left standing next to its refutation
    - Change-specific details stay in the change's artifacts; nothing durable to record → skip, never pad
 4. Compute the archive path: `spec/archive/<YYYY-MM-DD>-<name>/` (use today's date — it is already in context; no shell call needed)
-5. `mv` the entire directory there
-6. Output a summary:
+5. If the change was a `$spec-loop` run: delete `.loop-state` (the driver's machine state — dead weight once archived; loop.md itself travels with the directory), and durable `## Lessons` entries feed step 3's knowledge.md pass
+6. `mv` the entire directory there
+7. Output a summary:
    ```
    Archived: spec/archive/YYYY-MM-DD-<name>/
    Artifacts included: research.md, research/ (if present), design.md, proposal.md, tasks.md, verify.md, retrospect.md

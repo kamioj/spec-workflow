@@ -32,6 +32,13 @@
         "hooks": [
           {
             "type": "command",
+            "command": "sh ${PLUGIN_ROOT}/hooks/loop-driver.sh",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -File ${PLUGIN_ROOT}/hooks/loop-driver.ps1",
+            "statusMessage": "SDD loop driver: continue or stop?",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "sh ${PLUGIN_ROOT}/hooks/check-verify-reminder.sh",
             "commandWindows": "pwsh -NoProfile -NonInteractive -File ${PLUGIN_ROOT}/hooks/check-verify-reminder.ps1",
             "statusMessage": "SDD reminder: verification ledger",

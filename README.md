@@ -92,11 +92,12 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 
 ## Features
 
-### 11 independent slash commands
+### 12 independent slash commands
 
 | Category | Command | What it does |
 |---|---|---|
 | **Entry** | `/spec:workflow <task>` | run the whole flow end-to-end, fully delegated — decisions triaged internally, stops only at the HARD GATE + acceptance |
+|  | `/spec:loop <goal>` | goal-driven **autonomous round loop**: approve the goal + acceptance checklist + round budget once, then it researches / implements / verifies / retrospects round after round — hook-driven, ledger-remembered — until acceptance or a fuse |
 |  | `/spec:status` | report where the current change stands |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
 |  | `/spec:ask` | work through the `[TBD]` questions with you |
@@ -108,9 +109,9 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (three dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:archive` | archive the current change |
 
-### 4 hooks — 3 hard gates + 1 reminder
+### 5 hooks — 3 hard gates + 1 reminder + 1 loop driver
 
-On the `UserPromptSubmit` event, **shell scripts block** any command that breaks the flow; on the `Stop` event, a reminder catches implementation ending without verification:
+On the `UserPromptSubmit` event, **shell scripts block** any command that breaks the flow; on the `Stop` event, a reminder catches implementation ending without verification, and a **driver** turns `/spec:loop`'s "next round" from prompt discipline into a hard mechanism:
 
 | Hook | Fires on | What it does |
 |---|---|---|
@@ -118,8 +119,11 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 | `check-gate.sh` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
 | `check-archive.sh` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
 | `check-verify-reminder.sh` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
+| `loop-driver.sh` | Stop, when exactly one `running` loop ledger exists | re-injects the next `/spec:loop` round (probe-verified Stop JSON contract) — or releases the stop with a **distinct notice** per ending: acceptance met / round cap / no progress / refusal-to-retrospect / corrupt ledger. All fuse signals are mechanical (checkbox counts, worktree fingerprint) — the model's own "I made progress" is never consulted |
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
+
+**`/spec:loop` vs a bare self-feeding loop** (ralph-style): same drive mechanism, but with an acceptance checklist as the success exit, an independent fresh-context verifier per round (self-review never checks a box), a cross-round ledger (`loop.md`: rounds + lessons), and layered fuses. **Do not run `/spec:loop` alongside another Stop-driven looper** (e.g. the official ralph-loop plugin) in the same session — two drivers competing for one Stop event have undefined merge semantics.
 
 ### 1 development agent (dispatched by scope)
 
@@ -307,6 +311,10 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.5.0** — `/spec:loop`: goal-driven autonomous rounds, hook-driven:
+  - new command + round ledger (`loop.md`: goal / acceptance checklist / round records / lessons; `.loop-state` is the driver's own state — never edit it): approve the goal once, get verified rounds until acceptance or a fuse
+  - new Stop-event hook `loop-driver` on both hosts: re-injects the next round via the Stop JSON contract (probe-verified on Claude Code 2.1.208 and codex-cli 0.144.3 — raw captures in `hooks/loop-driver.sh` header and `codex/hooks/SCHEMA.md`); fuses are mechanical (round cap / no-progress via checkbox-count + worktree fingerprint / refusal-to-retrospect / corrupt ledger), each with a distinct stop notice
+  - fixture suites grow to 68 (Claude) / 66 (Codex) cases incl. a JSON-escaping canary (ledger text must never leak into driver JSON) and a reminder-invariant pin
 - **0.4.2** — Claude-side gates go cross-platform (macOS / Linux / Windows):
   - the four PowerShell hooks are **replaced** by single POSIX sh implementations, run via hooks.json shell form (`sh` on unix, Git Bash on Windows — the prerequisite Claude Code's own Bash tool already imposes); the 0.3.3 powershell.exe launcher machinery retires with them
   - gates now read the project dir from `$CLAUDE_PROJECT_DIR` instead of parsing stdin JSON — non-ASCII project paths (e.g. Chinese) can no longer silently disable a gate

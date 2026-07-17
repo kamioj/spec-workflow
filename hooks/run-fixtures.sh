@@ -151,6 +151,118 @@ P=$(mkproj rem-unapproved); mkdir -p "$P/spec/changes/c"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"
 run_case reminder-not-approved     check-verify-reminder allow "$P" "$(json_stop false)"
 
+# ---- loop-driver (Stop DRIVER — opposite contract to the gates: stdout JSON + exit 0;
+#       reinject = {"decision":"block",...}, notice = {"systemMessage":...} w/o decision,
+#       quiet = empty stdout; probe evidence in loop-driver.sh header) ----
+
+LOOP_RUNNING='---
+goal: g
+status: running
+max_rounds: 10
+---
+# Loop: g
+
+## Acceptance
+- [ ] A-1 thing (verify: x)
+- [x] A-2 done (verify: y)
+
+## Rounds
+### Round 1
+#### Plan
+p
+#### Retrospect
+lesson; next A-1
+
+## Lessons
+'
+
+# run_driver_case <name> <expected: reinject|notice|quiet> <project> <state: - = none> <stdin>
+run_driver_case() {
+    name=$1; expected=$2; proj=$3; state=$4; stdin=$5
+    sdir="$proj/spec/changes/g"
+    if [ "$state" = "-" ]; then rm -f "$sdir/.loop-state" 2>/dev/null
+    else printf '%s' "$state" > "$sdir/.loop-state"; fi
+    out=$(printf '%s' "$stdin" | CLAUDE_PROJECT_DIR="$proj" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
+    code=$?
+    if [ "$code" -ne 0 ]; then got="exit-$code"
+    else
+        case "$out" in
+            *'"decision":"block"'*) got=reinject ;;
+            '')                     got=quiet ;;
+            *'"systemMessage"'*)    got=notice ;;
+            *)                      got=unexpected-output ;;
+        esac
+    fi
+    if [ "$got" = "$expected" ]; then
+        PASS=$((PASS+1)); echo "PASS  $name"
+    else
+        FAIL=$((FAIL+1)); echo "FAIL  $name  expected=$expected got=$got"
+        [ -n "$out" ] && echo "      stdout: $out" | head -2
+    fi
+}
+
+P=$(mkproj loop-none); mkdir -p "$P/spec/changes/g"
+run_driver_case loop-no-ledger-quiet quiet "$P" - "$(json_stop false)"
+
+P=$(mkproj loop-paused); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^status: running/status: paused/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-paused-quiet quiet "$P" - "$(json_stop false)"
+
+P=$(mkproj loop-cont); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+run_driver_case loop-continue-reinjects reinject "$P" - "$(json_stop false)"
+run_driver_case loop-session-mismatch-quiet quiet "$P" 'session_id=OTHER
+rounds_injected=0
+retro_reinjects=0
+checked_history=
+tree_fp_history=
+' "$(json_stop false)"
+run_driver_case loop-round-cap-notice notice "$P" 'session_id=s
+rounds_injected=10
+retro_reinjects=0
+checked_history=1,1
+tree_fp_history=na,na
+' "$(json_stop false)"
+run_driver_case loop-no-progress-fuse-notice notice "$P" 'session_id=s
+rounds_injected=4
+retro_reinjects=0
+checked_history=1,1,1
+tree_fp_history=na,na,na
+' "$(json_stop false)"
+
+P=$(mkproj loop-retro); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^lesson; next A-1$//' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-retro-missing-reinjects reinject "$P" - "$(json_stop false)"
+run_driver_case loop-retro-refusal-notice notice "$P" 'session_id=s
+rounds_injected=1
+retro_reinjects=2
+checked_history=1
+tree_fp_history=na
+' "$(json_stop false)"
+
+P=$(mkproj loop-done); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-acceptance-met-reinjects reinject "$P" - "$(json_stop false)"
+
+P=$(mkproj loop-corrupt); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^max_rounds: 10$/max_rounds: ten/' > "$P/spec/changes/g/loop.md"
+run_driver_case loop-corrupt-max-rounds-notice notice "$P" - "$(json_stop false)"
+
+# V-7 invariant pin: a loop change dir (no proposal.md) must never wake the verify reminder
+P=$(mkproj loop-remind); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+run_case loop-dir-reminder-allows  check-verify-reminder allow "$P" "$(json_stop false)"
+
+# V-11 canary: ledger text with quotes/backslashes must never leak into the driver's JSON
+P=$(mkproj loop-escape); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed 's/^goal: g$/goal: EVILCANARY"quote\\\\backslash/' > "$P/spec/changes/g/loop.md"
+out=$(printf '%s' "$(json_stop false)" | CLAUDE_PROJECT_DIR="$P" sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
+case "$out" in
+    *EVILCANARY*) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary  ledger text leaked into driver JSON" ;;
+    *'"decision":"block"'*) PASS=$((PASS+1)); echo "PASS  loop-json-escaping-canary" ;;
+    *) FAIL=$((FAIL+1)); echo "FAIL  loop-json-escaping-canary  expected reinject got: $out" ;;
+esac
+
 # ---- Claude-specific extras ----
 
 # V-2: non-ASCII project path — gate must still bite (env route is encoding-immune)
@@ -181,8 +293,8 @@ fi
 # ---- scenario-name sync against the codex fixture set (V-3/V-6 drift guard) ----
 CODEX_RUNNER="$HOOKS_DIR/../codex/hooks/run-fixtures.sh"
 if [ -f "$CODEX_RUNNER" ]; then
-    for n in $(sed -n 's/^run_case[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\1/p' "$CODEX_RUNNER"); do
-        if grep -q "run_case $n " "$0"; then
+    for n in $(sed -n 's/^run_\(driver_\)\{0,1\}case[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\2/p' "$CODEX_RUNNER"); do
+        if grep -Eq "run_(driver_)?case $n " "$0"; then
             PASS=$((PASS+1)); echo "PASS  scenario-sync:$n"
         else
             FAIL=$((FAIL+1)); echo "FAIL  scenario-sync:$n  codex case has no Claude mirror"
