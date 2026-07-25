@@ -1,5 +1,5 @@
 ---
-description: Dispatches a @researcher sub-agent to survey industry practices and key constraints, writing findings into research.md (single file; Open[TBD]/Decided maintained as before). Changing direction = snapshot the current research.md into the research/ discarded-draft pile first, then overwrite with the new direction; old drafts can be resurrected at any time.
+description: Researches the change — always maps the codebase status quo; dispatches a @researcher web-survey sub-agent ONLY when the decision space is external (new dependency / tech choice / unfamiliar domain), never for internal refactors or fix batches. Findings go into research.md (single file; Open[TBD]/Decided maintained as before). Changing direction = snapshot the current research.md into the research/ discarded-draft pile first, then overwrite; old drafts can be resurrected at any time.
 allowed-tools: Read, Write, Glob, Grep, Edit, Bash(mkdir:*, date:*)
 ---
 <!-- GENERATED from core/commands/research.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
@@ -46,13 +46,14 @@ Key references: <URL>
 ## Process
 
 1. **Confirm the change directory**: no active change → create `spec/changes/<kebab-name>/`, deriving the name from the user's description; active change with a matching direction → append to research.md.
-2. **Dispatch the `@researcher` sub-agent** to research and write into research.md:
+2. **Decide whether an industry survey is warranted at all** — the web-research subagent is for changes whose decision space is genuinely external: a new dependency / tech choice, an unfamiliar domain, a pattern where industry practice materially constrains the design. **Internal refactors, fix batches, and changes whose constraints all live in this codebase skip the survey entirely** — step 3's status-quo mapping IS the research for those (dispatching a web survey there is ceremony, not information).
+3. **When warranted, dispatch the `@researcher` sub-agent** to research and write into research.md:
    - WebSearch option A/B/C comparisons, known issues, benchmarks → `## Practices`
    - Hard constraints (compatibility / performance / security / dependency versions) → `## Constraints`
    - References MUST include URLs
    - **Apply the four-question self-check before writing anything** (SKILL "Claim Self-Review"): do not dump everything found — for each practice / constraint ask "what breaks if this is removed?"; omit anything whose removal has no impact; a constraint MUST identify where it causes a failure if violated. Zero encyclopedia-style padding.
-3. Main conversation maps the status quo — **read `spec/knowledge.md` first** (if it exists: project-level durable facts from previous changes — table ownership / call chains / verified gotchas; don't re-derive or re-Grep what's already recorded there), then Grep / Glob relevant modules to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design). A knowledge.md fact contradicted by what you find → note the correction in research (`订正/corrected: ...`); the fix to knowledge.md itself lands at archive time.
-4. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
+4. Main conversation maps the status quo (**always — this step never gets skipped**) — **read `spec/knowledge.md` first** (if it exists: project-level durable facts from previous changes — table ownership / call chains / verified gotchas; don't re-derive or re-Grep what's already recorded there), then Grep / Glob relevant modules to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design). A knowledge.md fact contradicted by what you find → note the correction in research (`订正/corrected: ...`); the fix to knowledge.md itself lands at archive time.
+5. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
    - Factual (determinable by reading code / docs) → decide yourself, note "decided from status quo: X"
    - Preference-driven (multiple valid options, depends on user trade-offs) → MUST mark `[TBD]` for `/spec:ask`
    - When in doubt, treat it as preference-driven — **NEVER skip a preference-driven point by pretending it's factual**

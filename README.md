@@ -123,7 +123,7 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
 
-**`/spec:loop` vs a bare self-feeding loop** (ralph-style): same drive mechanism, but with an acceptance checklist as the success exit, an independent fresh-context verifier per round (self-review never checks a box), a cross-round ledger (`loop.md`: rounds + lessons), and layered fuses. **Do not run `/spec:loop` alongside another Stop-driven looper** (e.g. the official ralph-loop plugin) in the same session — two drivers competing for one Stop event have undefined merge semantics.
+**`/spec:loop` vs a bare self-feeding loop** (ralph-style): same drive mechanism, but with an acceptance checklist as the success exit, an **exhaustive independent audit at final acceptance** (rounds stay cheap on self-checks; mid-loop checkmarks are claims the audit unchecks if false — so a dishonest check can never produce a false pass), a cross-round ledger (`loop.md`: rounds + lessons), and layered fuses. **Do not run `/spec:loop` alongside another Stop-driven looper** (e.g. the official ralph-loop plugin) in the same session — two drivers competing for one Stop event have undefined merge semantics.
 
 ### 1 development agent (dispatched by scope)
 
@@ -312,6 +312,14 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.5.2** — loop verification moves to a terminal-audit model (first overnight dogfood run: per-round verifier dispatches dominated the budget — two small features a night):
+  - rounds now run on the model's own working checks only (no subagent dispatch mid-round); mid-loop checkmarks are self-claims
+  - the final acceptance becomes the loop's ONLY independent audit, exhaustive and **iterative**: failed items get unchecked and the loop keeps fixing — a dishonest check still can't produce a false pass, it just costs an audit round
+  - "one item per round" reworded to "one coherent increment" (stop shredding small features into ceremony rounds)
+  - the critique panel goes two-speed: manual `/spec:propose` asks you which lenses to run (multi-select over necessity / regression-compat / testability / performance); workflow auto-orchestration dispatches necessity + regression-compat only, the rest on request at the gate (the content-triggered security lens is retired)
+  - the same terminal-audit principle lands in `/spec:apply`: per-node checks are self-run working checks only, the ONE spec-verifier dispatch happens after the last item — the old frontmatter line telling the model to "call /spec:verify close to each node" (the verify-edit-verify-edit churn observed in real runs) is gone
+  - a god's-eye duplicate sweep kills three more rhythm-verification sinks: workflow step 7 no longer runs a second back-to-back full verifier pass (it consumes apply's closing ledger round; fix-rounds re-verify only the open findings + fix diff), verify fix-rounds are scoped instead of full re-passes, and the research web-survey subagent becomes conditional (external decision spaces only — internal refactors map the status quo and skip the ceremony)
+- **0.5.1** — hardening batch from the same-day max-effort review of 0.5.0 (25 confirmed findings): four integration seams fixed (copy-safe ledger template, resume session re-bind, verifier loop-ledger branch, archive gate loop awareness), driver edge cases (pipeline exit codes, fuse validation, HEAD-aware fingerprint, cap/acceptance boundary, strict twin-consistent heading match), guard hardening (canary joined the sync sweep, reinject-template sync set registered), and a full CLAUDE.md hook-contract rewrite
 - **0.5.0** — `/spec:loop`: goal-driven autonomous rounds, hook-driven:
   - new command + round ledger (`loop.md`: goal / acceptance checklist / round records / lessons; `.loop-state` is the driver's own state — never edit it): approve the goal once, get verified rounds until acceptance or a fuse
   - new Stop-event hook `loop-driver` on both hosts: re-injects the next round via the Stop JSON contract (probe-verified on Claude Code 2.1.208 and codex-cli 0.144.3 — raw captures in `hooks/loop-driver.sh` header and `codex/hooks/SCHEMA.md`); fuses are mechanical (round cap / no-progress via checkbox-count + worktree fingerprint / refusal-to-retrospect / corrupt ledger), each with a distinct stop notice

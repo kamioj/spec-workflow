@@ -5,7 +5,8 @@
 # This is a DRIVER, not a gate: it decides whether the autonomous loop continues
 # (re-inject the next round) or genuinely stops (acceptance met / fuse blown / paused).
 #
-# Stop contract (probe-verified on Claude Code 2.1.208, 2026-07-17 — NOT the
+# Stop contract (probe-verified on Claude Code 2.1.208, 2026-07-17; re-verified on
+# 2.1.217, 2026-07-18 after a CLI auto-update — NOT the
 # UserPromptSubmit contract; see codex/hooks/SCHEMA.md for the Codex twin evidence):
 #   re-inject = stdout {"decision":"block","reason":"<next input>","systemMessage":"..."} + exit 0
 #               (probe: reason "Reply with exactly this single word: RESUMED-OK" -> the
@@ -148,7 +149,7 @@ fi
 #         the rounds guard allows exactly ONE overrun (next stop falls to the cap). ----
 if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -ge 1 ] && [ "$ROUNDS" -le "$MAX_ROUNDS" ]; then
     state_write "$SESSION" $((ROUNDS + 1)) "$RETROS" "$CHECKED_HIST" "$FP_HIST"
-    reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause, report the results to the user, and only if verification holds set status: done in the loop.md frontmatter. Do not end the turn before the report is written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
+    reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause -- this is the ONLY independent audit of the loop, so it is exhaustive. Items that fail the audit: uncheck them, record the findings in the current round, and let the loop continue fixing. Only if every item holds, report the results to the user and set status: done in the loop.md frontmatter. Do not end the turn before the report or the findings are written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
 fi
 
 # ---- 6. round cap (primary safety mechanism, DEC-2) ----
@@ -215,4 +216,4 @@ NEXT=$((ROUND_COUNT + 1))
 CH="$CHECKED"; [ -n "$CHECKED_HIST" ] && CH=$(trunc_csv "$CHECKED_HIST,$CHECKED" "$FUSE_N")
 FH="$FP"; [ -n "$FP_HIST" ] && FH=$(trunc_csv "$FP_HIST,$FP" "$FUSE_N")
 state_write "$SESSION" $((ROUNDS + 1)) 0 "$CH" "$FH"
-reinject "SPEC-LOOP: start round $NEXT of $MAX_ROUNDS. Read the running loop ledger (spec/changes/*/loop.md, status: running) in full -- Acceptance, the latest Retrospect, Lessons. Pick exactly ONE next item from the last retrospect plan (or the first unchecked Acceptance item). Search the ledger and the codebase before assuming anything is unimplemented. Then implement it, verify through the spec-verifier agent (self-review does not count), check off any Acceptance item only with verifier evidence, and write this round's ### Round $NEXT section with a non-empty #### Retrospect before ending the turn. To pause the loop instead, set status: paused in loop.md frontmatter." "SPEC-LOOP: round $NEXT of $MAX_ROUNDS injected"
+reinject "SPEC-LOOP: start round $NEXT of $MAX_ROUNDS. Read the running loop ledger (spec/changes/*/loop.md, status: running) in full -- Acceptance, the latest Retrospect, Lessons. Pick exactly ONE coherent increment from the last retrospect plan (or the first unchecked Acceptance item). Search the ledger and the codebase before assuming anything is unimplemented. Then implement it, run your own working checks (compile / tests / minimal repro -- no subagent dispatch during rounds), check off Acceptance items your checks satisfy (every checkmark gets independently audited at final acceptance), and write this round's ### Round $NEXT section with a non-empty #### Retrospect before ending the turn. To pause the loop instead, set status: paused in loop.md frontmatter." "SPEC-LOOP: round $NEXT of $MAX_ROUNDS injected"
