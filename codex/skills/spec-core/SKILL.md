@@ -1,6 +1,6 @@
 ---
 name: spec-core
-description: Spec-driven development workflow overview. Load this skill when the user says "spec this first / draft a proposal / design first / write a proposal", or when a task is >150 lines / spans 3+ files / introduces a new dependency / involves an architecture choice — to learn the sdd plugin's 12 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
+description: Spec-driven development workflow overview. Load this skill ONLY when the user explicitly asks for the spec flow — says "spec this first / draft a proposal / design first / write a proposal", or invokes a $spec-x command. NEVER self-activate on task size or complexity: size is at most grounds for a one-line suggestion, and silence means proceed without spec. Teaches the sdd plugin's 12 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
 ---
 <!-- GENERATED from core/skill.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -10,19 +10,11 @@ Spec-driven development workflow: research → interrogate → propose → HARD 
 
 ## When to use
 
-**Activate** (any one is enough):
-- The change is expected to exceed 150 lines
-- It spans 3+ files
-- It introduces a new dependency
-- It involves an architecture choice (weighing multiple options)
-- The user explicitly says "spec this first | proposal | design first | draft a solution"
+**Activation is user-explicit ONLY** — the flow starts when the user invokes a `$spec-x` command or says "spec this first | proposal | design first | draft a solution". **The model NEVER self-activates this workflow**, no matter how large the task looks.
 
-**Do NOT activate**:
-- trivial (typo / log / styling)
-- small (<30 lines, single file)
-- medium (30–150 lines / 2–3 files / no cross-module impact)
+Size signals (>150 lines / 3+ files / new dependency / architecture choice) are grounds for **at most a one-line suggestion** ("this is large — want the spec flow?"). No answer = no spec: just do the work. Auto-drifting a task into spec ceremony uninvited is this plugin's single biggest failure mode — worse than skipping spec on a large change, because the user can always invoke spec later, but time burned on unwanted process is gone.
 
-→ Just make the change; **NEVER activate this workflow**. Spinning up the heavy process by mistake is this plugin's single biggest failure mode.
+**Never even suggest it for**: trivial (typo / log / styling) · small (<30 lines, single file) · medium (30–150 lines / 2–3 files / no cross-module impact).
 
 ## Command index
 
