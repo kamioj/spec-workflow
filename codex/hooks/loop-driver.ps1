@@ -121,7 +121,7 @@ try {
     # ---- 5. acceptance met -> final acceptance (before the cap; one overrun allowed) ----
     if ($unchecked -eq 0 -and $checked -ge 1 -and [int]$rounds -le [int]$maxRounds) {
         StateWrite $session ([string]([int]$rounds + 1)) $retros $checkedHist $fpHist
-        Reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause, report the results to the user, and only if verification holds set status: done in the loop.md frontmatter. Do not end the turn before the report is written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
+        Reinject 'SPEC-LOOP: every Acceptance item in the running loop ledger (spec/changes/*/loop.md, status: running) is checked. Run the final acceptance now: dispatch the spec-verifier agent (fresh context) to independently re-verify EVERY Acceptance item against its verify: clause -- this is the ONLY independent audit of the loop, so it is exhaustive. Items that fail the audit: uncheck them, record the findings in the current round, and let the loop continue fixing. Only if every item holds, report the results to the user and set status: done in the loop.md frontmatter. Do not end the turn before the report or the findings are written.' 'SPEC-LOOP: acceptance checklist complete -- injecting final acceptance'
     }
 
     # ---- 6. round cap (primary safety mechanism) ----
@@ -183,7 +183,7 @@ try {
     $ch = if ($checkedHist) { TruncCsv "$checkedHist,$checked" ([int]$fuseN) } else { [string]$checked }
     $fh = if ($fpHist) { TruncCsv "$fpHist,$fp" ([int]$fuseN) } else { $fp }
     StateWrite $session ([string]([int]$rounds + 1)) '0' $ch $fh
-    Reinject "SPEC-LOOP: start round $next of $maxRounds. Read the running loop ledger (spec/changes/*/loop.md, status: running) in full -- Acceptance, the latest Retrospect, Lessons. Pick exactly ONE next item from the last retrospect plan (or the first unchecked Acceptance item). Search the ledger and the codebase before assuming anything is unimplemented. Then implement it, verify through the spec-verifier agent (self-review does not count), check off any Acceptance item only with verifier evidence, and write this round's ### Round $next section with a non-empty #### Retrospect before ending the turn. To pause the loop instead, set status: paused in loop.md frontmatter." "SPEC-LOOP: round $next of $maxRounds injected"
+    Reinject "SPEC-LOOP: start round $next of $maxRounds. Read the running loop ledger (spec/changes/*/loop.md, status: running) in full -- Acceptance, the latest Retrospect, Lessons. Pick exactly ONE coherent increment from the last retrospect plan (or the first unchecked Acceptance item). Search the ledger and the codebase before assuming anything is unimplemented. Then implement it, run your own working checks (compile / tests / minimal repro -- no subagent dispatch during rounds), check off Acceptance items your checks satisfy (every checkmark gets independently audited at final acceptance), and write this round's ### Round $next section with a non-empty #### Retrospect before ending the turn. To pause the loop instead, set status: paused in loop.md frontmatter." "SPEC-LOOP: round $next of $maxRounds injected"
 } catch {
     [Console]::Error.WriteLine("SPEC-LOOP driver internal error (fail-open, loop ends): $_")
     exit 0

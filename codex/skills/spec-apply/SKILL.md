@@ -1,6 +1,6 @@
 ---
 name: spec-apply
-description: Implement the code, advancing by proposal/tasks. A pre-command hook checks that proposal.md carries the required prerequisites. Incremental verification: call $spec-verify close to each node as it lands, don't save it all for the end.
+description: Implement the code, advancing by proposal/tasks. A pre-command hook checks that proposal.md carries the required prerequisites. Verification model: cheap self-run working checks per node while implementing; ONE independent spec-verifier pass at the end (never dispatch verification subagents mid-implementation).
 ---
 <!-- GENERATED from core/commands/apply.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -113,11 +113,13 @@ The agent automatically loads the corresponding tech-stack references by scope (
 
 The main conversation only steps in when dispatch fails / cross-executor coordination is needed / an agent reports it's stuck.
 
-## Implementation + incremental verification
+## Implementation + verification model
+
+**Independent verification is a terminal event, not a rhythm.** While implementing, the only checks are your OWN working checks (seconds-cheap, self-run); the ONE subagent-backed independent verification happens after the last item lands. Never dispatch a verifier / fresh-context subagent mid-implementation — a verify-edit-verify-edit cadence spends the budget on re-reading context instead of building (measured in real runs: it dominates the bill).
 
 - Advance by deps, touching only tasks whose deps are done
 - Multiple deps satisfied and independent → **prefer spawning two dedicated agents concurrently** (if frontend and backend are independent)
-- After finishing each node (or a group of parallel ones) → run that node's own checks close by (compile / tests for the node), **don't save them for the end**. These are working checks — they do NOT write ledger rounds
+- After finishing each node (or a group of parallel ones) → run that node's own checks close by (compile / tests for the node), **don't save them for the end**. These are working checks — self-run, seconds-cheap, they do NOT write ledger rounds and they NEVER involve a subagent
 - **Closing verification is part of apply, not optional**: after the last What item / task lands, **spawn the spec-verifier agent (defined in ~/.codex/agents/spec-verifier.toml)** (the same fresh-context, evidence-or-drop protocol `$spec-verify` uses — the conversation that just implemented MUST NOT write the closing round from its own self-review, that is exactly the bias the verifier exists to remove) and write its results as a ledger round to `spec/changes/<name>/verify.md` **before reporting implementation complete** — "done" without an independent ledger round covering the final state is not done. The Stop-event reminder hook (`codex/hooks/check-verify-reminder`) backstops this: ending a turn with an approved proposal and no ledger gets nudged back.
 - Mark finished tasks `[x]` in tasks.md — **whoever finishes it marks it**: the dev agent marks the subtasks it owns; the main conversation marks the items it handles itself (config / scripts / cross-module coordination)
 

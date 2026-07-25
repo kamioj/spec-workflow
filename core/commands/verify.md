@@ -196,6 +196,7 @@ not run: <check> — <reason>
 
 Round rules:
 1. **Read the previous ledger first** (if present): this run's `round` = previous + 1. **Round 0 is legal**: `/spec:propose`'s critique panel writes its surviving findings as round 0 (stage: propose) before any code exists — the first verify run is then round 1, and it re-checks round 0's open findings like any others
+   - **Fix-round scoping**: when a round exists only to re-check fixes (no new implementation since the last full pass), the verifier's scope is the still-open findings + the fix diff — NOT a fresh full three-dimension pass over the whole change (a full re-pass over unchanged code is a measured pure duplicate). A full pass is warranted only when new implementation landed since the last one
 2. **Re-check every Status=open finding one by one** — fixed → `fixed(rN)`; still open → stays open and **escalates**: a critical/major finding open for 2+ rounds forces `conclusion: fail` and leads the user-facing output
 3. New findings take the next V-N ID; IDs are never reused or renumbered
 4. `wontfix` requires a written reason (inside `Not in this change` / explicit user decision) — silence is not a status

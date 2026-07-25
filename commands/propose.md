@@ -68,13 +68,16 @@ When any one condition holds, **the propose stage generates** `spec/changes/<nam
 
 The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` — never this conversation) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
 
-| Lens | Locked stance | On |
+**Lens selection depends on who invoked propose:**
+- **Standalone (manual) `/spec:propose`** — before dispatching, put the lens choice to the user as ONE multi-select question (per SKILL Interrogation rules; self-contained — each option names what that lens catches and what skipping it risks). Options = the four lenses below, with **necessity + regression-compat pre-recommended**. Dispatch exactly what the user picked.
+- **Workflow-invoked (auto orchestration)** — no mid-flight questions (two-touchpoint doctrine): dispatch **necessity + regression-compat only**. The other lenses stay available to the user at the gate ("want a testability/performance pass → say so" is a legal gate reply, answered with a supplementary panel round).
+
+| Lens | Locked stance | Auto default |
 |---|---|---|
-| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | always |
-| **regression-compat** | what existing behavior, consumer, or installed user does this change break | always |
-| **testability** | is every What item's `verify:` clause actually falsifiable — could it pass while the feature is broken | always |
-| **security** | auth / permissions / external input / data-write paths | only when What/How touches those |
-| **performance** | hot paths / loops / batch queries / N+1 | only when What/How touches those |
+| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | yes |
+| **regression-compat** | what existing behavior, consumer, or installed user does this change break | yes |
+| **testability** | is every What item's `verify:` clause actually falsifiable — could it pass while the feature is broken | manual pick only |
+| **performance** | hot paths / loops / batch queries / N+1 | manual pick only |
 
 **Discipline** (reuses the spec-verifier protocol — the anti-sycophancy measures are structural, not tonal):
 - **evidence-or-drop**: a finding must cite the concrete proposal line + the concrete scenario where it bites; "this might be risky" is dropped unwritten

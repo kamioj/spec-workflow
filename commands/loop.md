@@ -1,5 +1,5 @@
 ---
-description: Goal-driven autonomous round loop. Give it a goal + acceptance checklist + round budget (touchpoint 1), then it researches, implements, verifies, and retrospects round after round — driven by a Stop-event hook, not by prompt discipline — until every acceptance item is verifier-checked (touchpoint 2: final acceptance) or a fuse blows (round cap / no-progress / refusal-to-retrospect). Use when the goal is known but the path is not; a known plan one-pass change belongs to /spec:workflow instead.
+description: Goal-driven autonomous round loop. Give it a goal + acceptance checklist + round budget (touchpoint 1), then it researches, implements, self-checks, and retrospects round after round — driven by a Stop-event hook, not by prompt discipline — until the final acceptance audit (touchpoint 2, the loop's ONLY independent verification) passes every item, or a fuse blows (round cap / no-progress / refusal-to-retrospect). Use when the goal is known but the path is not; a known plan one-pass change belongs to /spec:workflow instead.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
 ---
 <!-- GENERATED from core/commands/loop.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
@@ -47,9 +47,9 @@ awk -v s="${CLAUDE_CODE_SESSION_ID:-}" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s}
 
 
 1. **Read the ledger first**: Acceptance state, the latest Retrospect's plan, ALL of `## Lessons`. Then **search the ledger and the codebase before assuming anything is unimplemented** — re-implementing existing work is the classic fresh-context failure.
-2. **Plan**: pick exactly **ONE** item — from the previous Retrospect's plan, or the first unchecked Acceptance item. One item per round is the anti-degradation rule, not a suggestion. Write `#### Plan` (what + why this one).
-3. **Act**: implement the one item. Coding Charter applies (read `skills/core/references/code-charter.md` before the first keystroke of the run). Write `#### Act` (file-level).
-4. **Verify**: dispatch the **spec-verifier agent** (fresh context) on what this round produced. Self-review does not count; an Acceptance checkbox may be checked **only** with the verifier's evidence anchored in `#### Verify`. Anti-Cheating applies in full (unrun ≠ success; a bypass must be declared a bypass).
+2. **Plan**: pick exactly **ONE coherent increment** — from the previous Retrospect's plan, or the first unchecked Acceptance item. One increment per round is the anti-context-saturation rule, not a suggestion — but "one increment" means one coherent deliverable slice, not one micro-task; don't shred a small feature into ceremony rounds. Write `#### Plan` (what + why this one).
+3. **Act**: implement the increment. Coding Charter applies (read `skills/core/references/code-charter.md` before the first keystroke of the run). Write `#### Act` (file-level).
+4. **Self-check** (NO subagent dispatch during rounds — that cost is deferred to the final acceptance, the loop's only independent audit): run your own working checks — compile / tests / minimal repro — and record command + key output in `#### Verify`. Check off Acceptance items your checks satisfy; a mid-loop checkmark is a **claim** that final acceptance will independently audit, so an honest miss costs one fix round while a dishonest check costs the same round plus the audit finding. Anti-Cheating applies in full (unrun ≠ success; a bypass must be declared a bypass).
 5. **Retrospect** (the driver hard-checks this): `#### Retrospect` = the lesson learned (durable/operational ones also appended to `## Lessons` as `L-N`) + the next round's plan. Then **end the turn** — ending the turn is how the round ends.
 6. **Stuck?** SKILL Stuck Protection applies within and across rounds: 3 consecutive failed fixes in one direction → write the Stuck Self-Check into the Retrospect, set `status: paused`, and report to the user instead of burning rounds.
 
@@ -67,7 +67,7 @@ Implications:
 <!-- KEPT IN SYNC with the loop-driver final-acceptance reinject template (hooks/loop-driver.sh + codex twins). -->
 
 
-When every Acceptance item is checked, the driver injects the final-acceptance turn: dispatch a **fresh spec-verifier** to independently re-verify EVERY Acceptance item against its `verify:` clause (mid-loop checkmarks are claims, this is the audit), write the result as a ledger round in `verify.md` if the project keeps one, **report per-item results to the user**, and only if verification holds set `status: done`. Then `/spec:archive` closes the change (loop.md travels with it, `.loop-state` is deleted, durable Lessons feed `spec/knowledge.md`).
+When every Acceptance item is checked, the driver injects the final-acceptance turn: dispatch a **fresh spec-verifier** to independently re-verify EVERY Acceptance item against its `verify:` clause — mid-loop checkmarks are claims; **this is the loop's ONLY independent audit, so it is exhaustive**. The audit is iterative by design: items that fail get **unchecked**, the findings recorded in the current round, and the loop continues fixing (the driver re-arms automatically; each audit pass counts toward the round cap). Only when every item holds: **report per-item results to the user** and set `status: done`. Then `/spec:archive` closes the change (loop.md travels with it, `.loop-state` is deleted, durable Lessons feed `spec/knowledge.md`).
 
 A fuse stop instead of acceptance → report the driver's notice verbatim, plus: what the ledger shows, what you would change (plan / acceptance list / budget), and wait — resuming is the user's call (`/spec:loop`).
 
@@ -75,6 +75,6 @@ A fuse stop instead of acceptance → report the driver's notice verbatim, plus:
 
 - ❌ Starting a loop for a task with a known plan (that's `/spec:workflow`) or for pure understanding (that's exploration, no delivery)
 - ❌ A vague acceptance list ("works well") — unverifiable acceptance = the loop cannot ever legitimately finish
-- ❌ Checking Acceptance items without verifier evidence; checkboxes outside `## Acceptance`; editing `.loop-state` (full list in loop-spec.md)
-- ❌ Advancing multiple items in one round because "they're small" — round-scope creep is how context saturates and lessons stop being written
+- ❌ Checking Acceptance items with no working-check evidence in `#### Verify` (a bare claim wastes an audit round); checkboxes outside `## Acceptance`; editing `.loop-state` (full list in loop-spec.md)
+- ❌ Dispatching subagents mid-round for verification (the whole point of the terminal-audit design is that rounds stay cheap; independent eyes come once, at the end)
 - ❌ After a fuse, restarting with nothing changed — same inputs, same fuse
