@@ -13,6 +13,7 @@ Research direction: $ARGUMENTS
 ```
 spec/changes/<name>/
 ├── research.md                   ← current research (single file: Practices + Constraints + Open[TBD] + Decided)
+├── index.md                      ← requirement & asset index (R-N verbatim quotes + A-N assets + E-N exemplars — built HERE at first source contact; see references/index-spec.md)
 └── research/                     ← discarded-draft pile for this proposal (optional; only created on direction change)
     └── <title>-research.md       ← full snapshot of an abandoned research.md; no labels, no links, resurrectable
 ```
@@ -54,7 +55,9 @@ Key references: <URL>
    - References MUST include URLs
    - **Apply the four-question self-check before writing anything** (SKILL "Claim Self-Review"): do not dump everything found — for each practice / constraint ask "what breaks if this is removed?"; omit anything whose removal has no impact; a constraint MUST identify where it causes a failure if violated. Zero encyclopedia-style padding.
 4. Main conversation maps the status quo (**always — this step never gets skipped**) — **read `spec/knowledge.md` first** (if it exists: project-level durable facts from previous changes — table ownership / call chains / verified gotchas; don't re-derive or re-Grep what's already recorded there), then Grep / Glob relevant modules to **map existing call chains / constraints** (write into `## Constraints` — this is "understanding the status quo", not "designing new architecture"; new architecture belongs in design). A knowledge.md fact contradicted by what you find → note the correction in research (`订正/corrected: ...`); the fix to knowledge.md itself lands at archive time.
-5. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
+5. **Build `spec/changes/<name>/index.md`** (mandatory for new changes; format → references/index-spec.md) at **first contact** with the requirement source: extract R-N **verbatim quotes** of behavioral clauses only (validation / required fields / value ranges / permissions / display mappings / state rules — descriptive narrative is not indexed); from the status-quo mapping, inventory the A-N assets this change's domain touches (`use: reuse / extend / pattern / rejected: <reason>`) and designate E-N exemplars for each new page/module (1–2 existing ones as the master template). **One extraction** — propose freezes the index; later stages append new IDs only, never renumber. No prototype/document → the user's task statement IS the source: quote its sentences (a few lines; mandatory does not mean heavy).
+6. **Delivery-channel precheck** (results → `## Constraints`): verify the test runner **actually executes tests** (a skipTests-style config makes every later "build passed" claim vacuous — name the config if found) and the commit/deploy path works; each anomaly is a Constraint with its consequence stated.
+7. **Flag [TBD]s**: preference-driven decision points go into `## Open`:
    - Factual (determinable by reading code / docs) → decide yourself, note "decided from status quo: X"
    - Preference-driven (multiple valid options, depends on user trade-offs) → MUST mark `[TBD]` for `$spec-ask`
    - When in doubt, treat it as preference-driven — **NEVER skip a preference-driven point by pretending it's factual**

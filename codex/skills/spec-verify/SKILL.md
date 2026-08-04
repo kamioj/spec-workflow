@@ -1,6 +1,6 @@
 ---
 name: spec-verify
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across three dimensions + charter audit. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions + charter audit. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
 ---
 <!-- GENERATED from core/commands/verify.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -18,7 +18,7 @@ The conversation that just ran `$spec-apply` cannot audit its own output — sam
 3. Run the round rules below (diff vs previous round, escalation)
 4. The user overrules a finding as a false positive → distill the generalized lesson (what pattern + why it's acceptable here) into `spec/knowledge.md`, so later rounds and later changes stop repeating it
 
-## Three-dimension verification framework (executed by the spawned spec-verifier; runs in all modes)
+## Four-dimension verification framework (executed by the spawned spec-verifier; runs in all modes)
 
 ### 1. Completeness
 - Is every item in proposal `## What` implemented? **Check each item against its `verify:` clause** — that clause is the falsifiable acceptance check; a What item with no `verify:` clause → flag it explicitly, don't improvise a pass
@@ -33,9 +33,14 @@ The conversation that just ran `$spec-apply` cannot audit its own output — sam
 ### 3. Coherence
 - Is the change consistent with the decisions in proposal `## How`?
 - **Nothing was done that the proposal did not ask for** (no scope creep)?
+- **Index anchor**: with `index.md` present, every behavioral addition in the diff (validation / required field / value range / permission / endpoint / schema element) must trace to a `refs:` R-N whose quoted text entails it — no citation or a mismatched one = unsourced addition; index absent (legacy change) → declare it and hunt additions against `## What` only
 - **`Not in this change` = exclusion zones**: code changes inside that scope → scope violation, flag it; conversely NEVER flag excluded scope as "missing work" — it is out of scope by decision
 - Does it conform to the coding conventions in the sdd spec-core skill's stack references?
 - **Charter audit** (see the dedicated section below): every fallback / degrade / compat path in the diff must trace to an explicit proposal `## How` / `## Risk` decision
+
+### 4. Reuse
+- Each new class / shared util / shared component / page in the diff: does the host codebase already have an equivalent (grep by **responsibility**, not just name)? Does the dev summary's `New creations` field carry the A-N gap citation? Does a new page conform to its designated E-N exemplar (abstractions the exemplar lacks = additions; conventions it has that the page drops = findings)?
+- Anchored to index.md `## Assets` / `## Exemplars`; index absent (legacy change) → declare it, flag blatant duplication only
 
 ## Charter audit (part of Coherence — hunts the dirty-data defect class)
 
@@ -68,6 +73,7 @@ The fix direction is **replacement or a gate decision** (`$spec-revise how` to a
 [independent] Completeness: <pass/fail/partial> - <explanation>
                Correctness:  <pass/fail/partial> - <explanation>
                Coherence:    <pass/fail/partial> - <explanation>
+               Reuse:        <pass/fail/partial> - <explanation>
 
 Evidence (mandatory — one line per check actually executed):
   <command / action> → <exit code or the key output line>
@@ -131,6 +137,7 @@ When the review fails, **report the specific failure point**:
 | Completeness | List unimplemented items from proposal `## What`; list interfaces in design.md that are not aligned |
 | Correctness | Paste the exact error + file / line number; failing test case + expected vs. actual |
 | Coherence | Where the change diverges from `## How`; scope creep; violations of stack conventions |
+| Reuse | The new creation + the existing equivalent it duplicates (file:line), or the E-N exemplar convention dropped, or the missing A-N gap citation |
 
 **Guiding principle**: describe the problem; do not prescribe the fix — the remediation path is for the user / main conversation to decide.
 

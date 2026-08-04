@@ -19,7 +19,7 @@ Stay disciplined at the prompt level too:
 
 1. Read research.md: read `## Decided` + `## Practices` / `## Constraints` (the research conclusions for the current direction; `research/` drafts don't participate unless already revived into research.md)
 2. Read design.md (if it exists)
-3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). Two later stages consume these: `/spec:verify` checks Completeness against the `verify:` clauses; the HARD GATE shows Not-in-this-change as the approval boundary
+3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries `| refs: R-N` (citing the change's index.md `## Requirements`) and a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). **Requirement-fidelity pass before finalizing** (SKILL § Requirement fidelity): every behavioral What item must cite an R-N **whose quote entails it** — no citation, or a citation the quote doesn't cover, makes the item an addition → it goes on the gate's `Unsourced additions` line (the user approves or cuts it; it never slips through as "obviously good"). Legacy change without index.md → that line reads "legacy change (no index)" and the pass falls back to prose source-tracing (user words / prototype / defect). Three later stages consume these: `/spec:verify` checks Completeness against the `verify:` clauses and Coherence against the R-N citations; the HARD GATE shows Unsourced additions + Not-in-this-change as the approval boundary
 4. **Run the critique panel** (section below) — surviving findings land in the verification ledger as round 0
 5. **Emit the HARD GATE closing block**
 
@@ -148,6 +148,11 @@ rewritten around its scenario.
 Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line each — the
 evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
 catch a misclassified preference>
+Unsourced additions: <behavioral items (validation / required fields / permissions / endpoints /
+schema) carrying no valid R-N citation against the change's index.md, one line each — they
+ride this gate as additions to approve, never slip through as "obviously good"; "none" if
+every behavioral What item cites the index; "legacy change (no index)" when the change
+predates the index format — mandatory line>
 Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
 one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
 "none" if none>
@@ -192,6 +197,7 @@ User rejects → go through `/spec:revise [section]` (local) or `/spec:chat` (re
 - ❌ `## How` copying research.md `## Decided` verbatim (distill, don't transport)
 - ❌ Bursting the proposal sections with content (it should move to design)
 - ❌ A `## What` item without a `verify:` clause (leaves /spec:verify's Completeness check nothing falsifiable)
+- ❌ A behavioral What item with no `refs:` citation, or citing an R-N whose quote doesn't entail it — both belong on the gate's `Unsourced additions` line; omitting them there is the violation (verify audits mismatched refs as unsourced)
 - ❌ Translating section headers (e.g. `## 为什么（Why）`) — headers are always `## Why / ## What / ## How / ## Risk`; `/spec:revise` targets sections by English name
 - ❌ Gate Changes written in insider shorthand ("three-layer CAS idempotency guarantee (DEC-8/9/11)") — that is executor register; the gate is decision-maker register (Problem / After / Cost, same-scenario mirror)
 - ❌ Skipping the critique panel, or running it and withholding open findings from the gate (the user judges with full information or the gate is theater)
