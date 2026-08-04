@@ -47,7 +47,7 @@ Dispatch by the type of code the proposal `## What` involves:
 
 **Dispatching `spec-dev` MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 
-**The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope). An agent whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`/spec:revise what`), never the agent's.
+**The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope), **and state whether `spec/changes/<name>/index.md` exists** (legacy change without one → tell the agent to proceed per proposal and declare the absence in its summary). An agent whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`/spec:revise what`), never the agent's.
 
 ### Cross-stack: contract first + parallel implementation
 
@@ -111,6 +111,15 @@ The agent automatically loads the corresponding tech-stack references by scope (
 **No flag by default** — to avoid over-caution on routine tool-type UIs / internal pages / backend services.
 
 The main conversation only steps in when dispatch fails / cross-executor coordination is needed / an agent reports it's stuck.
+
+## Concern adjudication (consumes the summaries' Concerns fields)
+
+Dev agents implement permissively and reroute every tightening impulse into their summary's `Concerns` field (spec-dev § Concerns discipline). After the last agent returns, adjudicate by invocation mode:
+
+- **Standalone `/spec:apply`**: batch ALL concerns into ONE AskUserQuestion round (multi-select; each option self-contained per SKILL Interrogation rules — proposed tightening + trigger + cost of adopting). Adopted → append each as a **new R-N** to `spec/changes/<name>/index.md` and implement it in-session, **before** the closing verification, so the closing verifier round audits base change + adopted tightenings uniformly (concerns never seed V-N rows before a round exists). Rejected → one ledger note each (`concern rejected: <one line>`) so the same worry isn't re-litigated later.
+- **Inside `/spec:workflow`** (two-touchpoint doctrine — no mid-flight pause): carry the Concerns list verbatim into the acceptance report (touchpoint 2); adopted ones enter the ledger via the acceptance-stage user-sourced-findings path and drive the scoped fix round.
+- No concerns returned → skip entirely, zero ceremony.
+- A **blocking** concern (the agent stopped: no permissive fallback exists) is not batch material — it already halted implementation; resolve it immediately (AskUserQuestion when standalone; in workflow mode it surfaces as the reason apply stopped).
 
 ## Implementation + verification model
 

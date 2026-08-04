@@ -30,7 +30,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `/spec:propose [--codex]` | write proposal.md; `--codex` lets codex poke holes in the solution |
 |  | `/spec:revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `/spec:apply` | implement the code |
-|  | `/spec:verify [--codex] [--fix]` | dispatches the independent spec-verifier agent (three dimensions + charter audit); `--codex` adds codex as a heterogeneous second reviewer, `--fix` lets codex edit |
+|  | `/spec:verify [--codex] [--fix]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--codex` adds codex as a heterogeneous second reviewer, `--fix` lets codex edit |
 | Wrap up | `/spec:archive` | archive the change |
 
 ## Artifact map
@@ -42,6 +42,7 @@ spec/
 │   └── <change-name>/
 │       ├── research.md   required    current research (Practices + Constraints + Open[TBD] + Decided, single file)
 │       ├── research/     optional    discarded-draft pile of research directions (research.md snapshots of abandoned directions, no markers/links, revivable)
+│       ├── index.md      required    requirement & asset index (R-N verbatim quotes + A-N assets + E-N exemplars; built by research, frozen at gate, append-only — see references/index-spec.md; changes predating the format are legacy: consumers declare the absence and fall back, never block)
 │       ├── design.md     optional    technical design (architecture / interfaces / data model)
 │       ├── proposal.md   required    the final solution (carries the HARD GATE approval marker)
 │       ├── tasks.md      optional    task list for multi-executor collaboration
@@ -54,7 +55,7 @@ spec/
     └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
-**The artifact set is fixed at these four + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
+**The artifact set is fixed at these four + the requirement & asset index + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
@@ -63,6 +64,7 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 | Artifact | **Writes only** (single source of truth) | **Does not write** (moves to) | Soft budget |
 |---|---|---|---|
 | research.md | External information: Practices / Constraints / Open[TBD] / Decided (DEC-N conclusion + one-line reason) | architecture·interfaces·schema→design ｜ changed files→proposal What ｜ raw search process→discarded-draft pile | one line each |
+| index.md | Static external anchor: R-N verbatim requirement quotes / A-N assets / E-N exemplar designations (append-only; quotes, never paraphrases) | status·progress·code locations·coverage → computed per verify round, never stored ｜ interpretation → downstream artifacts cite entries, never restate them | one line per entry |
 | design.md | Internal technical structure: architecture diagram (structure, no fields) / interface contract (precise schema) / data model / **deep argument for contested decisions only** | business motivation→proposal Why ｜ risk·rollback→proposal Risk ｜ full code·DDL→apply ｜ copying DEC-N conclusions (reference, don't transcribe) ｜ expanding non-contested decisions | **narrative/argument ≤150 lines** (contracts excluded, as precise as needed); split diagrams >20 nodes; expand 1–2 decisions, ≤12 lines each |
 | proposal.md | Decision record: Why / What (each item + `verify:` acceptance check, closing **Not in this change** list) / How (conclusion + pointer) / Risk | deep argument→design ｜ schema→design ｜ restating design decisions | ≤5 lines per section (`verify:` clauses + the Not-in-this-change block don't count) |
 | tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
@@ -118,6 +120,11 @@ rewritten around its scenario.
 Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line each — the
 evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
 catch a misclassified preference>
+Unsourced additions: <behavioral items (validation / required fields / permissions / endpoints /
+schema) carrying no valid R-N citation against the change's index.md, one line each — they
+ride this gate as additions to approve, never slip through as "obviously good"; "none" if
+every behavioral What item cites the index; "legacy change (no index)" when the change
+predates the index format — mandatory line>
 Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
 one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
 "none" if none>
@@ -184,6 +191,15 @@ Wait for the user's decision; no endless patching.
 2. **No passing off a bypass as a fix**: mocking a fake response / changing an assert / patching a check function to return true MUST be stated plainly as "bypass, root cause unresolved"
 3. **Hardcoding must be flagged**: offsets / fixed hashes / one-off parameters get a code comment + a "applies to this case only" note in tasks.md
 4. **Self-reported success is not verification**: a result reported by another agent (or by an earlier round) must be independently re-run before it counts as evidence — /spec:verify's spec-verifier re-runs the key commands itself (Iron Law)
+
+### Requirement fidelity (anti-gold-plating)
+
+**What the requirement source did not ask for is forbidden by default.** The requirement source is the user's words / the prototype / the defect being fixed — "engineering best practice" is NOT a requirement source. The classic inflations — finer-grained permissions than the system uses, extra config switches, extension points, defensive features, "while we're here" capabilities — are the top real-world failure mode of autonomous flows: every checker downstream anchors to the proposal, so an inflated proposal (or an implementation-time invention that never entered one) gets certified all the way to production.
+
+- Every proposal `## What` item traces to the requirement source; an item with **no source is an ADDITION** and must ride the gate as an escalated decision — never slip in as "obviously good"
+- At implementation time, a capability not in `## What` is **drift**: stop and report, never build it because it seems professional
+- When the existing system has a simpler convention (e.g. menu-level permissions), matching that convention IS the requirement; exceeding it is an addition
+- **Mechanical layer — the index** (references/index-spec.md): `/spec:research` extracts the requirement source ONCE into the change's `index.md` (R-N verbatim quotes, behavioral clauses only); every behavioral What item carries `| refs: R-N`; the gate's `Unsourced additions` line lists what has no valid citation; `/spec:verify` audits the diff against the quotes — a **mismatched** citation (behavior not entailed by the quoted text) is the same finding as a missing one. Detection never relies on the agent knowing it made an assumption — only on the assumption existing in the diff
 
 ### Halt on infeasible task
 

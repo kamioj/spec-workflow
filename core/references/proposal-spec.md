@@ -12,8 +12,10 @@ Why this change is being made (business motivation / technical pain / time windo
 
 ## What
 What concretely changes (files / modules / interfaces / additions / deletions / renames). A list is fine.
-- <item> | verify: <observable behavior or executable check that proves this item landed>
+- <item> | refs: R-N[, R-M] | verify: <observable behavior or executable check that proves this item landed>
 - ...
+
+(`refs:` cites the change's index.md `## Requirements` — the quote must entail the item; a mismatched ref is audited as unsourced, same as no ref. Legacy change without index.md → omit the clause; the gate declares "legacy change (no index)".)
 
 **Not in this change**: <1–3 lines of adjacent scope explicitly excluded — the boundary of what approval covers>
 
@@ -31,7 +33,7 @@ Key technical decisions (distilled from research.md `## Decided`, **not copied v
 
 ## Section constraints
 
-- Each section **≤ 5 lines** (What: ≤5 items; the `| verify:` clause on an item and the closing **Not in this change** block don't count toward the limit)
+- Each section **≤ 5 lines** (What: ≤5 items; the `| refs:` / `| verify:` clauses on an item and the closing **Not in this change** block don't count toward the limit)
 - Content over the limit → move it to `design.md`, **don't stuff it into the proposal**
 - `## How` distills `research.md ## Decided`, doesn't copy it verbatim
 - **What / How must pass question ④ (cut it)**: before committing a non-trivial What item / How decision, ask "what happens if I remove it" and don't write what makes no difference removed (SKILL § Claim Self-Review) — this is the precondition for the HARD GATE change points to let the user judge "approve or not" at a glance
@@ -43,8 +45,9 @@ The gate block emitted by `/spec:propose` / `/spec:revise` (full template in pro
 1. `Escalated decisions` — **always first when present** (irreversible-class provisional calls; they stand by default, silence + `/spec:apply` = consent, one reply line overturns; `/spec:apply` echoes them again at its first line)
 2. `Changes` — 3–6 key decisions, each a **same-scenario before/after mirror**: Problem / After / Cost, Problem and After ≤2 lines each; register test: a non-developer can tell what problem each point solves
 3. `Decided without asking` — factual + `auto` triage decisions, one line each + reversibility (mandatory line, "none" allowed)
-4. `Unresolved critique` — critique-panel findings still open after the one refutation round (they live as round-0 ledger findings)
-5. `Not in this change` — the approval boundary
+4. `Unsourced additions` — behavioral items with no valid R-N citation against the change's index.md (mandatory line; "none" when all cite, "legacy change (no index)" when the change predates the format)
+5. `Unresolved critique` — critique-panel findings still open after the one refutation round (they live as round-0 ledger findings)
+6. `Not in this change` — the approval boundary
 
 The user's reply is an evaluation: per-item adopt / refute (with reason) / partial, one response round, user final; insisted items are applied and ledger-marked `user-override`.
 
@@ -102,5 +105,6 @@ On revise, **leave the other sections untouched** — edit only the named sectio
 - ❌ Risk written as vague filler ("there may be a performance risk") without anchoring the trigger scenario / concrete hazard (SKILL Claim Self-Review question ③)
 - ❌ What listing "everything I can think of changing" without passing question ④'s cut (leaving the HARD GATE change points unjudgeable for approval)
 - ❌ A What item without a `verify:` clause (Completeness verification has nothing falsifiable to check)
+- ❌ A behavioral What item citing an R-N whose quote doesn't entail it (a mismatched ref is audited as unsourced — same finding as no ref)
 - ❌ Scope limits bolted on after APPROVED as extra HTML comments (they belong in **Not in this change**, re-gated via `/spec:revise what`)
 - ❌ Translated section headers (`## 为什么（Why）`) — headers are always the English canonical forms; prose follows the working language

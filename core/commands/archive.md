@@ -61,6 +61,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
    Why the divergence review earns its cost: "docs say A, code does B" is precisely the defect class that implementation and verify most often both miss — the archive review is the last set of eyes on it.
 3. **Maintain `spec/knowledge.md`** (project-level, lives OUTSIDE the change dir so it survives archiving; create on first use):
    - Extract from this change the durable facts future changes will need: topology / table ownership ("ICMP and mallcoo share one physical DB"), verified mechanisms, hard-won gotchas
+   - **Sediment the index**: durable A-N assets and E-N exemplar designations from `index.md` become knowledge.md facts (`<asset — role> | evidence: index.md (<change>) | <date>`) — the next change's research reads them instead of re-surveying; change-specific R-N quotes stay in the archived change
    - **For a `/spec:loop` change, `loop.md ## Lessons` is a primary input to this step** — its durable operational lessons (correct build/verify commands, known traps) are exactly knowledge.md material; read it here, before the move
    - One line per fact: `<fact> | evidence: <source> | <YYYY-MM-DD> (<change-name>)`
    - **Correct, don't contradict**: a recorded fact this change proved wrong is replaced (correction noted), never left standing next to its refutation
@@ -71,7 +72,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
 7. Output a summary:
    ```
    Archived: spec/archive/YYYY-MM-DD-<name>/
-   Artifacts included: research.md, research/ (if present), design.md, proposal.md, tasks.md, verify.md, loop.md (if present), retrospect.md
+   Artifacts included: research.md, research/ (if present), index.md, design.md, proposal.md, tasks.md, verify.md, loop.md (if present), retrospect.md
    Retrospect: divergences <N / none> · evidence <attached / not verified> · deferred <M items / none>
    Knowledge: <K facts added/corrected in spec/knowledge.md / nothing durable>
    ```
