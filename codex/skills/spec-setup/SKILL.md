@@ -11,6 +11,11 @@ Run this once after installing the `sdd` Codex plugin. Codex plugins can bundle 
 and hooks, but there is no official bundled mechanism for `agents/*.toml`, so this skill
 guides the agent TOML copy step.
 
+Since 0.5.5 the spawn-heavy skills (`$spec-apply` / `$spec-verify`) also run a freshness
+pre-check at point of use — a stale or missing agent definition is detected and synced
+(or loudly escalated) before any spawn. This skill remains the first-install path and the
+place where hook trust + gate verification are walked through.
+
 ## Agent TOML install
 
 Source files live in the installed plugin at:

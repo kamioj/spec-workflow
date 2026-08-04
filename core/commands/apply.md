@@ -64,6 +64,8 @@ Dispatch by the type of code the proposal `## What` involves:
 
 <!-- host:codex -->
 `spawn_agent` parameter contract: pass EITHER `message` (plain-text task only) OR `items` (use this when attaching a skill reference — put the task text inside `items` as a `{type:"text"}` entry alongside the `{type:"skill"}` entry). Passing both is rejected by the tool.
+
+**Agent freshness pre-check (run once per session, before the first spawn)** — Codex cannot bundle agent TOMLs, so installed definitions go stale after every plugin upgrade, **silently**: compare the shipped `${PLUGIN_ROOT}/agents/spec-dev.toml` (plugin root = the installed sdd plugin directory, parent of the skills/ tree) with `~/.codex/agents/spec-dev.toml`. Destination missing → copy it over (create `~/.codex/agents/` if needed) and say so in one line. Files differ → one-line notice ("plugin update detected — installed agent definition is stale") and ask once: sync (overwrite with the shipped file) or keep (a user-customized agent must never be clobbered silently). Byte-identical → proceed silently. Never spawn against a definition you have not checked this session.
 <!-- /host -->
 
 <!-- host:claude -->
