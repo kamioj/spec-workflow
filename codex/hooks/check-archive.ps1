@@ -75,6 +75,25 @@ try {
         Block ($lines -join "`n")
     }
 
+    # $spec-quick change (quick.md present, proposal.md absent -- precedence: proposal.md
+    # wins, so an upgraded quick dir falls through to the normal APPROVED audit below):
+    # light-tier flow record -- status: done + non-empty Evidence = flow honored (same
+    # trust model as the loop branch above).
+    $quickPath = Join-Path $change.FullName 'quick.md'
+    $proposalProbe = Join-Path $change.FullName 'proposal.md'
+    if ((Test-Path $quickPath) -and -not (Test-Path $proposalProbe)) {
+        $quick = Get-Content $quickPath -Raw -Encoding UTF8
+        $qstatus = if ($quick -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
+        $qev = [regex]::Match($quick, '(?ms)^## Evidence\s*?$(.*?)(?=^## |\z)').Groups[1].Value
+        if ($qstatus -eq 'done' -and $qev.Trim().Length -gt 0) { exit 0 }
+        $lines = @("SDD: archive blocked for '$($change.Name)' -- the quick change is not finished:")
+        $lines += '  - quick.md must have status: done AND a non-empty ## Evidence section (finish via $spec-quick''s closing verification)'
+        $lines += 'Or archive deliberately:'
+        $lines += '  "$spec-archive force"     -- archive as-is; the reason gets recorded in retrospect.md'
+        $lines += '  "$spec-archive abandoned" -- drop the direction; archived as *-abandoned with ABANDONED.md'
+        Block ($lines -join "`n")
+    }
+
     $findings = @()
 
     $proposalPath = Join-Path $change.FullName 'proposal.md'

@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.5.5-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,7 +24,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 12 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
+**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 15 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
 
 ### Comparison
 
@@ -32,7 +32,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
-| 命令粒度 | 12 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
+| 命令粒度 | 15 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
 | 中途重入 | 每阶段独立调用 | `/opsx:continue` 推进 | 重头来 |
 | 反作弊精神 | 命令 + agent 双层 + opt-in flag | 无 | 隐含 |
 
@@ -90,13 +90,16 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 ## Features
 
-### 12 个独立 slash 命令
+### 15 个独立 slash 命令
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
 | **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
-|  | `/spec:status` | 报告当前 change 在哪一步 |
+|  | `/spec:quick <task>` | 小改动**轻量档**：原话锚点 + 直接实施 + 一次 diff 范围独立验证 + 一页可归档记录；开工先自估尺寸，大活直接拒绝 |
+|  | `/spec:status` | 报告当前 change 在哪一步（含暂停与轻量变更） |
+|  | `/spec:pause` | **挂起**当前变更——释放唯一活动槽位；台账、索引、提案全部保温 |
+|  | `/spec:resume` | 解冻暂停的变更，附带续接上下文（停在哪、什么还开着） |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
 |  | `/spec:chat` | 讨论模式，不动文档 |
@@ -104,7 +107,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
-|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（三维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
+|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:archive` | 归档当前 change |
 
 ### 5 个 Hook——3 个硬门 + 1 个提醒 + 1 个循环驱动器
@@ -192,7 +195,7 @@ graph LR
 ├── core/                           # 两端全部 markdown 的单一事实源
 ├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
 ├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
-├── commands/                       # 12 个 slash 命令——由 core/ 生成，勿手改
+├── commands/                       # 15 个 slash 命令——由 core/ 生成，勿手改
 ├── hooks/                          # 硬约束（POSIX sh,全平台）+ 夹具套件
 │   ├── hooks.json
 │   ├── check-tbd.sh
@@ -310,6 +313,11 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.5.6** — **流程弹性**：补上缺失的中间档与手刹：
+  - `/spec:quick`——小改动轻量档：原话摘录锚点 → 直接实施 → 一次 diff 范围独立验证 → 一页可归档记录（`references/quick-spec.md`）；开工先自估尺寸，大活（>150 行 / 3+ 文件 / 新依赖）直接拒绝，验证端对超标 quick diff 亮 finding 兜底；可就地升级为全流程（同目录跑 `/spec:research`——proposal.md 在场即切换语义，quick.md 留作历史）
+  - `/spec:pause` / `/spec:resume`——用 `.paused` 标记挂起当前变更：唯一活动槽位释放，台账/索引/提案全部保温；resume 恢复续接上下文；运行中的 `/spec:loop` 变更拒绝挂起（受驱动器约束）
+  - 三个提示闸门 + Stop 提醒的活动变更计数排除暂停目录与纯 quick 目录（次序铁律：proposal.md 在场即按全流程对待）；check-archive 按 quick 自身记录审计（`status: done` + 非空 Evidence，沿用 loop 分支信任模型）
+  - `/spec:status` 报告暂停变更（"paused: 日期+原因"）与 quick 阶段；fixture 场景名同步守卫改为双向（任一侧加用例缺镜像即红）
 - **0.5.5** — **Codex 侧代理新鲜度自检**：`$spec-apply` / `$spec-verify` 在每会话首次派发前比对插件自带的代理 TOML 与 `~/.codex/agents/`——缺失自动拷贝；过期（插件升级后未重跑 `$spec-setup`）给一行提示并让你选同步/保留；用户自定义过的代理绝不静默覆盖。堵住"插件升级后旧代理静默继续跑、全程无报错"的暗坑
 - **0.5.4** — **需求保真（反镀金）**：原则 + 机械层。堵住的结构性盲区：此前所有检查都以 proposal 为锚，没有环节对照"到底要了什么"审计 proposal 与实现本身：
   - 需求保真成为共享原则，三层落地：proposal 的 What 逐项溯源需求源（无源=附加项，要么升格 escalated 过闸门要么砍掉）；dev 代理把 What 之外的任何能力视为漂移（停下报告，绝不因"显得专业"就顺手做）；verifier 的一致性检查改为**同时猎捕加法**——没被要求的权限校验/表/开关/接口即使运行完美也是 finding

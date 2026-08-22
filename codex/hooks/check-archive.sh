@@ -72,6 +72,23 @@ Or archive deliberately:
   \"\$spec-archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"
 fi
 
+# $spec-quick change (quick.md present, proposal.md absent -- precedence: proposal.md wins,
+# so an upgraded quick dir falls through to the normal APPROVED audit below): light-tier
+# flow record -- status: done + non-empty Evidence = flow honored (same trust model as the
+# loop branch above).
+if [ -f "$change/quick.md" ] && [ ! -f "$change/proposal.md" ]; then
+    qstatus=$(sed -n 's/^status:[[:space:]]*//p' "$change/quick.md" | head -1 | sed 's/#.*//' | tr -d '[:space:]')
+    qev=$(awk '/^## Evidence[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$change/quick.md" | grep -c '[^[:space:]]') || qev=0
+    if [ "$qstatus" = "done" ] && [ "$qev" -ge 1 ]; then
+        exit 0
+    fi
+    block "SDD: archive blocked for '$name' -- the quick change is not finished:
+  - quick.md must have status: done AND a non-empty ## Evidence section (finish via \$spec-quick's closing verification)
+Or archive deliberately:
+  \"\$spec-archive force\"     -- archive as-is; the reason gets recorded in retrospect.md
+  \"\$spec-archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"
+fi
+
 findings=''
 
 proposal="$change/proposal.md"

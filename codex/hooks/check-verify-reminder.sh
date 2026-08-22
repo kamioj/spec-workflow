@@ -32,6 +32,11 @@ for d in "$CHANGES_DIR"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [ "$name" = "archive" ] && continue
+    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
+    # an upgraded quick dir counts as a normal full change). Without this filter an
+    # unarchived quick/paused dir inflates the count and silences the single-active window.
+    [ -f "$d/.paused" ] && continue
+    [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done
 
@@ -57,5 +62,5 @@ fi
 
 block "SDD: change '$name' has an approved proposal but no implementation-round verification (verify.md absent, or holds only the round-0 critique).
 If implementation is unfinished (unchecked tasks.md items / What items not landed): CONTINUE implementing -- do not end the turn.
-If implementation just finished: run the closing three-dimension verification now and write the ledger round (see \$spec-verify -- findings with V-N IDs + Evidence).
+If implementation just finished: run the closing verification now (four dimensions + charter audit) and write the ledger round (see \$spec-verify -- findings with V-N IDs + Evidence).
 If you are deliberately pausing (stuck self-check / awaiting a user decision): say so explicitly to the user, then stop."

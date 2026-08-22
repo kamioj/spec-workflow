@@ -366,6 +366,77 @@ printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
 run_case archive-loop-running-blocks check-archive block "$(json "$P" '$spec-archive')"
 run_case archive-loop-force-overrides check-archive allow "$(json "$P" '$spec-archive force')"
 
+# ---- 0.5.6 flow-elasticity: .paused / quick.md skip filters + archive quick branch
+#      (names mirrored on the Claude side; the reverse sync guard there enforces it) ----
+
+P=$(mkproj flex-paused-active); mkdir -p "$P/spec/changes/parked" "$P/spec/changes/live"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case gate-paused-plus-active-allows check-gate allow "$(json "$P" '$spec-apply')"
+
+P=$(mkproj flex-paused-only); mkdir -p "$P/spec/changes/parked"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+run_case gate-only-paused-blocks   check-gate block "$(json "$P" '$spec-apply')"
+
+P=$(mkproj flex-quick-active); mkdir -p "$P/spec/changes/hotfix" "$P/spec/changes/live"
+printf '# Quick: hotfix\n\nstatus: in-flight\n\n## Ask\n> q\n' > "$P/spec/changes/hotfix/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case gate-quick-plus-active-allows check-gate allow "$(json "$P" '$spec-apply')"
+
+P=$(mkproj flex-upgraded); mkdir -p "$P/spec/changes/grown"
+printf '# Quick: grown\n\nstatus: done\n' > "$P/spec/changes/grown/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
+run_case gate-upgraded-quick-counts check-gate allow "$(json "$P" '$spec-apply')"
+
+P=$(mkproj flex-tbd); mkdir -p "$P/spec/changes/parked" "$P/spec/changes/live"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+printf '# R\n\n## Open [TBD]\n- [TBD-9] x\n' > "$P/spec/changes/parked/research.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/live/research.md"
+run_case tbd-paused-plus-active-allows check-tbd allow "$(json "$P" '$spec-propose')"
+
+P=$(mkproj flex-rem-paused); mkdir -p "$P/spec/changes/parked"
+printf '%s\n<!-- APPROVED: 2026-08-22 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+run_case reminder-paused-skipped-allows check-verify-reminder allow "$(json_stop "$P" false)"
+
+P=$(mkproj flex-rem-quick); mkdir -p "$P/spec/changes/hotfix" "$P/spec/changes/live"
+printf '# Quick: hotfix\n\nstatus: in-flight\n' > "$P/spec/changes/hotfix/quick.md"
+printf '%s\n<!-- APPROVED: 2026-08-22 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case reminder-quick-coexist-nudges check-verify-reminder block "$(json_stop "$P" false)"
+
+QUICK_DONE='# Quick: h
+
+status: done
+date: 2026-08-22
+
+## Ask
+> fix the label
+
+## Done
+- x
+
+## Concerns
+none
+
+## Evidence
+verifier: grep -> 0 findings
+'
+P=$(mkproj flex-arch-qdone); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" > "$P/spec/changes/h/quick.md"
+run_case archive-quick-done-allows check-archive allow "$(json "$P" '$spec-archive')"
+
+P=$(mkproj flex-arch-qflight); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" | sed 's/^status: done$/status: in-flight/' > "$P/spec/changes/h/quick.md"
+run_case archive-quick-inflight-blocks check-archive block "$(json "$P" '$spec-archive')"
+run_case archive-quick-force-overrides check-archive allow "$(json "$P" '$spec-archive force')"
+
+P=$(mkproj flex-arch-upg); mkdir -p "$P/spec/changes/grown"
+printf '%s' "$QUICK_DONE" > "$P/spec/changes/grown/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
+run_case archive-upgraded-quick-audits-approved check-archive block "$(json "$P" '$spec-archive')"
+
 # DEC-2: the documented resume re-bind command performs surgery on session_id ONLY
 assert_resume_rebind() {
     rs="$TMP_ROOT/rebind"; mkdir -p "$rs"

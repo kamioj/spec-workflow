@@ -388,6 +388,85 @@ assert_resume_rebind() {
 }
 run_assert loop-resume-rebind-cmd assert_resume_rebind
 
+# ---- 0.5.6 flow-elasticity: .paused / quick.md skip filters + archive quick branch ----
+
+# paused frees the slot: paused dir + one active full change -> gates see exactly one
+P=$(mkproj flex-paused-active); mkdir -p "$P/spec/changes/parked" "$P/spec/changes/live"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case gate-paused-plus-active-allows check-gate allow "$P" "$(json '/spec:apply')"
+
+# a paused-only project has NO active change (paused must not count)
+P=$(mkproj flex-paused-only); mkdir -p "$P/spec/changes/parked"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+run_case gate-only-paused-blocks   check-gate block "$P" "$(json '/spec:apply')"
+
+# quick coexists: quick-only dir + active full change -> apply on the full change allowed
+P=$(mkproj flex-quick-active); mkdir -p "$P/spec/changes/hotfix" "$P/spec/changes/live"
+printf '# Quick: hotfix\n\nstatus: in-flight\n\n## Ask\n> q\n' > "$P/spec/changes/hotfix/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case gate-quick-plus-active-allows check-gate allow "$P" "$(json '/spec:apply')"
+
+# precedence: an upgraded quick dir (quick.md + proposal.md) is a NORMAL full change
+P=$(mkproj flex-upgraded); mkdir -p "$P/spec/changes/grown"
+printf '# Quick: grown\n\nstatus: done\n' > "$P/spec/changes/grown/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
+run_case gate-upgraded-quick-counts check-gate allow "$P" "$(json '/spec:apply')"
+
+# tbd gate: same filter -- a paused dir with open TBDs must not block the live change
+P=$(mkproj flex-tbd); mkdir -p "$P/spec/changes/parked" "$P/spec/changes/live"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+printf '# R\n\n## Open [TBD]\n- [TBD-9] x\n' > "$P/spec/changes/parked/research.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/live/research.md"
+run_case tbd-paused-plus-active-allows check-tbd allow "$P" "$(json '/spec:propose')"
+
+# reminder skips a paused change entirely (would otherwise nag forever)
+P=$(mkproj flex-rem-paused); mkdir -p "$P/spec/changes/parked"
+printf '%s\n<!-- APPROVED: 2026-08-22 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/parked/proposal.md"
+printf 'paused: 2026-08-22 | reason: test\n' > "$P/spec/changes/parked/.paused"
+run_case reminder-paused-skipped-allows check-verify-reminder allow "$P" "$(json_stop false)"
+
+# reminder window survives a coexisting quick dir (count filter -- the N-3 refutation pin)
+P=$(mkproj flex-rem-quick); mkdir -p "$P/spec/changes/hotfix" "$P/spec/changes/live"
+printf '# Quick: hotfix\n\nstatus: in-flight\n' > "$P/spec/changes/hotfix/quick.md"
+printf '%s\n<!-- APPROVED: 2026-08-22 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case reminder-quick-coexist-nudges check-verify-reminder block "$P" "$(json_stop false)"
+
+# archive quick branch: done + Evidence -> allow; in-flight -> block; force overrides
+QUICK_DONE='# Quick: h
+
+status: done
+date: 2026-08-22
+
+## Ask
+> fix the label
+
+## Done
+- x
+
+## Concerns
+none
+
+## Evidence
+verifier: grep -> 0 findings
+'
+P=$(mkproj flex-arch-qdone); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" > "$P/spec/changes/h/quick.md"
+run_case archive-quick-done-allows check-archive allow "$P" "$(json '/spec:archive')"
+
+P=$(mkproj flex-arch-qflight); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" | sed 's/^status: done$/status: in-flight/' > "$P/spec/changes/h/quick.md"
+run_case archive-quick-inflight-blocks check-archive block "$P" "$(json '/spec:archive')"
+run_case archive-quick-force-overrides check-archive allow "$P" "$(json '/spec:archive force')"
+
+# precedence at archive: an upgraded dir is audited by APPROVED, not by the quick branch
+P=$(mkproj flex-arch-upg); mkdir -p "$P/spec/changes/grown"
+printf '%s' "$QUICK_DONE" > "$P/spec/changes/grown/quick.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
+run_case archive-upgraded-quick-audits-approved check-archive block "$P" "$(json '/spec:archive')"
+
 # ---- Claude-specific extras ----
 
 # V-2: non-ASCII project path — gate must still bite (env route is encoding-immune)
@@ -428,6 +507,22 @@ if [ -f "$CODEX_RUNNER" ]; then
     done
 else
     echo "WARN: codex runner not found -- scenario-name sync skipped (repo checkout only)"
+fi
+
+# reverse direction (0.5.6, ledger V-4): every Claude-side named case must have a codex
+# mirror too -- except the declared Claude-only set (host-specific mechanics with no codex
+# equivalent). A new Claude-only case belongs in this list DELIBERATELY, never by omission.
+if [ -f "$CODEX_RUNNER" ]; then
+    CLAUDE_ONLY="unicode-path-blocks loop-git-status-fails-reinjects loop-git-status-fails-fp-na"
+    for n in $(sed -n -e 's/^run_\(driver_\)\{0,1\}case[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\2/p' \
+                      -e 's/^run_assert[[:space:]]\{1,\}\([a-z0-9-]\{1,\}\).*/\1/p' "$0"); do
+        case " $CLAUDE_ONLY " in *" $n "*) continue ;; esac
+        if grep -Eq "run_((driver_)?case|assert) $n " "$CODEX_RUNNER"; then
+            PASS=$((PASS+1)); echo "PASS  scenario-sync-rev:$n"
+        else
+            FAIL=$((FAIL+1)); echo "FAIL  scenario-sync-rev:$n  Claude case has no codex mirror"
+        fi
+    done
 fi
 
 echo "----"

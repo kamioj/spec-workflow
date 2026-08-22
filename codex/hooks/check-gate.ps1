@@ -39,8 +39,14 @@ try {
         Block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose'
     }
 
+    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
+    # an upgraded quick dir counts as a normal full change).
     $changes = Get-ChildItem $changesDir -Directory -ErrorAction SilentlyContinue |
-               Where-Object { $_.Name -ne 'archive' }
+               Where-Object {
+                   $_.Name -ne 'archive' -and
+                   -not (Test-Path (Join-Path $_.FullName '.paused')) -and
+                   -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
+               }
 
     if (-not $changes -or $changes.Count -eq 0) {
         Block 'SDD: no active change. Start with $spec-research -> $spec-propose'

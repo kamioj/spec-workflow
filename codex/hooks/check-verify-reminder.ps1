@@ -37,8 +37,15 @@ try {
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) { exit 0 }
 
+    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
+    # an upgraded quick dir counts as a normal full change). Without this filter an
+    # unarchived quick/paused dir inflates the count and silences the single-active window.
     $changes = Get-ChildItem $changesDir -Directory -ErrorAction SilentlyContinue |
-               Where-Object { $_.Name -ne 'archive' }
+               Where-Object {
+                   $_.Name -ne 'archive' -and
+                   -not (Test-Path (Join-Path $_.FullName '.paused')) -and
+                   -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
+               }
 
     # Only nudge in the unambiguous single-active-change window
     if (-not $changes -or $changes.Count -ne 1) { exit 0 }
@@ -65,7 +72,7 @@ try {
     $lines = @(
         "SDD: change '$($change.Name)' has an approved proposal but no implementation-round verification (verify.md absent, or holds only the round-0 critique).",
         'If implementation is unfinished (unchecked tasks.md items / What items not landed): CONTINUE implementing -- do not end the turn.',
-        'If implementation just finished: run the closing three-dimension verification now and write the ledger round (see $spec-verify -- findings with V-N IDs + Evidence).',
+        'If implementation just finished: run the closing verification now (four dimensions + charter audit) and write the ledger round (see $spec-verify -- findings with V-N IDs + Evidence).',
         'If you are deliberately pausing (stuck self-check / awaiting a user decision): say so explicitly to the user, then stop.'
     )
     Block ($lines -join "`n")

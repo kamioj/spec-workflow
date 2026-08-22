@@ -34,6 +34,10 @@ for d in "$CHANGES_DIR"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [ "$name" = "archive" ] && continue
+    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
+    # an upgraded quick dir counts as a normal full change).
+    [ -f "$d/.paused" ] && continue
+    [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done
 
