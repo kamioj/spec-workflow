@@ -14,7 +14,8 @@ counterpart of the full flow's /spec:verify + /spec:archive, collapsed into one 
 - `spec/changes/fixes/fix.md` must exist with at least one F-N entry (the check-archive
   hook blocks the invocation otherwise — there is nothing to audit).
 - fix.md already `status: shipped` but the dir still present (a previous ship's archive
-  move failed) → skip the audit, redo the archive move only.
+  move failed) → report it and point to `/spec:archive`, which passes a shipped+Audit
+  batch through its fix branch; ship itself audits open batches only.
 
 ## Flow
 

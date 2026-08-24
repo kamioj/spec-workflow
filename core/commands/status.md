@@ -75,7 +75,7 @@ Multiple un-archived ACTIVE changes → list all, and add a note: this workflow 
 | `spec/changes/` is empty (or holds only paused dirs) | No active change | `/spec:research "<direction>"` to start a new survey (paused changes present → or `/spec:resume` to pick one back up) |
 | dir has `.paused` | Paused | Report only ("paused <date>: <reason>"); no next step is recommended for a paused change — `/spec:resume` when the user wants it back |
 | `fix.md` present, `proposal.md` absent, `status: open` | Fix batch open (N entries pending) | Keep streaming with `/spec:fix`, or close the batch with `/spec:ship` (ONE audit over the accumulated diff, then archive) — a fixes dir doesn't block anything |
-| `fix.md` present, `proposal.md` absent, `status: shipped` | Fix batch shipped, archive pending | The archive move didn't complete — re-run `/spec:ship` (it skips the audit and redoes the move) |
+| `fix.md` present, `proposal.md` absent, `status: shipped` | Fix batch shipped, archive pending | The archive move didn't complete — `/spec:archive` finishes it (the archive gate's fix branch passes a shipped+Audit batch through) |
 | `quick.md` present, `proposal.md` absent | Legacy quick change (pre-0.6.0) | `status: done` → archive when ready (`/spec:archive`); otherwise finish per its quick.md record — new light-tier work uses `/spec:fix` |
 | `research.md` exists + `## Open [TBD]` is non-empty | Research has open TBDs | `/spec:ask` to work through the pending decisions |
 | `research.md` exists + Open [TBD] empty + no `proposal.md` | Interrogation done, awaiting propose | For complex tasks, `/spec:design` first (architecture / >3 interfaces / data-flow diagram); otherwise `/spec:propose` |
