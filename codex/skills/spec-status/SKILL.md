@@ -62,7 +62,7 @@ Paused changes:
 
 A quick change reports its own two-line form: `Quick change: <name> — <in-flight/done> (light tier; archive when done, or upgrade via $spec-research in the same dir)`.
 
-Multiple un-archived ACTIVE changes → list all, and add a note: this workflow is designed for **a single active change**; there is no switch command. When multiple exist, `$spec-archive` the completed one(s) or `$spec-pause` the not-current one(s) first.
+Multiple un-archived ACTIVE changes → list all, and add a note: this workflow is designed for **a single active change**; there is no switch command. When multiple exist, `$spec-archive` the completed one(s) or `$spec-stash` the not-current one(s) first.
 
 ## State machine mapping (authoritative definition of "Current stage" + "Recommended next step" output)
 

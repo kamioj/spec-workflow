@@ -12,7 +12,7 @@ The middle tier between full ceremony and bare work. Three invariants survive at
 
 ## Size self-check (before ANY work — hard stop)
 
-Estimate the change first. Any of: **>150 lines / 3+ files / new dependency / architecture choice / preference forks that need user decisions** → REFUSE: report "this is full-flow sized" and point to `$spec-research` (if another change holds the active slot, suggest `$spec-pause` first). Never grind big work through the light tier — the closing verifier flags an oversized quick diff as a "should have been a full change" finding, so it gets flagged either way; refusing upfront is cheaper.
+Estimate the change first. Any of: **>150 lines / 3+ files / new dependency / architecture choice / preference forks that need user decisions** → REFUSE: report "this is full-flow sized" and point to `$spec-research` (if another change holds the active slot, suggest `$spec-stash` first). Never grind big work through the light tier — the closing verifier flags an oversized quick diff as a "should have been a full change" finding, so it gets flagged either way; refusing upfront is cheaper.
 
 ## Flow
 

@@ -28,7 +28,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `/spec:loop <goal>` | goal-driven autonomous round loop (goal known, path unknown): two touchpoints — goal confirmation + final acceptance — with Stop-hook-driven rounds and a cross-round ledger in between |
 |  | `/spec:quick <task>` | light tier for small changes: quote anchor + direct implement + ONE diff-scoped verification + archivable record; refuses full-flow-sized work upfront |
 |  | `/spec:status` | report the current stage |
-|  | `/spec:pause` | suspend the active change (`.paused` marker) — frees the single-active slot; every artifact stays warm |
+|  | `/spec:stash` | suspend the active change (`.paused` marker) — frees the single-active slot; every artifact stays warm |
 |  | `/spec:resume` | bring a paused change back, with re-entry context (where it left off) |
 | Gather | `/spec:research <direction>` | survey industry practice + key constraints |
 |  | `/spec:ask` | interrogate and resolve `[TBD]` items |
@@ -71,7 +71,7 @@ spec/
 │       ├── loop.md       at-loop     round ledger of a /spec:loop run (goal + acceptance checklist + rounds + lessons; model-written, driver-read — see references/loop-spec.md)
 │       ├── .loop-state   at-loop     the loop driver's own state (driver-written ONLY — never edit)
 │       ├── quick.md      at-quick    light-tier flow record (quote anchor + Concerns + Evidence — see references/quick-spec.md); quick.md WITHOUT proposal.md = the dir is a quick change, excluded from the active count; WITH proposal.md = upgraded, normal full change
-│       ├── .paused       at-pause    suspension marker (one line: date + reason) — gates and the reminder skip the dir; /spec:resume deletes it
+│       ├── .paused       at-stash    suspension marker (one line: date + reason) — gates and the reminder skip the dir; /spec:resume deletes it
 │       └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + evidence + leftovers)
 │
 └── archive/                          archive directory
@@ -278,10 +278,10 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 <!-- /host -->
 
 <!-- host:claude -->
-check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:pause` the rest before continuing). **Dirs carrying `.paused`, or `quick.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded quick dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits quick changes by their own record (quick.md `status: done` + non-empty Evidence).
+check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:stash` the rest before continuing). **Dirs carrying `.paused`, or `quick.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded quick dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits quick changes by their own record (quick.md `status: done` + non-empty Evidence).
 <!-- /host -->
 <!-- host:codex -->
-check-tbd / check-gate also block when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:pause` the rest before continuing). **Dirs carrying `.paused`, or `quick.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded quick dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits quick changes by their own record (quick.md `status: done` + non-empty Evidence).
+check-tbd / check-gate also block when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:stash` the rest before continuing). **Dirs carrying `.paused`, or `quick.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded quick dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits quick changes by their own record (quick.md `status: done` + non-empty Evidence).
 <!-- /host -->
 
 **Soft vs hard constraints:**

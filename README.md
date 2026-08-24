@@ -100,7 +100,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:loop <goal>` | goal-driven **autonomous round loop**: approve the goal + acceptance checklist + round budget once, then it researches / implements / verifies / retrospects round after round — hook-driven, ledger-remembered — until acceptance or a fuse |
 |  | `/spec:quick <task>` | **light tier** for small changes: quote anchor + direct implement + one diff-scoped independent verification + an archivable one-page record; refuses full-flow-sized work upfront |
 |  | `/spec:status` | report where the current change stands (including paused and quick changes) |
-|  | `/spec:pause` | **suspend** the active change — frees the single-active slot; ledger, index, and proposal stay warm |
+|  | `/spec:stash` | **suspend** the active change — frees the single-active slot; ledger, index, and proposal stay warm |
 |  | `/spec:resume` | bring a paused change back with re-entry context (where it left off, what's open) |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
 |  | `/spec:ask` | work through the `[TBD]` questions with you |
@@ -317,7 +317,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 - **0.5.6** — **flow elasticity**: the missing middle tier + the missing parking brake:
   - `/spec:quick` — light tier for small changes: verbatim quote anchor → direct implement → ONE diff-scoped independent verifier pass → archivable one-page record (`references/quick-spec.md`); refuses full-flow-sized work upfront (>150 lines / 3+ files / new dependency), and the verifier flags oversized quick diffs as findings; grows into a full change in place (run `/spec:research` in the same dir — proposal.md presence flips semantics, quick.md stays as history)
-  - `/spec:pause` / `/spec:resume` — suspend the active change with a `.paused` marker: the single-active-change slot frees up while ledger/index/proposal stay warm; resume restores re-entry context; running `/spec:loop` changes refuse to pause (driver-bound)
+  - `/spec:stash` / `/spec:resume` — suspend the active change with a `.paused` marker: the single-active-change slot frees up while ledger/index/proposal stay warm; resume restores re-entry context; running `/spec:loop` changes refuse to pause (driver-bound)
   - all three prompt gates + the Stop reminder now exclude paused dirs and quick-only dirs from the active-change count (precedence rule: proposal.md presence wins); check-archive audits quick changes by their own record (`status: done` + non-empty Evidence, the loop-branch trust model)
   - `/spec:status` reports paused changes ("paused: date + reason") and quick stages; the fixture scenario-name sync guard is now bidirectional (a case added on either host without its mirror fails the run)
 - **0.5.5** — **agent freshness pre-check on Codex hosts**: `$spec-apply` / `$spec-verify` now compare the shipped agent TOMLs with `~/.codex/agents/` before the first spawn of a session — a missing definition is copied over automatically, a stale one (plugin upgraded, `$spec-setup` not re-run) raises a one-line notice with a sync/keep choice, and a customized one is never clobbered silently. Closes the silent-stale-agent trap where a plugin upgrade left the OLD dev/verifier definitions running with no error

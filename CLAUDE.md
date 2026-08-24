@@ -100,7 +100,7 @@ printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CL
 
 ## Big picture: commands + agents + artifacts
 
-**15 independent commands** (`core/commands/*.md` → both hosts), each re-entrant and re-runnable — the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (rigid 9 steps). Typical flow: `research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`; `workflow` runs end-to-end, `status` reports position, `loop` runs goal-driven autonomous rounds (two touchpoints, Stop-driver enforced), `quick` is the light tier (quote anchor + ONE diff-scoped verification, no ceremony; refuses full-flow-sized work), `pause`/`resume` suspend and revive a change via a `.paused` marker. **Active-change counting rule (all three prompt gates + the Stop reminder)**: dirs carrying `.paused`, or `quick.md` without proposal.md, don't count — precedence is "proposal.md presence wins" (an upgraded quick dir is a normal full change); check-archive audits quick changes by quick.md `status: done` + non-empty Evidence (loop-branch trust model).
+**15 independent commands** (`core/commands/*.md` → both hosts), each re-entrant and re-runnable — the positioning difference from OpenSpec (4 commands all-in-one) / superpowers (rigid 9 steps). Typical flow: `research → ask → (design) → propose → [HARD GATE] → apply → verify → archive`; `workflow` runs end-to-end, `status` reports position, `loop` runs goal-driven autonomous rounds (two touchpoints, Stop-driver enforced), `quick` is the light tier (quote anchor + ONE diff-scoped verification, no ceremony; refuses full-flow-sized work), `stash`/`resume` suspend and revive a change via a `.paused` marker. **Active-change counting rule (all three prompt gates + the Stop reminder)**: dirs carrying `.paused`, or `quick.md` without proposal.md, don't count — precedence is "proposal.md presence wins" (an upgraded quick dir is a normal full change); check-archive audits quick changes by quick.md `status: done` + non-empty Evidence (loop-branch trust model).
 
 **The HARD GATE mechanism**:
 - propose/revise end by emitting the fixed `<HARD-GATE>` block, then stop. The gate's Changes block is the **explanation layer** (Scenario / Avoided by / Cost per decision, plus "Decided without asking" and "Not in this change") — decision-maker register, never proposal lines pasted verbatim.
@@ -122,7 +122,7 @@ printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CL
 │   ├── research.md  required  Practices + Constraints + Open[TBD] + Decided
 │   ├── index.md     required  R-N verbatim requirement quotes + A-N assets + E-N exemplars (research builds, gate freezes, append-only; legacy changes lack it — consumers fall back)
 │   ├── quick.md     at-quick  light-tier record (quick.md without proposal.md = quick change, not counted active)
-│   ├── .paused      at-pause  suspension marker (dir skipped by gates/reminder; /spec:resume deletes)
+│   ├── .paused      at-stash  suspension marker (dir skipped by gates/reminder; /spec:resume deletes)
 │   ├── research/    optional  discarded-draft pile (snapshots of abandoned directions, revivable)
 │   ├── design.md    optional  architecture / interface contract / key decisions
 │   ├── proposal.md  required  four sections + APPROVED marker; What items carry verify: clauses + Not in this change

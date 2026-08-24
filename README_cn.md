@@ -98,7 +98,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
 |  | `/spec:quick <task>` | 小改动**轻量档**：原话锚点 + 直接实施 + 一次 diff 范围独立验证 + 一页可归档记录；开工先自估尺寸，大活直接拒绝 |
 |  | `/spec:status` | 报告当前 change 在哪一步（含暂停与轻量变更） |
-|  | `/spec:pause` | **挂起**当前变更——释放唯一活动槽位；台账、索引、提案全部保温 |
+|  | `/spec:stash` | **挂起**当前变更——释放唯一活动槽位；台账、索引、提案全部保温 |
 |  | `/spec:resume` | 解冻暂停的变更，附带续接上下文（停在哪、什么还开着） |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
@@ -315,7 +315,7 @@ claude --plugin-dir .
 
 - **0.5.6** — **流程弹性**：补上缺失的中间档与手刹：
   - `/spec:quick`——小改动轻量档：原话摘录锚点 → 直接实施 → 一次 diff 范围独立验证 → 一页可归档记录（`references/quick-spec.md`）；开工先自估尺寸，大活（>150 行 / 3+ 文件 / 新依赖）直接拒绝，验证端对超标 quick diff 亮 finding 兜底；可就地升级为全流程（同目录跑 `/spec:research`——proposal.md 在场即切换语义，quick.md 留作历史）
-  - `/spec:pause` / `/spec:resume`——用 `.paused` 标记挂起当前变更：唯一活动槽位释放，台账/索引/提案全部保温；resume 恢复续接上下文；运行中的 `/spec:loop` 变更拒绝挂起（受驱动器约束）
+  - `/spec:stash` / `/spec:resume`——用 `.paused` 标记挂起当前变更：唯一活动槽位释放，台账/索引/提案全部保温；resume 恢复续接上下文；运行中的 `/spec:loop` 变更拒绝挂起（受驱动器约束）
   - 三个提示闸门 + Stop 提醒的活动变更计数排除暂停目录与纯 quick 目录（次序铁律：proposal.md 在场即按全流程对待）；check-archive 按 quick 自身记录审计（`status: done` + 非空 Evidence，沿用 loop 分支信任模型）
   - `/spec:status` 报告暂停变更（"paused: 日期+原因"）与 quick 阶段；fixture 场景名同步守卫改为双向（任一侧加用例缺镜像即红）
 - **0.5.5** — **Codex 侧代理新鲜度自检**：`$spec-apply` / `$spec-verify` 在每会话首次派发前比对插件自带的代理 TOML 与 `~/.codex/agents/`——缺失自动拷贝；过期（插件升级后未重跑 `$spec-setup`）给一行提示并让你选同步/保留；用户自定义过的代理绝不静默覆盖。堵住"插件升级后旧代理静默继续跑、全程无报错"的暗坑
