@@ -60,8 +60,9 @@ if [ ! -f "$research" ]; then
     block "SDD: $name is missing research.md. Run /spec:research <direction> first"
 fi
 
-# Strip the ## Decided section (resolved citations, not open items), then scan for [TBD-N].
-if awk '/^## *Decided/{skip=1; next} /^## /{skip=0} !skip' "$research" | grep -Eq '\[TBD-[0-9]+\]'; then
+# Scan ONLY the ## Open [TBD] section: [TBD-N] tokens elsewhere (Practices/Constraints/Decided)
+# are provenance citations of a decision point, not open items.
+if awk '/^## *Open/{grab=1; next} /^## /{grab=0} grab' "$research" | grep -Eq '\[TBD-[0-9]+\]'; then
     block "SDD: research.md ($name) has unresolved [TBD] decision points. Run /spec:ask to resolve them first"
 fi
 

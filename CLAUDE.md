@@ -68,7 +68,7 @@ Five hooks, same semantics on both hosts: three UserPromptSubmit gates match the
 
 | Hook | Matches | Blocks / drives when |
 |---|---|---|
-| check-tbd | propose | research.md still has `[TBD-N]` outside `## Decided` |
+| check-tbd | propose | research.md still has `[TBD-N]` inside `## Open [TBD]` (tokens elsewhere are provenance citations, never counted) |
 | check-gate | apply | proposal.md absent / missing any of the four sections / ≠1 active change. **Deliberately does NOT require the APPROVED marker** — apply appends it after this hook fires (requiring it here = happy-path deadlock, the pre-0.2.3 bug); check-archive enforces it at archive time |
 | check-archive | archive | flow was bypassed (no APPROVED / unchecked tasks / no proposal); **loop changes are audited differently** (loop.md with status: done + fully checked Acceptance = flow honored — no proposal.md exists by design); override = prompt contains `force` or `abandon(ed)` — **matched against the prompt value only**, never the whole stdin JSON (a cwd containing "force" must not bypass; that was finding V-1) |
 | check-verify-reminder | Stop event | single active change has an APPROVED proposal but no verify.md ledger; `stop_hook_active` loop-guards (one nudge per stop) |

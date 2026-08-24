@@ -117,6 +117,11 @@ printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [T
 run_case tbd-decided-only-allows   check-tbd allow "$(json "$P" '$spec-propose')"
 run_case tbd-mention-not-invoke    check-tbd allow "$(json "$P" 'explain $spec-propose please')"
 
+# regression: [TBD-N] provenance citations OUTSIDE ## Open (Practices/Constraints) must not block
+P=$(mkproj tbd-prov); mkdir -p "$P/spec/changes/c"
+printf '# R\n\n## Practices\n- pattern X (drove [TBD-1])\n\n## Constraints\n- limit Y, see [TBD-2]\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/c/research.md"
+run_case tbd-provenance-ref-allows check-tbd allow "$(json "$P" '$spec-propose')"
+
 # ---- check-archive ----
 P=$(mkproj arch-unapproved); mkdir -p "$P/spec/changes/c"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"

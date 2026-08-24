@@ -57,10 +57,10 @@ try {
 
         $content = Get-Content $researchPath -Raw -Encoding UTF8
 
-        # Strip the ## Decided section (its "source [TBD-N]" references are resolved citations,
-        # not open items), then scan the rest for unresolved [TBD-N]
-        $scanText = $content -replace '(?ms)^##\s*Decided[\s\S]*?(?=^##\s+|\z)', ''
-        if ($scanText -match '\[TBD-\d+\]') {
+        # Scan ONLY the ## Open [TBD] section: [TBD-N] tokens elsewhere (Practices/Constraints/
+        # Decided) are provenance citations of a decision point, not open items.
+        $openSection = [regex]::Match($content, '(?ms)^##\s*Open[\s\S]*?(?=^##\s|\z)').Value
+        if ($openSection -match '\[TBD-\d+\]') {
             Block "SDD: research.md ($($change.Name)) has unresolved [TBD] decision points. Run `$spec-ask to resolve them first"
         }
     }
