@@ -178,18 +178,24 @@ The `check-gate.sh` hook checks the prerequisites before `/spec:apply` runs (pro
 
 One attempt = new hypothesis + code change + verification; re-running the same code / fixing a typo / tweaking logging **does not count**. From the second attempt on, the hypothesis must also state **why the previous attempt failed** — a retry without a root-cause reading of the last failure is a blind retry, and does not count.
 
+**Type the blocker before burning attempts**: if what actually blocks is a **decision** (preference / scope / authorization) rather than missing knowledge, stop right there — neither research nor a retry can answer a preference question.
+
+**The third shot must be evidence-backed.** Two failures mean the working mental model is suspect; the third attempt MUST be grounded in retrieved evidence — framework source, official docs, community reports of the same failure — never a third guess. Research is read-only and cannot break anything, while a third blind patch can (and its damage is often silent). No research channel reachable from the current context → skip the third attempt and go straight to the self-check.
+
 ```
 === Stuck Self-Check ===
 Symptom: <one line>
+Blocker type: knowledge (how does X actually work) | decision (preference / scope / authorization)
 Three hypotheses tried:
   1. <hypothesis> → <result>
-  2. <hypothesis> → <result>
-  3. <hypothesis> → <result>
+  2. <hypothesis, why #1 failed> → <result>
+  3. <evidence-backed hypothesis + source> → <result>   (or "skipped: no research channel")
+Research findings: <what source / docs / community say about this failure, or "none retrievable">
 Inferred root cause: <write it if you can infer one, otherwise "unknown">
-Suggested new direction: <write it if you have one, otherwise "awaiting user guidance">
+Default next direction: <ONE direction stated as the decision to run with next round; "awaiting user guidance" only when genuinely none exists>
 ```
 
-Wait for the user's decision; no endless patching.
+Close the report in **statement mode**: the default direction plus one "overridable" line — never a multiple-choice menu (an option that is already a fait accompli, or one that was never authorized, must not be posed as a question). Then wait for the user's decision; no endless patching.
 
 ### Anti-Cheating (in the spirit of the explore skill)
 
