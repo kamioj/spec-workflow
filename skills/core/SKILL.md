@@ -1,6 +1,6 @@
 ---
 name: core
-description: Spec-driven development workflow overview. Load this skill ONLY when the user explicitly asks for the spec flow — says "spec this first / draft a proposal / design first / write a proposal", or invokes a /spec:x command. NEVER self-activate on task size or complexity: size is at most grounds for a one-line suggestion, and silence means proceed without spec. Teaches the sdd plugin's 15 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
+description: Spec-driven development workflow overview. Load this skill ONLY when the user explicitly asks for the spec flow — says "spec this first / draft a proposal / design first / write a proposal", or invokes a /spec:x command. NEVER self-activate on task size or complexity: size is at most grounds for a one-line suggestion, and silence means proceed without spec. Teaches the sdd plugin's 16 commands, artifact map, and Shared Principles (HARD GATE / interrogation / Stuck Protection / Anti-Cheating).
 ---
 <!-- GENERATED from core/skill.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -14,7 +14,7 @@ Spec-driven development workflow: research → interrogate → propose → HARD 
 
 Size signals (>150 lines / 3+ files / new dependency / architecture choice) are grounds for **at most a one-line suggestion** ("this is large — want the spec flow?"). No answer = no spec: just do the work. Auto-drifting a task into spec ceremony uninvited is this plugin's single biggest failure mode — worse than skipping spec on a large change, because the user can always invoke spec later, but time burned on unwanted process is gone.
 
-**Never even suggest the full flow for**: trivial (typo / log / styling) · small (<30 lines, single file) · medium (30–150 lines / 2–3 files / no cross-module impact). When the user wants a record for a small change anyway, `/spec:quick` is the tier to name — same doctrine: one-line suggestion at most, user-explicit activation only.
+**Never even suggest the full flow for**: trivial (typo / log / styling) · small (<30 lines, single file) · medium (30–150 lines / 2–3 files / no cross-module impact). When the user wants a record for a small change anyway, `/spec:fix` is the tier to name — same doctrine: one-line suggestion at most, user-explicit activation only.
 
 ## Command index
 
@@ -22,7 +22,8 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |---|---|---|
 | Entry | `/spec:workflow <task>` | run the whole flow end-to-end; back-compatible with the old /sdd |
 |  | `/spec:loop <goal>` | goal-driven autonomous round loop (goal known, path unknown): two touchpoints — goal confirmation + final acceptance — with Stop-hook-driven rounds and a cross-round ledger in between |
-|  | `/spec:quick <task>` | light tier for small changes: quote anchor + direct implement + ONE diff-scoped verification + archivable record; refuses full-flow-sized work upfront |
+|  | `/spec:fix <task>` | streaming light tier for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to the standing `spec/changes/fixes/` batch; size is advisory, never a refusal |
+|  | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch dir; findings stay in place on fail |
 |  | `/spec:status` | report the current stage |
 |  | `/spec:stash` | suspend the active change (`.paused` marker) — frees the single-active slot; every artifact stays warm |
 |  | `/spec:resume` | bring a paused change back, with re-entry context (where it left off) |
@@ -52,7 +53,7 @@ spec/
 │       ├── verify.md     at-propose+ verification ledger (stable V-N finding IDs + round history + Evidence; round 0 by propose's critique panel, rounds 1+ by /spec:verify)
 │       ├── loop.md       at-loop     round ledger of a /spec:loop run (goal + acceptance checklist + rounds + lessons; model-written, driver-read — see references/loop-spec.md)
 │       ├── .loop-state   at-loop     the loop driver's own state (driver-written ONLY — never edit)
-│       ├── quick.md      at-quick    light-tier flow record (quote anchor + Concerns + Evidence — see references/quick-spec.md); quick.md WITHOUT proposal.md = the dir is a quick change, excluded from the active count; WITH proposal.md = upgraded, normal full change
+│       ├── fix.md        at-fix      streaming light-tier batch ledger, lives ONLY in the standing dir changes/fixes/ (F-N entries + ship-time Audit — see references/fix-spec.md); fix.md WITHOUT proposal.md = light-tier dir, excluded from the active count; WITH proposal.md = upgraded, normal full change. Legacy quick.md dirs keep the same exemption + archive audit
 │       ├── .paused       at-stash    suspension marker (one line: date + reason) — gates and the reminder skip the dir; /spec:resume deletes it
 │       └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + evidence + leftovers)
 │
@@ -60,7 +61,7 @@ spec/
     └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
-**The artifact set is fixed at these four + the requirement & asset index + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the /spec:quick record + the .paused marker + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
+**The artifact set is fixed at these four + the requirement & asset index + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the /spec:fix batch ledger + the .paused marker + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
@@ -75,7 +76,7 @@ The main cause of bloated docs on large changes is **phase boundary violations**
 | tasks.md | Collaboration list: owner / deps / acceptance | restating the solution → point back to proposal/design | one line per task |
 | verify.md | Verification ledger — two writers, same table: round 0 (stage: propose) by /spec:propose's critique panel, rounds 1+ by /spec:verify; findings with stable V-N IDs + severity + status (open/fixed/wontfix) + per-round Evidence; acceptance-stage user evaluations enter as user-sourced findings | restating the fix → it lives in code ｜ restating the solution → proposal/design | one line per finding |
 | loop.md | /spec:loop round ledger: goal + Acceptance checklist (checkboxes ONLY here; mid-loop checks self-claimed with working-check evidence, independently audited at final acceptance) / round records (Plan·Act·Verify·Retrospect) / Lessons — **model-written only**; the driver reads mechanical counts and owns `.loop-state` | proposal-grade solution records → the loop's own artifacts stay in loop.md; durable lessons → knowledge.md at archive | one round section per round; Lessons one line each |
-| quick.md | Light-tier flow record: verbatim Ask quote / Done list / Concerns / verifier Evidence (status: done only after the ONE verifier dispatch) | research·proposal-grade content → if it needs those, it needed the full flow (upgrade in place) | one line per Done/Concern entry |
+| fix.md | Streaming light-tier batch ledger: per-entry verbatim Ask quote / root cause / files / self-check evidence; ship-time verifier Audit (status: shipped only after /spec:ship's dispatch) | research·proposal-grade content → if it needs those, it needed the full flow (upgrade in place) | 1–2 lines per entry field |
 | retrospect.md | Archive-stage audit (written by /spec:archive only): divergences found ("docs say A, code does B"), verify Evidence lines, unfinished/deferred items, force/abandon reason | restating the solution → point back to proposal/design | ≤40 lines |
 | knowledge.md (project-level, outside the change dir) | Durable cross-change facts: topology/ownership, verified mechanisms, gotchas — `<fact> \| evidence \| date (change)` | anything change-specific → stays in that change's artifacts ｜ a fact proven wrong is **replaced** (correction noted), never left contradicting | one line per fact |
 
@@ -234,7 +235,7 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 | `hooks/check-verify-reminder.sh` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
 | `hooks/loop-driver.sh` | Stop event, when exactly one `running` loop.md exists | **driver, not gate**: re-injects the next /spec:loop round (stdout `{"decision":"block","reason":...}` — the Stop-event JSON contract, probe-verified, NOT the gates' exit-2 contract) until acceptance is met or a fuse blows (round cap / no-progress / refusal-to-retrospect / corrupt ledger — four distinct notices); deliberately ignores `stop_hook_active`, bounded by ledger state instead |
 
-check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:stash` the rest before continuing). **Dirs carrying `.paused`, or `quick.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded quick dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits quick changes by their own record (quick.md `status: done` + non-empty Evidence).
+check-tbd / check-gate also `exit 2` when **more than one active change** exists under `spec/changes/` (this workflow assumes a single active change — archive or `/spec:stash` the rest before continuing). **Dirs carrying `.paused`, or `quick.md`/`fix.md` without proposal.md, don't count as active** (precedence: proposal.md wins — an upgraded light-tier dir is a normal full change); the same filter keeps check-verify-reminder's single-active window detectable. check-archive deliberately does **not** block on multiple changes (archiving is exactly how you get back down to one) and audits light-tier dirs by their own record (fix.md `status: shipped` + non-empty Audit; legacy quick.md `status: done` + non-empty Evidence). `/spec:ship` invocations are gated on preconditions only (a batch with entries exists) — never on the shipped status ship itself writes.
 
 **Soft vs hard constraints:**
 - Soft constraint (prompt): the model may violate it; the violation rate depends on the model's quality

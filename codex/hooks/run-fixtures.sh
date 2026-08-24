@@ -442,6 +442,96 @@ printf '%s' "$QUICK_DONE" > "$P/spec/changes/grown/quick.md"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
 run_case archive-upgraded-quick-audits-approved check-archive block "$(json "$P" '$spec-archive')"
 
+# ---- fix stream tier (0.6.0) ----
+
+P=$(mkproj fix-active); mkdir -p "$P/spec/changes/fixes" "$P/spec/changes/live"
+printf '# Fixes\n\nstatus: open\n\n## F-1: x\n\n### Ask\n> q\n' > "$P/spec/changes/fixes/fix.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/live/research.md"
+run_case gate-fix-plus-active-allows check-gate allow "$(json "$P" '$spec-apply')"
+run_case tbd-fix-plus-active-allows check-tbd allow "$(json "$P" '$spec-propose')"
+
+P=$(mkproj fix-rem); mkdir -p "$P/spec/changes/fixes" "$P/spec/changes/live"
+printf '# Fixes\n\nstatus: open\n\n## F-1: x\n' > "$P/spec/changes/fixes/fix.md"
+printf '%s\n<!-- APPROVED: 2026-08-24 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case reminder-fix-coexist-nudges check-verify-reminder block "$(json_stop "$P" false)"
+
+# ship preconditions: first-ship deadlock canary -- the gate must NEVER require status: shipped
+P=$(mkproj fix-ship-none)
+run_case ship-no-batch-blocks check-archive block "$(json "$P" '$spec-ship')"
+
+P=$(mkproj fix-ship-empty); mkdir -p "$P/spec/changes/fixes"
+printf '# Fixes\n\nstatus: open\n' > "$P/spec/changes/fixes/fix.md"
+run_case ship-empty-batch-blocks check-archive block "$(json "$P" '$spec-ship')"
+
+FIX_OPEN='# Fixes
+
+status: open
+opened: 2026-08-24
+
+## F-1: fix the label
+date: 2026-08-24
+files: src/a.js
+
+### Ask
+> fix it
+
+### Root cause
+wrong key
+
+### Self-check
+npm test -> exit 0
+
+### Concerns
+none
+'
+P=$(mkproj fix-ship-ok); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/fix.md"
+run_case ship-with-entries-allows check-archive allow "$(json "$P" '$spec-ship')"
+
+P=$(mkproj fix-ship-upg); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/fix.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/fixes/proposal.md"
+run_case ship-upgraded-fixes-blocks check-archive block "$(json "$P" '$spec-ship')"
+
+FIX_SHIPPED='# Fixes
+
+status: shipped
+opened: 2026-08-24
+
+## F-1: fix the label
+date: 2026-08-24
+files: src/a.js
+
+### Ask
+> fix it
+
+### Root cause
+wrong key
+
+### Self-check
+npm test -> exit 0
+
+### Concerns
+none
+
+## Audit
+verifier round: npm test -> exit 0; 0 findings
+'
+P=$(mkproj fix-arch-shipped); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/fix.md"
+run_case archive-fix-shipped-allows check-archive allow "$(json "$P" '$spec-archive')"
+
+P=$(mkproj fix-arch-open); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/fix.md"
+run_case archive-fix-unshipped-blocks check-archive block "$(json "$P" '$spec-archive')"
+run_case archive-fix-force-overrides check-archive allow "$(json "$P" '$spec-archive force')"
+
+P=$(mkproj fix-arch-upg); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/fix.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/fixes/proposal.md"
+run_case archive-upgraded-fix-audits-approved check-archive block "$(json "$P" '$spec-archive')"
+
 # DEC-2: the documented resume re-bind command performs surgery on session_id ONLY
 assert_resume_rebind() {
     rs="$TMP_ROOT/rebind"; mkdir -p "$rs"

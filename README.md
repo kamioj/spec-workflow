@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,7 +24,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 - **Fast lane** — start coding right away and let hooks catch the mistakes (hookify, or a stripped-down superpowers brainstorm).
 - **Heavy lane** — spec everything up front, but down a rigid track (OpenSpec's 4 commands, superpowers brainstorm's 9 steps).
 
-**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 15 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification; a Stop-event driver turns `/spec:loop`'s autonomous rounds into a hard mechanism.
+**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 16 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification; a Stop-event driver turns `/spec:loop`'s autonomous rounds into a hard mechanism.
 
 ### Comparison
 
@@ -32,7 +32,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 |---|---|---|---|
 | Stage gating | explicit HARD GATE + hook enforcement | loose, advisory warnings | rigid 9-step track |
 | Open questions `[TBD]` | allowed, but a hook forces them closed | Open Questions can linger | banned — resolve on the spot |
-| Command granularity | 15 independent commands | 4 commands, all-in-one | one skill-based flow |
+| Command granularity | 16 independent commands | 4 commands, all-in-one | one skill-based flow |
 | Mid-flow re-entry | call any stage on its own | `/opsx:continue` to advance | start over |
 | Anti-cheating | two layers (command + agent) + opt-in flags | none | implicit |
 
@@ -92,14 +92,14 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 
 ## Features
 
-### 15 independent slash commands
+### 16 independent slash commands
 
 | Category | Command | What it does |
 |---|---|---|
 | **Entry** | `/spec:workflow <task>` | run the whole flow end-to-end, fully delegated — decisions triaged internally, stops only at the HARD GATE + acceptance |
 |  | `/spec:loop <goal>` | goal-driven **autonomous round loop**: approve the goal + acceptance checklist + round budget once, then it researches / implements / verifies / retrospects round after round — hook-driven, ledger-remembered — until acceptance or a fuse |
-|  | `/spec:quick <task>` | **light tier** for small changes: quote anchor + direct implement + one diff-scoped independent verification + an archivable one-page record; refuses full-flow-sized work upfront |
-|  | `/spec:status` | report where the current change stands (including paused and quick changes) |
+|  | `/spec:fix <task>` | **streaming light tier** for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to the standing `fixes/` batch; size is advisory, never a refusal |
+|  | `/spec:status` | report where the current change stands (including paused changes and the fix batch's pending count) |
 |  | `/spec:stash` | **suspend** the active change — frees the single-active slot; ledger, index, and proposal stay warm |
 |  | `/spec:resume` | bring a paused change back with re-entry context (where it left off, what's open) |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
@@ -110,7 +110,8 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | dispatch agents to implement |
 |  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
-| **Wrap up** | `/spec:archive` | archive the current change |
+| **Wrap up** | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch |
+|  | `/spec:archive` | archive the current change |
 
 ### 5 hooks — 3 hard gates + 1 reminder + 1 loop driver
 
@@ -120,7 +121,7 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 |---|---|---|
 | `check-tbd.sh` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
 | `check-gate.sh` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
-| `check-archive.sh` | before `/spec:archive` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal); override deliberately with `force` or `abandoned` |
+| `check-archive.sh` | before `/spec:archive` & `/spec:ship` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal; fix batches: archive requires shipped + Audit, ship requires a non-empty batch); override deliberately with `force` or `abandoned` |
 | `check-verify-reminder.sh` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
 | `loop-driver.sh` | Stop, when exactly one `running` loop ledger exists | re-injects the next `/spec:loop` round (probe-verified Stop JSON contract) — or releases the stop with a **distinct notice** per ending: acceptance met / round cap / no progress / refusal-to-retrospect / corrupt ledger. All fuse signals are mechanical (checkbox counts, worktree fingerprint) — the model's own "I made progress" is never consulted |
 
@@ -197,7 +198,7 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── core/                           # SINGLE SOURCE for all shipped markdown (both plugins)
 ├── tools/generate.mjs              # emits commands/ skills/ rules/ agents/ AND codex/skills|agents from core/; --check = drift guard
 ├── codex/                          # OpenAI Codex CLI port (same workflow + gates; see codex/README.md)
-├── commands/                       # 15 slash commands — GENERATED from core/, do not hand-edit
+├── commands/                       # 16 slash commands — GENERATED from core/, do not hand-edit
 ├── hooks/                          # hard constraints (POSIX sh, all platforms) + fixture suite
 │   ├── hooks.json
 │   ├── check-tbd.sh
@@ -315,6 +316,11 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.6.0** — **the fix stream tier**: `/spec:quick` merges with the real-world bug-fixing workflow into `/spec:fix` + `/spec:ship`:
+  - `/spec:fix` — streaming light tier over the standing `spec/changes/fixes/` dir: locate & confirm before touching code, fix directly (or research candidates first when uncertain), append an F-N entry (verbatim ask / root cause / files / self-check evidence), close every round with the pending-audit count; size is advisory, never a refusal
+  - `/spec:ship` — batch close: ONE verifier audit over the accumulated diff (F-N entries as the claim anchors), then archive the whole dir (`<date>-fixes`, counter-suffixed on a same-day collision); on fail the batch stays in place with findings recorded
+  - hooks: fixes dirs don't count toward the single-active-change slot; check-archive gates `/spec:ship` on preconditions only (the first-ship deadlock is designed out) and audits direct archives of a fix dir by `status: shipped` + non-empty Audit; legacy quick.md dirs keep full recognition (exemption + archive audit)
+  - `/spec:quick` retires (no alias); quick-spec.md folds into fix-spec.md's Legacy section
 - **0.5.6** — **flow elasticity**: the missing middle tier + the missing parking brake:
   - `/spec:quick` — light tier for small changes: verbatim quote anchor → direct implement → ONE diff-scoped independent verifier pass → archivable one-page record (`references/quick-spec.md`); refuses full-flow-sized work upfront (>150 lines / 3+ files / new dependency), and the verifier flags oversized quick diffs as findings; grows into a full change in place (run `/spec:research` in the same dir — proposal.md presence flips semantics, quick.md stays as history)
   - `/spec:stash` / `/spec:resume` — suspend the active change with a `.paused` marker: the single-active-change slot frees up while ledger/index/proposal stay warm; resume restores re-entry context; running `/spec:loop` changes refuse to pause (driver-bound)

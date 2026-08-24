@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,7 +24,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 15 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
+**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 16 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
 
 ### Comparison
 
@@ -32,7 +32,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
-| 命令粒度 | 15 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
+| 命令粒度 | 16 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
 | 中途重入 | 每阶段独立调用 | `/opsx:continue` 推进 | 重头来 |
 | 反作弊精神 | 命令 + agent 双层 + opt-in flag | 无 | 隐含 |
 
@@ -90,14 +90,14 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 ## Features
 
-### 15 个独立 slash 命令
+### 16 个独立 slash 命令
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
 | **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
-|  | `/spec:quick <task>` | 小改动**轻量档**：原话锚点 + 直接实施 + 一次 diff 范围独立验证 + 一页可归档记录；开工先自估尺寸，大活直接拒绝 |
-|  | `/spec:status` | 报告当前 change 在哪一步（含暂停与轻量变更） |
+|  | `/spec:fix <task>` | 修 bug/小改动的**流式轻量档**：先定位确认 → 直接修（没把握先调研备选）→ 追加 F-N 条目进固定 `fixes/` 批次；尺寸只提醒不拒收 |
+|  | `/spec:status` | 报告当前 change 在哪一步（含暂停变更与 fix 批次待审数） |
 |  | `/spec:stash` | **挂起**当前变更——释放唯一活动槽位；台账、索引、提案全部保温 |
 |  | `/spec:resume` | 解冻暂停的变更，附带续接上下文（停在哪、什么还开着） |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
@@ -108,7 +108,8 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
-| **收尾** | `/spec:archive` | 归档当前 change |
+| **收尾** | `/spec:ship` | 收口 fix 批次：对累积 diff 做一次统一审计，通过后整批归档 |
+|  | `/spec:archive` | 归档当前 change |
 
 ### 5 个 Hook——3 个硬门 + 1 个提醒 + 1 个循环驱动器
 
@@ -118,7 +119,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |---|---|---|
 | `check-tbd.sh` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
 | `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
-| `check-archive.sh` | `/spec:archive` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
+| `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：归档要求 shipped+Audit，ship 要求批次非空）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
 | `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 | `loop-driver.sh` | Stop，且恰好存在 1 份 `running` 状态的循环账本时 | 再注入 `/spec:loop` 的下一轮（Stop 事件 JSON 契约，探针实证）——或按**四种互异的终止说明**放行：验收达成 / 轮次上限 / 无进展 / 拒写复盘 / 账本损坏。所有熔断信号全部机械（checkbox 计数、工作树指纹），从不采信模型自报"有进展" |
 
@@ -195,7 +196,7 @@ graph LR
 ├── core/                           # 两端全部 markdown 的单一事实源
 ├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
 ├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
-├── commands/                       # 15 个 slash 命令——由 core/ 生成，勿手改
+├── commands/                       # 16 个 slash 命令——由 core/ 生成，勿手改
 ├── hooks/                          # 硬约束（POSIX sh,全平台）+ 夹具套件
 │   ├── hooks.json
 │   ├── check-tbd.sh
@@ -313,6 +314,11 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.6.0** — **fix 流式轻量档**：`/spec:quick` 与真实修 bug 工作流合并为 `/spec:fix` + `/spec:ship`：
+  - `/spec:fix`——固定目录 `spec/changes/fixes/` 上的流式轻量档：先定位确认再动代码，有把握直接修（没把握先调研备选），追加 F-N 条目（原话引用 / 根因 / 涉及文件 / 自检证据），每轮收尾报"批次现有 N 条待审"；尺寸只提醒、永不拒收
+  - `/spec:ship`——批次收口：对累积 diff 派一次统一审计（F-N 条目作为待核声明锚点），通过后整目录归档（`<日期>-fixes`，同日冲突加计数后缀）；不通过则批次原地留存、findings 记录在案
+  - 钩子：fixes 目录不占唯一活动变更槽位；check-archive 对 `/spec:ship` 只审前置条件（首次 ship 死锁在设计上被排除），对 fix 目录的直接归档审 `status: shipped` + 非空 Audit；存量 quick.md 目录完整保留识别（豁免 + 归档审计）
+  - `/spec:quick` 退役（不留别名）；quick-spec.md 并入 fix-spec.md 的 Legacy 一节
 - **0.5.6** — **流程弹性**：补上缺失的中间档与手刹：
   - `/spec:quick`——小改动轻量档：原话摘录锚点 → 直接实施 → 一次 diff 范围独立验证 → 一页可归档记录（`references/quick-spec.md`）；开工先自估尺寸，大活（>150 行 / 3+ 文件 / 新依赖）直接拒绝，验证端对超标 quick diff 亮 finding 兜底；可就地升级为全流程（同目录跑 `/spec:research`——proposal.md 在场即切换语义，quick.md 留作历史）
   - `/spec:stash` / `/spec:resume`——用 `.paused` 标记挂起当前变更：唯一活动槽位释放，台账/索引/提案全部保温；resume 恢复续接上下文；运行中的 `/spec:loop` 变更拒绝挂起（受驱动器约束）

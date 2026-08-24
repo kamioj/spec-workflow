@@ -20,7 +20,7 @@ block() {
     exit 2
 }
 
-printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*/spec:archive|\\n[[:space:]]*/spec:archive' || exit 0
+printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*/spec:(archive|ship)|\\n[[:space:]]*/spec:(archive|ship)' || exit 0
 
 # Deliberate override — scoped to the prompt VALUE only, never the whole raw JSON
 PROMPT_VAL=$(printf '%s' "$STDIN" | sed -n 's/.*"prompt":"\([^"]*\)".*/\1/p')
@@ -30,6 +30,26 @@ CWD=${CLAUDE_PROJECT_DIR:-}
 [ -n "$CWD" ] || exit 0
 
 CHANGES_DIR="$CWD/spec/changes"
+
+# /spec:ship invocation: precondition audit ONLY (fix batch exists with >=1 entry).
+# Deliberately NOT checked here: status: shipped / ## Audit -- ship itself writes them
+# AFTER this hook fires (requiring them here = the pre-0.2.3 happy-path deadlock shape);
+# they are audited on the /spec:archive path below instead.
+if printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*/spec:ship|\\n[[:space:]]*/spec:ship'; then
+    FIXMD="$CHANGES_DIR/fixes/fix.md"
+    if [ ! -f "$FIXMD" ]; then
+        block 'SDD: no fix batch to ship -- start one with /spec:fix'
+    fi
+    if [ -f "$CHANGES_DIR/fixes/proposal.md" ]; then
+        block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via /spec:verify + /spec:archive'
+    fi
+    fentries=$(grep -Ec '^## F-[0-9]+' "$FIXMD") || fentries=0
+    if [ "$fentries" -eq 0 ]; then
+        block 'SDD: the fix batch is empty (no F-N entries) -- nothing to ship'
+    fi
+    exit 0
+fi
+
 if [ ! -d "$CHANGES_DIR" ]; then
     block 'SDD: no spec/changes/ directory -- nothing to archive'
 fi
@@ -83,7 +103,25 @@ if [ -f "$change/quick.md" ] && [ ! -f "$change/proposal.md" ]; then
         exit 0
     fi
     block "SDD: archive blocked for '$name' -- the quick change is not finished:
-  - quick.md must have status: done AND a non-empty ## Evidence section (finish via /spec:quick's closing verification)
+  - quick.md must have status: done AND a non-empty ## Evidence section (legacy pre-0.6.0 quick change; if it cannot be finished, archive deliberately below)
+Or archive deliberately:
+  \"/spec:archive force\"     -- archive as-is; the reason gets recorded in retrospect.md
+  \"/spec:archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"
+fi
+
+# /spec:fix batch (fix.md present, proposal.md absent -- precedence: proposal.md wins, so
+# an upgraded fixes dir falls through to the normal APPROVED audit below): streaming
+# light-tier ledger -- status: shipped + non-empty Audit = the batch went through
+# /spec:ship's audit (same trust model as the loop/quick branches; this is what makes
+# archiving an unaudited batch impossible to do silently).
+if [ -f "$change/fix.md" ] && [ ! -f "$change/proposal.md" ]; then
+    fstatus=$(sed -n 's/^status:[[:space:]]*//p' "$change/fix.md" | head -1 | sed 's/#.*//' | tr -d '[:space:]')
+    fau=$(awk '/^## Audit[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$change/fix.md" | grep -c '[^[:space:]]') || fau=0
+    if [ "$fstatus" = "shipped" ] && [ "$fau" -ge 1 ]; then
+        exit 0
+    fi
+    block "SDD: archive blocked for '$name' -- the fix batch is not shipped:
+  - fix.md must have status: shipped AND a non-empty ## Audit section (close the batch via /spec:ship)
 Or archive deliberately:
   \"/spec:archive force\"     -- archive as-is; the reason gets recorded in retrospect.md
   \"/spec:archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"

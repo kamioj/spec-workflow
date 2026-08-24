@@ -38,6 +38,7 @@ for d in "$CHANGES_DIR"/*/; do
     # an upgraded quick dir counts as a normal full change).
     [ -f "$d/.paused" ] && continue
     [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
+    [ -f "$d/fix.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done
 

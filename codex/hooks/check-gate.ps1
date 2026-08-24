@@ -45,7 +45,8 @@ try {
                Where-Object {
                    $_.Name -ne 'archive' -and
                    -not (Test-Path (Join-Path $_.FullName '.paused')) -and
-                   -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
+                   -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
+                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 
     if (-not $changes -or $changes.Count -eq 0) {

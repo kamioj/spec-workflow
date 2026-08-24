@@ -19,7 +19,7 @@ Unlike `git stash`, this touches **no source code and no git state** — it only
    ```
    paused: <YYYY-MM-DD> | reason: <the user's stated reason, or "user request">
    ```
-4. **Report**: the slot is free (new changes / quick changes can start); `/spec:status` will show this change as stashed with the date + reason; `/spec:resume` brings it back; archiving a stashed change directly (without resuming) stays legal.
+4. **Report**: the slot is free (new changes / fix entries can start); `/spec:status` will show this change as stashed with the date + reason; `/spec:resume` brings it back; archiving a stashed change directly (without resuming) stays legal.
 
 ## What it does NOT do
 

@@ -32,11 +32,12 @@ for d in "$CHANGES_DIR"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [ "$name" = "archive" ] && continue
-    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
-    # an upgraded quick dir counts as a normal full change). Without this filter an
-    # unarchived quick/paused dir inflates the count and silences the single-active window.
+    # Skip suspended changes and light-tier quick/fix changes (precedence: proposal.md wins --
+    # an upgraded quick/fix dir counts as a normal full change). Without this filter an
+    # unarchived quick/fix/paused dir inflates the count and silences the single-active window.
     [ -f "$d/.paused" ] && continue
     [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
+    [ -f "$d/fix.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done
 
