@@ -34,7 +34,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `/spec:propose [--codex]` | write proposal.md; `--codex` lets codex poke holes in the solution |
 |  | `/spec:revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `/spec:apply` | implement the code |
-|  | `/spec:verify [--codex] [--fix]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--codex` adds codex as a heterogeneous second reviewer, `--fix` lets codex edit |
+|  | `/spec:verify [--codex] [--fix] [native]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--codex` adds codex as a heterogeneous second reviewer, `--fix` lets codex edit, `native` adds the opt-in project-idiom conformance pass |
 | Wrap up | `/spec:archive` | archive the change |
 
 ## Artifact map

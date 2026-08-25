@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -109,7 +109,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:propose [--codex]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | dispatch agents to implement |
-|  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
+|  | `/spec:verify [--codex] [--fix] [native]` | independent fresh-context verifier review (four dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly, `native` adds the opt-in project-idiom conformance pass |
 | **Wrap up** | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch |
 |  | `/spec:archive` | archive the current change |
 
@@ -316,6 +316,8 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.6.2** — **the opt-in Native pass**: `/spec:verify native` adds a project-idiom conformance dimension — every touched file is compared against its E-N exemplar (or nearest same-type neighbors) on naming / component shape / styling approach / state & error idioms; findings need dual citation (the project's convention at file:line, ≥2 occurrences, vs the deviation), the project's own code is the sole authority (generic style guides don't count, consistency outranks elegance). Born from a real observation: implementations too rarely read neighboring code first, so frontend changes drift into styles foreign to the project
+- **0.6.1** — **the spec root rule, made explicit**: hooks resolve `spec/` at the session launch root only (by design — no subdirectory search); after a live monorepo miss (the model created `spec/` inside a subproject, leaving every gate blind), the rule is now doctrine in skill/research/fix, and the no-dir gate messages self-diagnose the subdir case (move it to the root, or relaunch inside the subproject)
 - **0.6.0** — **the fix stream tier**: `/spec:quick` merges with the real-world bug-fixing workflow into `/spec:fix` + `/spec:ship`:
   - `/spec:fix` — streaming light tier over the standing `spec/changes/fixes/` dir: locate & confirm before touching code, fix directly (or research candidates first when uncertain), append an F-N entry (verbatim ask / root cause / files / self-check evidence), close every round with the pending-audit count; size is advisory, never a refusal
   - `/spec:ship` — batch close: ONE verifier audit over the accumulated diff (F-N entries as the claim anchors), then archive the whole dir (`<date>-fixes`, counter-suffixed on a same-day collision); on fail the batch stays in place with findings recorded

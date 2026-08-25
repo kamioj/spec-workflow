@@ -1,6 +1,6 @@
 ---
 name: spec-verify
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions + charter audit. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions + charter audit; native adds the opt-in project-idiom conformance pass. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
 ---
 <!-- GENERATED from core/commands/verify.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -8,12 +8,14 @@ description: Verifies the current change by dispatching the independent spec-ver
 
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
 
+`$spec-verify native` adds the opt-in **Native pass** (project-idiom conformance over every touched file — E-N exemplar / nearest same-type neighbors as the reference set; verifier check 6) to the spawned verifier's checklist.
+
 ## Independent verifier (why verify dispatches an agent instead of reviewing inline)
 
 The conversation that just ran `$spec-apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `$spec-verify` therefore **spawns the spec-verifier agent (defined in ~/.codex/agents/spec-verifier.toml)** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself. The same rule binds `$spec-apply`'s closing verification: the review is ALWAYS performed by a spawned spec-verifier, whoever initiates it — the implementing conversation only ever does bookkeeping:
 
 0. **Agent freshness pre-check** (once per session): compare the shipped `${PLUGIN_ROOT}/agents/spec-verifier.toml` with `~/.codex/agents/spec-verifier.toml` — missing → copy + one-line notice; differs → one-line notice + ask once (sync / keep — never clobber a customized agent silently); identical → proceed. Codex cannot bundle agents; without this check a plugin upgrade leaves the OLD verifier running with no error
-1. Spawn spec-verifier with the change name and nothing else — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
+1. Spawn spec-verifier with the change name and nothing else (plus the `native` switch when the user passed it — the ONLY extra the dispatch may carry) — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
    (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references, with the task text as a `{type:"text"}` item; both together is rejected)
 2. Transcribe its findings into ledger rows **without softening, dropping, or re-judging them** — format conversion only (one finding = one table row; severity / location / text preserved). Derive the per-dimension pass/fail lines from its findings; its `conclusion` is authoritative and may never be upgraded fail → pass. Disagreement is recorded as a note next to the row, never by deletion
 3. Run the round rules below (diff vs previous round, escalation)
@@ -41,6 +43,9 @@ The conversation that just ran `$spec-apply` cannot audit its own output — sam
 
 ### 4. Reuse
 - Each new class / shared util / shared component / page in the diff: does the host codebase already have an equivalent (grep by **responsibility**, not just name)? Does the dev summary's `New creations` field carry the A-N gap citation? Does a new page conform to its designated E-N exemplar (abstractions the exemplar lacks = additions; conventions it has that the page drops = findings)?
+
+### Native pass (opt-in — runs ONLY with the `native` flag)
+- Project-idiom conformance over every touched file: compare against the E-N exemplar (or 1–2 nearest same-type files when the index has none) — naming / component shape / styling approach / state & error idioms / API-call pattern. Findings need **dual citation** (project convention at file:line with ≥2 occurrences vs the change's deviation at file:line); the project's own code is the sole authority — generic stack references are not citations here, and consistency outranks elegance. Full definition: spec-verifier check 6.
 - Anchored to index.md `## Assets` / `## Exemplars`; index absent (legacy change) → declare it, flag blatant duplication only
 
 ## Charter audit (part of Coherence — hunts the dirty-data defect class)

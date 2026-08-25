@@ -34,7 +34,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `$spec-propose` | write proposal.md |
 |  | `$spec-revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `$spec-apply` | implement the code |
-|  | `$spec-verify [--fix]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--fix` lets the agent edit |
+|  | `$spec-verify [--fix] [native]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--fix` lets the agent edit, `native` adds the opt-in project-idiom conformance pass |
 | Wrap up | `$spec-archive` | archive the change |
 
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.

@@ -25,7 +25,7 @@ What does NOT count as verification:
 4. Read `code-charter.md` under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)
 5. The diff: `git diff` scoped to the change — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.
 
-## Five checks
+## Five checks (+ one opt-in)
 
 1. **Completeness** — each What item against its `verify:` clause; an item with no clause → flag it, never improvise a pass
 2. **Correctness** — compile / tests / edge cases, every claim evidence-backed per the Iron Law
@@ -35,6 +35,20 @@ What does NOT count as verification:
    - **Machine pass first**: `ast-grep scan --config <sdd-rules>/sgconfig.yml <changed files>` — resolve `<sdd-rules>` first (the installed sdd `spec-core/rules` directory; location depends on install method): `find ~/.codex/plugins/cache ~/.agents/skills -path '*spec-core/rules/sgconfig.yml' 2>/dev/null | sort | tail -1` (pwsh: `Get-ChildItem ~/.codex/plugins/cache, ~/.agents/skills -Recurse -Filter sgconfig.yml -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName`) — AST-level rules, no regex false positives; output lines go straight into Evidence. Not installed → declare `not run: ast-grep not installed (scoop install main/ast-grep / npm i -g @ast-grep/cli)` and fall back to manual Grep for: swallowed exception + default return · new-logic-falls-back-to-old branches · `|| defaultValue` chains masking failures · compat flags defaulting to old behavior · silent query re-route
    - **Attribute every machine hit before judging**: `git blame` / diff membership decides whether this change introduced the hit — pre-existing hits are recorded as out-of-scope in Defended, never counted as this change's findings
    - **Every hit introduced by this change is judged by traceability, not taste**: traces to an explicit proposal `## How` / `## Risk` decision and degrades loudly → not a finding (note the citation); untraceable → **major**; untraceable on a data-write path (INSERT / UPDATE / message produce / file write) → **critical**
+6. **Native** (opt-in — run ONLY when the dispatch explicitly requests it, i.e. the user
+   invoked `$spec-verify native`): project-idiom conformance. For EACH touched file, build
+   its reference set — the designated E-N exemplar when index.md names one, otherwise 1–2
+   nearest same-type files in THIS project (same directory / same layer) — and compare the
+   change against how this project actually writes that kind of code: naming, component
+   shape & props conventions, styling approach (whatever the project uses — CSS modules /
+   utility classes / inline — not what a style guide prefers), state-management idiom,
+   error-handling shape, API-call pattern. A deviation is a finding ONLY with **dual
+   citation**: the project convention at file:line (≥2 existing occurrences — a single
+   occurrence is not a convention, skip it) vs this change's deviation at file:line.
+   **The project's own code is the sole authority here**: a deviation toward an objectively
+   cleaner pattern is still a finding — consistency outranks elegance, and a deliberate
+   convention change is a gate decision, never an implementation-time choice. Generic
+   stack references (vue-style etc.) are NOT citations for this check. Same ≤3 cap.
 
 ## Finding format (evidence before conclusion — hard format)
 

@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -107,7 +107,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
-|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改 |
+|  | `/spec:verify [--codex] [--fix] [native]` | 独立验证代理审查（四维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改，`native` 加可选的本项目惯用法一致性审 |
 | **收尾** | `/spec:ship` | 收口 fix 批次：对累积 diff 做一次统一审计，通过后整批归档 |
 |  | `/spec:archive` | 归档当前 change |
 
@@ -314,6 +314,8 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.6.2** — **可选 Native 审查维度**：`/spec:verify native` 增加本项目惯用法一致性审——每个被改文件对照其 E-N 母版（无索引则取最近邻同类文件），比命名/组件形态/样式方案/状态与错误处理惯用法；发现必须双引用举证（项目惯例 file:line、≥2 处成例 vs 本次偏离处），**本项目自身代码是唯一权威**（通用规范不作数，一致性优先于优雅）。源起真实观察：实施常不先读旁边的代码，前端尤其容易写出不属于本项目的风格
+- **0.6.1** — **spec 根目录规则显式化**：钩子只在会话启动根解析 `spec/`（设计使然，不做子目录搜索）；monorepo 实战踩坑后（模型把 spec/ 建进子项目，全部门失明），根规则写进 skill/research/fix 教条，"目录不存在"拦截文案自带诊断（挪到根，或去子目录重启会话）
 - **0.6.0** — **fix 流式轻量档**：`/spec:quick` 与真实修 bug 工作流合并为 `/spec:fix` + `/spec:ship`：
   - `/spec:fix`——固定目录 `spec/changes/fixes/` 上的流式轻量档：先定位确认再动代码，有把握直接修（没把握先调研备选），追加 F-N 条目（原话引用 / 根因 / 涉及文件 / 自检证据），每轮收尾报"批次现有 N 条待审"；尺寸只提醒、永不拒收
   - `/spec:ship`——批次收口：对累积 diff 派一次统一审计（F-N 条目作为待核声明锚点），通过后整目录归档（`<日期>-fixes`，同日冲突加计数后缀）；不通过则批次原地留存、findings 记录在案
