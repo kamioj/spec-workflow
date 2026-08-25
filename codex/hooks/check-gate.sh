@@ -26,7 +26,8 @@ CWD=$(printf '%s' "$STDIN" | sed -n 's/.*"cwd":"\([^"]*\)".*/\1/p' | sed 's/\\\\
 
 CHANGES_DIR="$CWD/spec/changes"
 if [ ! -d "$CHANGES_DIR" ]; then
-    block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose'
+    block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
 fi
 
 set --

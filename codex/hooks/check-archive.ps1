@@ -49,7 +49,8 @@ try {
         $fixesDir = Join-Path $changesDir 'fixes'
         $fixMd = Join-Path $fixesDir 'fix.md'
         if (-not (Test-Path $fixMd)) {
-            Block 'SDD: no fix batch to ship -- start one with $spec-fix'
+            Block 'SDD: no fix batch to ship -- start one with $spec-fix
+(note: hooks resolve spec/ at the session cwd -- a fixes dir inside a subdirectory is invisible to this gate)'
         }
         if (Test-Path (Join-Path $fixesDir 'proposal.md')) {
             Block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via $spec-verify + $spec-archive'
@@ -63,7 +64,8 @@ try {
     }
 
     if (-not (Test-Path $changesDir)) {
-        Block 'SDD: no spec/changes/ directory -- nothing to archive'
+        Block 'SDD: no spec/changes/ directory -- nothing to archive
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
     }
 
     $changes = Get-ChildItem $changesDir -Directory -ErrorAction SilentlyContinue |

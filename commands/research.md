@@ -46,7 +46,7 @@ Key references: <URL>
 
 ## Process
 
-1. **Confirm the change directory**: no active change → create `spec/changes/<kebab-name>/`, deriving the name from the user's description; active change with a matching direction → append to research.md.
+1. **Confirm the change directory**: no active change → create `spec/changes/<kebab-name>/`, deriving the name from the user's description; active change with a matching direction → append to research.md. **spec/ is created at the project root the session was launched from — NEVER inside a subproject directory**: the gate hooks resolve spec/ at that root only, and a spec tree anywhere else is invisible to them (apply/ship/archive would block with "no spec/changes/ directory"). Working on a monorepo subproject → keep spec/ at the launch root (prefix the change name with the subproject if helpful), or have the user relaunch the session inside the subproject.
 2. **Decide whether an industry survey is warranted at all** — the web-research subagent is for changes whose decision space is genuinely external: a new dependency / tech choice, an unfamiliar domain, a pattern where industry practice materially constrains the design. **Internal refactors, fix batches, and changes whose constraints all live in this codebase skip the survey entirely** — step 3's status-quo mapping IS the research for those (dispatching a web survey there is ceremony, not information).
 3. **When warranted, dispatch the `@researcher` sub-agent** to research and write into research.md:
    - WebSearch option A/B/C comparisons, known issues, benchmarks → `## Practices`

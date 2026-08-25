@@ -40,7 +40,8 @@ CHANGES_DIR="$CWD/spec/changes"
 if printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*\$spec-ship|\\n[[:space:]]*\$spec-ship'; then
     FIXMD="$CHANGES_DIR/fixes/fix.md"
     if [ ! -f "$FIXMD" ]; then
-        block 'SDD: no fix batch to ship -- start one with $spec-fix'
+        block 'SDD: no fix batch to ship -- start one with $spec-fix
+(note: hooks resolve spec/ at the session cwd -- a fixes dir inside a subdirectory is invisible to this gate)'
     fi
     if [ -f "$CHANGES_DIR/fixes/proposal.md" ]; then
         block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via $spec-verify + $spec-archive'
@@ -53,7 +54,8 @@ if printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*\$spec-ship|\\n[
 fi
 
 if [ ! -d "$CHANGES_DIR" ]; then
-    block 'SDD: no spec/changes/ directory -- nothing to archive'
+    block 'SDD: no spec/changes/ directory -- nothing to archive
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
 fi
 
 set --

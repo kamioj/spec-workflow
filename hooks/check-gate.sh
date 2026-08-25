@@ -25,7 +25,8 @@ CWD=${CLAUDE_PROJECT_DIR:-}
 
 CHANGES_DIR="$CWD/spec/changes"
 if [ ! -d "$CHANGES_DIR" ]; then
-    block 'SDD: no spec/changes/ directory. Start with /spec:research -> /spec:propose'
+    block 'SDD: no spec/changes/ directory. Start with /spec:research -> /spec:propose
+(note: hooks resolve spec/ at the project root Claude was launched from -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch Claude inside that subdirectory)'
 fi
 
 set --

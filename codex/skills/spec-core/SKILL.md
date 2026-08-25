@@ -63,6 +63,8 @@ spec/
     └── YYYY-MM-DD-<name>/            the whole change directory after archiving
 ```
 
+**spec/ roots at the directory the session was launched from** (`$CLAUDE_PROJECT_DIR` on Claude Code; the session cwd on Codex) — the gate hooks resolve it there and ONLY there, with no subdirectory search. Working on a subproject of a monorepo does NOT move spec/ into the subproject: keep spec/ at the launch root (change names can carry a subproject prefix), or launch the session inside the subproject so the root follows. A spec/ tree created anywhere else is invisible to every gate — apply/ship/archive will block with "no spec/changes/ directory".
+
 **The artifact set is fixed at these four + the requirement & asset index + the discarded-draft pile + the verification ledger + the $spec-loop round ledger (with its driver state file) + the $spec-fix batch ledger + the .paused marker + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)

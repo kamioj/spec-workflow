@@ -36,7 +36,8 @@ try {
 
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) {
-        Block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose'
+        Block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
     }
 
     # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
