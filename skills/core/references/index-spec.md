@@ -26,6 +26,10 @@ Requirement source: <where the quotes come from + date>
 
 ## Exemplars
 - E-1: <new page/module> → <existing page/module designated as its master template>
+
+## Carriers
+- C-1: <requirement concept> → <existing field/method/endpoint that carries it> | derive/reuse — no new carrier
+- C-2: <requirement concept> → NOT FOUND (searched <where>, by responsibility) | minting required — rides the gate for approval
 ```
 
 ## Field rules
@@ -45,6 +49,13 @@ Requirement source: <where the quotes come from + date>
 
 - For each **new** page/module, designate 1–2 existing ones as the master template. The exemplar sets the design level in both directions: abstractions it lacks are not added (over-design), conventions it has are not dropped (under-design). Deviating from the exemplar's patterns requires a stated reason in the implementation summary
 
+### C-N (Carriers — the concept-to-carrier reconciliation)
+
+- One row per requirement noun that will need a **data or API carrier** (a field / method / endpoint / parameter) — not every word in the requirement; concepts that stay in prose need no row
+- The mapping direction is concept → carrier: the row answers "who ALREADY carries this concept" (e.g. 单据类型 → `is_device`), which is what stops the noun being minted into a new entity; A-N stays asset-centric ("what exists, how used") — the two are complementary, not duplicates
+- A `NOT FOUND` row is legal **only with the search recorded** (where you looked, searching by responsibility, not by name) — the empty-handed search is the license to mint, and the row rides the HARD GATE's `Unsourced additions` line for explicit approval
+- Named consumers (per the Static-only rule): proposal `## What` items citing carriers, and the critique panel's necessity lens (its anti-minting check reads these rows line by line)
+
 ## Static-only discipline
 
 The index stores only what does not change: quotes, asset names, exemplar designations. **No status, no progress, no code locations, no coverage** — every volatile mapping (diff↔R-N coverage) is computed per verify round and never persisted. Every field must have a consumer (R-N: What refs + Coherence audit; A-N: new-creation citations + Reuse check; E-N: exemplar conformance); a field nobody reads is decoration.
@@ -53,8 +64,8 @@ The index stores only what does not change: quotes, asset names, exemplar design
 
 | Stage | Command | Action |
 |---|---|---|
-| Build | `/spec:research` | extract at first source contact |
-| Freeze | `/spec:propose` (HARD GATE) | What items cite entries; the gate lists unsourced additions |
+| Build | `/spec:research` | extract at first source contact; Carriers mapped during status-quo mapping |
+| Freeze | `/spec:propose` (HARD GATE) | What items cite entries; the gate lists unsourced additions and approves C-N minting rows |
 | Append | `/spec:apply` concern adjudication | adopted concerns → new R-N |
 | Audit | `/spec:verify` | Coherence anchors to R-N; Reuse anchors to A-N / E-N |
 | Sediment | `/spec:archive` | durable A-N / E-N facts → spec/knowledge.md |
@@ -68,3 +79,5 @@ The index stores only what does not change: quotes, asset names, exemplar design
 - ❌ Building the index at propose time (a second reading is a second interpretation; build at research's first contact)
 - ❌ A-N as an exhaustive codebase inventory (only the change's domain)
 - ❌ Citing an R-N whose quote does not entail the item (a mismatched ref is audited as unsourced — same finding as no ref)
+- ❌ A `NOT FOUND` Carriers row with no recorded search (the empty-handed responsibility search IS the license to mint; a bare claim is not)
+- ❌ Carriers rows for concepts that need no data/API carrier (bloat — the map is a reconciliation baseline, not a glossary)

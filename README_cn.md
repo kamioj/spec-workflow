@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -314,6 +314,12 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.6.3** — **载体级保真（derive, don't mint）**：一次实战复盘显示 8 处返工共享同一形态——需求名词被 1:1 铸造成新代码实体（字段/参数/方法/校验/默认值）而非从既有真相源派生，且全部由用户人工 diff 审拦下、流程零拦截。修法是一条全部落在 verify 之前的预防链：
+  - index.md 新增 `## Carriers` 节：research 测绘现状时把每个需求概念映射到**现有载体**；新铸只有在"按职责搜过、空手而归"记录在案时才合法，并上 HARD GATE 待批
+  - 批评面板加读 index，必要性镜头逐项对账新载体（映射有现成载体还新铸 = 发现）——当年放行 bill_type 的镜头是弹药匮乏，不是失职
+  - 边界归属类问题（权限校验哪层承载、默认值谁出）默认为偏好题 → 标 `[TBD]`；按惯例直接定需 ≥2 处一致成例引文件为证，且必须出现在闸门"未询自决"行上
+  - 性能镜头加证据门：无实测信号或指到 file:line 的结构论证 → 唯一合法产出是"无话可说"
+  - 编码公约新增 derive-don't-mint（按层作用域）与 ≥2 调用点抽取门槛——盖住提案期审查物理上看不见的实施期发明
 - **0.6.2** — **可选 Native 审查维度**：`/spec:verify native` 增加本项目惯用法一致性审——每个被改文件对照其 E-N 母版（无索引则取最近邻同类文件），比命名/组件形态/样式方案/状态与错误处理惯用法；发现必须双引用举证（项目惯例 file:line、≥2 处成例 vs 本次偏离处），**本项目自身代码是唯一权威**（通用规范不作数，一致性优先于优雅）。源起真实观察：实施常不先读旁边的代码，前端尤其容易写出不属于本项目的风格
 - **0.6.1** — **spec 根目录规则显式化**：钩子只在会话启动根解析 `spec/`（设计使然，不做子目录搜索）；monorepo 实战踩坑后（模型把 spec/ 建进子项目，全部门失明），根规则写进 skill/research/fix 教条，"目录不存在"拦截文案自带诊断（挪到根，或去子目录重启会话）
 - **0.6.0** — **fix 流式轻量档**：`/spec:quick` 与真实修 bug 工作流合并为 `/spec:fix` + `/spec:ship`：

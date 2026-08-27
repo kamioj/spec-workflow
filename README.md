@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -316,6 +316,12 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.6.3** — **carrier-level fidelity (derive, don't mint)**: a field run showed 8 reworks sharing one shape — requirement nouns minted 1:1 into new code entities (field / param / method / validation / default) instead of derived from existing truth sources, with every catch made by the user's manual diff review and none by the flow. The fix is a prevention chain, entirely upstream of verify:
+  - index.md gains a `## Carriers` section: research maps each requirement concept to its EXISTING carrier at status-quo-mapping time; minting is legal only with an empty-handed responsibility search on record, and rides the HARD GATE for approval
+  - the critique panel now reads index.md, and the necessity lens reconciles every new carrier against the map (mapped-but-minting = finding) — the lens that passed `bill_type` was information-starved, not lazy
+  - boundary-ownership questions (which layer holds a permission check, who supplies defaults) are preference-driven by default → `[TBD]`; deciding from convention requires ≥2 cited consistent occurrences and surfaces on the gate's "Decided without asking" line
+  - the performance lens is evidence-gated: no measured signal or file-cited structural argument → its only legal output is "nothing to say"
+  - the coding charter gains derive-don't-mint (per-tier scoped) and a ≥2-call-site extraction threshold — covering implementation-time inventions no propose-time review can see
 - **0.6.2** — **the opt-in Native pass**: `/spec:verify native` adds a project-idiom conformance dimension — every touched file is compared against its E-N exemplar (or nearest same-type neighbors) on naming / component shape / styling approach / state & error idioms; findings need dual citation (the project's convention at file:line, ≥2 occurrences, vs the deviation), the project's own code is the sole authority (generic style guides don't count, consistency outranks elegance). Born from a real observation: implementations too rarely read neighboring code first, so frontend changes drift into styles foreign to the project
 - **0.6.1** — **the spec root rule, made explicit**: hooks resolve `spec/` at the session launch root only (by design — no subdirectory search); after a live monorepo miss (the model created `spec/` inside a subproject, leaving every gate blind), the rule is now doctrine in skill/research/fix, and the no-dir gate messages self-diagnose the subdir case (move it to the root, or relaunch inside the subproject)
 - **0.6.0** — **the fix stream tier**: `/spec:quick` merges with the real-world bug-fixing workflow into `/spec:fix` + `/spec:ship`:

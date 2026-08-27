@@ -46,7 +46,7 @@ The gate block emitted by `$spec-propose` / `$spec-revise` (full template in pro
 1. `Escalated decisions` — **always first when present** (irreversible-class provisional calls; they stand by default, silence + `$spec-apply` = consent, one reply line overturns; `$spec-apply` echoes them again at its first line)
 2. `Changes` — 3–6 key decisions, each a **same-scenario before/after mirror**: Problem / After / Cost, Problem and After ≤2 lines each; register test: a non-developer can tell what problem each point solves
 3. `Decided without asking` — factual + `auto` triage decisions, one line each + reversibility (mandatory line, "none" allowed)
-4. `Unsourced additions` — behavioral items with no valid R-N citation against the change's index.md (mandatory line; "none" when all cite, "legacy change (no index)" when the change predates the format)
+4. `Unsourced additions` — behavioral items with no valid R-N citation against the change's index.md, AND new carriers (fields / params / methods / endpoints / validations / defaults) with no C-N backing; declared C-N minting rows surface here for approval (mandatory line; "none" when all cite and every carrier reconciles, "legacy change (no index)" when the change predates the format)
 5. `Unresolved critique` — critique-panel findings still open after the one refutation round (they live as round-0 ledger findings)
 6. `Not in this change` — the approval boundary
 

@@ -132,10 +132,12 @@ Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line
 evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
 catch a misclassified preference>
 Unsourced additions: <behavioral items (validation / required fields / permissions / endpoints /
-schema) carrying no valid R-N citation against the change's index.md, one line each — they
-ride this gate as additions to approve, never slip through as "obviously good"; "none" if
-every behavioral What item cites the index; "legacy change (no index)" when the change
-predates the index format — mandatory line>
+schema) carrying no valid R-N citation against the change's index.md, AND new carriers
+(fields / params / methods / endpoints / validations / defaults) with no C-N backing — one
+line each; declared C-N minting rows surface here for approval too. They ride this gate as
+additions to approve, never slip through as "obviously good"; "none" if every behavioral
+What item cites the index and every carrier reconciles; "legacy change (no index)" when the
+change predates the index format — mandatory line>
 Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
 one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
 "none" if none>
@@ -214,6 +216,7 @@ Close the report in **statement mode**: the default direction plus one "overrida
 **What the requirement source did not ask for is forbidden by default.** The requirement source is the user's words / the prototype / the defect being fixed — "engineering best practice" is NOT a requirement source. The classic inflations — finer-grained permissions than the system uses, extra config switches, extension points, defensive features, "while we're here" capabilities — are the top real-world failure mode of autonomous flows: every checker downstream anchors to the proposal, so an inflated proposal (or an implementation-time invention that never entered one) gets certified all the way to production.
 
 - Every proposal `## What` item traces to the requirement source; an item with **no source is an ADDITION** and must ride the gate as an escalated decision — never slip in as "obviously good"
+- **Fidelity extends to the CARRIER level**: a requirement noun is not entitled to its own code entity — derive from the existing truth source first (field / method / endpoint mapped in the index's `## Carriers`); minting a new carrier requires the empty-handed responsibility search on record. Behavioral fidelity asks "was this behavior asked for"; carrier fidelity asks "does this concept already have a home"
 - At implementation time, a capability not in `## What` is **drift**: stop and report, never build it because it seems professional
 - When the existing system has a simpler convention (e.g. menu-level permissions), matching that convention IS the requirement; exceeding it is an addition
 - **Mechanical layer — the index** (references/index-spec.md): `$spec-research` extracts the requirement source ONCE into the change's `index.md` (R-N verbatim quotes, behavioral clauses only); every behavioral What item carries `| refs: R-N`; the gate's `Unsourced additions` line lists what has no valid citation; `$spec-verify` audits the diff against the quotes — a **mismatched** citation (behavior not entailed by the quoted text) is the same finding as a missing one. Detection never relies on the agent knowing it made an assumption — only on the assumption existing in the diff

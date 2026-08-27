@@ -19,7 +19,7 @@ Stay disciplined at the prompt level too:
 
 1. Read research.md: read `## Decided` + `## Practices` / `## Constraints` (the research conclusions for the current direction; `research/` drafts don't participate unless already revived into research.md)
 2. Read design.md (if it exists)
-3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries `| refs: R-N` (citing the change's index.md `## Requirements`) and a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). **Requirement-fidelity pass before finalizing** (SKILL § Requirement fidelity): every behavioral What item must cite an R-N **whose quote entails it** — no citation, or a citation the quote doesn't cover, makes the item an addition → it goes on the gate's `Unsourced additions` line (the user approves or cuts it; it never slips through as "obviously good"). Legacy change without index.md → that line reads "legacy change (no index)" and the pass falls back to prose source-tracing (user words / prototype / defect). Three later stages consume these: `$spec-verify` checks Completeness against the `verify:` clauses and Coherence against the R-N citations; the HARD GATE shows Unsourced additions + Not-in-this-change as the approval boundary
+3. Write `spec/changes/<name>/proposal.md` — every `## What` item carries `| refs: R-N` (citing the change's index.md `## Requirements`) and a `| verify: <observable behavior / executable check>` clause, and the section closes with a **Not in this change** list (adjacent scope explicitly excluded). **Requirement-fidelity pass before finalizing** (SKILL § Requirement fidelity): every behavioral What item must cite an R-N **whose quote entails it** — no citation, or a citation the quote doesn't cover, makes the item an addition → it goes on the gate's `Unsourced additions` line (the user approves or cuts it; it never slips through as "obviously good"). **The same pass reconciles carriers** (SKILL § Requirement fidelity, carrier level): a What/How item minting a new carrier — field / param / method / endpoint / validation / default — must cite the index's `## Carriers`: an existing carrier mapped but bypassed, or a minting with no C-N row, goes on the same gate line; declared C-N minting rows surface there for approval. Legacy change without index.md → that line reads "legacy change (no index)" and the pass falls back to prose source-tracing (user words / prototype / defect). Three later stages consume these: `$spec-verify` checks Completeness against the `verify:` clauses and Coherence against the R-N citations; the HARD GATE shows Unsourced additions + Not-in-this-change as the approval boundary
 4. **Run the critique panel** (section below) — surviving findings land in the verification ledger as round 0
 5. **Emit the HARD GATE closing block**
 
@@ -66,19 +66,19 @@ When any one condition holds, **the propose stage generates** `spec/changes/<nam
 
 ## Critique panel (runs after proposal.md is written, before the HARD GATE)
 
-The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` — never this conversation) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
+The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` + index.md — never this conversation; index.md absent → legacy change: note it in the dispatch, critics proceed without) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
 (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references; both together is rejected.)
 
 **Lens selection depends on who invoked propose:**
-- **Standalone (manual) `$spec-propose`** — before dispatching, put the lens choice to the user as ONE multi-select question (per SKILL Interrogation rules; self-contained — each option names what that lens catches and what skipping it risks). Options = the four lenses below, with **necessity + regression-compat pre-recommended**. Dispatch exactly what the user picked.
+- **Standalone (manual) `$spec-propose`** — before dispatching, put the lens choice to the user as ONE multi-select question (per SKILL Interrogation rules; self-contained — each option names what that lens catches and what skipping it risks). Options = the four lenses below, with **necessity + regression-compat pre-recommended** and performance annotated "select only with a measured problem" (an evidence-free perf lens manufactures pre-optimization — field-verified failure mode). Dispatch exactly what the user picked.
 - **Workflow-invoked (auto orchestration)** — no mid-flight questions (two-touchpoint doctrine): dispatch **necessity + regression-compat only**. The other lenses stay available to the user at the gate ("want a testability/performance pass → say so" is a legal gate reply, answered with a supplementary panel round).
 
 | Lens | Locked stance | Auto default |
 |---|---|---|
-| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | yes |
+| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Anti-minting check** (the ammunition is index.md `## Carriers`): every new carrier in What/How — field / param / method / endpoint / validation / default — is reconciled against the map; a concept whose row names an existing carrier yet the proposal mints a new one = finding; a minting with no C-N row = finding. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | yes |
 | **regression-compat** | what existing behavior, consumer, or installed user does this change break | yes |
 | **testability** | is every What item's `verify:` clause actually falsifiable — could it pass while the feature is broken | manual pick only |
-| **performance** | hot paths / loops / batch queries / N+1 | manual pick only |
+| **performance** | hot paths / loops / batch queries / N+1 — **evidence-gated**: a finding must carry either a measured signal (profile / slow-query log / user report) or a structural argument that itself meets the evidence bar (the specific code path cited file:line PLUS the growth reasoning, e.g. an unbounded collection driving a per-item query); "looks slow" is not evidence, and absent evidence the lens's only legal output is "no measured problem — nothing to say" (pre-optimization suggestions are gold-plating, not findings) | manual pick only — select only when a measured problem exists |
 
 **Discipline** (reuses the spec-verifier protocol — the anti-sycophancy measures are structural, not tonal):
 - **evidence-or-drop**: a finding must cite the concrete proposal line + the concrete scenario where it bites; "this might be risky" is dropped unwritten
@@ -129,10 +129,12 @@ Decided without asking: <[TBD]s resolved autonomously (factual + auto), one line
 evidence or default used + reversibility; "none" if none — mandatory line, it lets the user
 catch a misclassified preference>
 Unsourced additions: <behavioral items (validation / required fields / permissions / endpoints /
-schema) carrying no valid R-N citation against the change's index.md, one line each — they
-ride this gate as additions to approve, never slip through as "obviously good"; "none" if
-every behavioral What item cites the index; "legacy change (no index)" when the change
-predates the index format — mandatory line>
+schema) carrying no valid R-N citation against the change's index.md, AND new carriers
+(fields / params / methods / endpoints / validations / defaults) with no C-N backing — one
+line each; declared C-N minting rows surface here for approval too. They ride this gate as
+additions to approve, never slip through as "obviously good"; "none" if every behavioral
+What item cites the index and every carrier reconciles; "legacy change (no index)" when the
+change predates the index format — mandatory line>
 Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
 one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
 "none" if none>
@@ -178,6 +180,7 @@ User rejects → go through `$spec-revise [section]` (local) or `$spec-chat` (re
 - ❌ Bursting the proposal sections with content (it should move to design)
 - ❌ A `## What` item without a `verify:` clause (leaves $spec-verify's Completeness check nothing falsifiable)
 - ❌ A behavioral What item with no `refs:` citation, or citing an R-N whose quote doesn't entail it — both belong on the gate's `Unsourced additions` line; omitting them there is the violation (verify audits mismatched refs as unsourced)
+- ❌ Minting a new carrier (field / param / method / endpoint / validation / default) without reconciling it against the index's `## Carriers` — a mapped-but-bypassed carrier or an undeclared minting belongs on the same gate line
 - ❌ Translating section headers (e.g. `## 为什么（Why）`) — headers are always `## Why / ## What / ## How / ## Risk`; `$spec-revise` targets sections by English name
 - ❌ Gate Changes written in insider shorthand ("three-layer CAS idempotency guarantee (DEC-8/9/11)") — that is executor register; the gate is decision-maker register (Problem / After / Cost, same-scenario mirror)
 - ❌ Skipping the critique panel, or running it and withholding open findings from the gate (the user judges with full information or the gate is theater)
