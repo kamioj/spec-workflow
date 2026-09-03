@@ -142,6 +142,7 @@ Hooks judge state by scanning non-`archive` directories under `spec/changes/` as
 - **Command frontmatter** (core): `description` + `allowed-tools`. **Agent frontmatter** (core): `name` / `description` / `model: inherit` / `color` / `tools`. The Codex emitter maps/drops these automatically.
 - **references/ read on demand**: agents detect the project stack and read only the relevant reference — never all of them.
 - Public docs (READMEs) carry no iteration narrative and no private project details; process records live in the gitignored `spec/` and in commit messages.
+- **core/ states current rules only — no release archaeology**: version pins ("pre-0.6.0", "since 0.5.1") and migration-relative phrasing ("deprecated", "now does X", "no longer") are diffs against prompt versions the model never saw; write every rule as if it were the only rule that ever existed, and leave the history to commit messages. (Prompt-audit finding, 2026-09: all four cruft hits in an otherwise clean surface were this one pattern.)
 
 ## Shared Principles (agents follow by default — see core/skill.md § Shared Principles)
 

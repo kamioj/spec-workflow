@@ -76,7 +76,7 @@ assumption. No locking machinery is provided.
 
 ## Legacy: quick.md
 
-`quick.md` was the pre-0.6.0 light-tier record (one invocation = one dir = one archive).
+`quick.md` is the legacy light-tier record format (one invocation = one dir = one archive).
 All hooks still recognize it: a dir with quick.md and no proposal.md stays exempt from the
 active-change count, and check-archive still audits it by `status: done` + non-empty
 `## Evidence`. Existing quick dirs (active or archived) need no migration; new work uses

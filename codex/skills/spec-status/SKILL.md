@@ -15,7 +15,7 @@ Read the `spec/changes/` directory (excluding `archive/`) and output the current
 1. **Glob `spec/changes/*/`** to list all un-archived changes; classify each dir first:
    - `.paused` present → **paused** (report its date + reason line; excluded from stage detection and next-step recommendations)
    - `fix.md` present AND `proposal.md` absent → **fix batch** (streaming light tier; stage from fix.md's `status:` field + pending F-N entry count)
-   - `quick.md` present AND `proposal.md` absent → **legacy quick change** (pre-0.6.0 light tier; stage from quick.md's `status:` field)
+   - `quick.md` present AND `proposal.md` absent → **legacy quick change** (legacy quick.md light tier; stage from quick.md's `status:` field)
    - otherwise → normal full change (an upgraded light-tier dir with proposal.md lands here — precedence: proposal.md wins)
 2. For each change, check artifact presence:
    - `research.md` (current research) + discarded drafts under `research/` (if any), `index.md`, `design.md`, `proposal.md`, `tasks.md`
@@ -61,7 +61,7 @@ Paused changes:
   <name> — paused <date>, reason: <reason>   (resume: $spec-resume)
 ```
 
-A fix batch reports its own two-line form: `Fix batch: <N> entries pending audit — <open/shipped> (streaming light tier; $spec-fix appends, $spec-ship audits + archives)`. A legacy quick change reports: `Quick change: <name> — <in-flight/done> (pre-0.6.0 light tier; archive when done)`.
+A fix batch reports its own two-line form: `Fix batch: <N> entries pending audit — <open/shipped> (streaming light tier; $spec-fix appends, $spec-ship audits + archives)`. A legacy quick change reports: `Quick change: <name> — <in-flight/done> (legacy quick.md light tier; archive when done)`.
 
 Multiple un-archived ACTIVE changes → list all, and add a note: this workflow is designed for **a single active change**; there is no switch command. When multiple exist, `$spec-archive` the completed one(s) or `$spec-stash` the not-current one(s) first.
 
@@ -77,7 +77,7 @@ Multiple un-archived ACTIVE changes → list all, and add a note: this workflow 
 | dir has `.paused` | Paused | Report only ("paused <date>: <reason>"); no next step is recommended for a paused change — `$spec-resume` when the user wants it back |
 | `fix.md` present, `proposal.md` absent, `status: open` | Fix batch open (N entries pending) | Keep streaming with `$spec-fix`, or close the batch with `$spec-ship` (ONE audit over the accumulated diff, then archive) — a fixes dir doesn't block anything |
 | `fix.md` present, `proposal.md` absent, `status: shipped` | Fix batch shipped, archive pending | The archive move didn't complete — `$spec-archive` finishes it (the archive gate's fix branch passes a shipped+Audit batch through) |
-| `quick.md` present, `proposal.md` absent | Legacy quick change (pre-0.6.0) | `status: done` → archive when ready (`$spec-archive`); otherwise finish per its quick.md record — new light-tier work uses `$spec-fix` |
+| `quick.md` present, `proposal.md` absent | Legacy quick change (quick.md format) | `status: done` → archive when ready (`$spec-archive`); otherwise finish per its quick.md record — new light-tier work uses `$spec-fix` |
 | `research.md` exists + `## Open [TBD]` is non-empty | Research has open TBDs | `$spec-ask` to work through the pending decisions |
 | `research.md` exists + Open [TBD] empty + no `proposal.md` | Interrogation done, awaiting propose | For complex tasks, `$spec-design` first (architecture / >3 interfaces / data-flow diagram); otherwise `$spec-propose` |
 | `proposal.md` exists + **no** `<!-- APPROVED: ... -->` marker | Awaiting HARD GATE approval | ✅ Satisfied → `$spec-apply` (apply auto-appends APPROVED then implements)<br>🔧 Partial changes → `$spec-revise [why \| what \| how \| risk]`<br>💭 Want to discuss → `$spec-chat`<br>🔄 Direction changed → `$spec-research "<new direction>"` |
@@ -91,7 +91,7 @@ Multiple un-archived ACTIVE changes → list all, and add a note: this workflow 
 
 **Key anti-patterns**:
 
-- ❌ Outputting "approve → reply go" during the awaiting-approval stage (**deprecated** — `$spec-apply` now auto-appends APPROVED; there is no "reply go" intermediate step)
+- ❌ Outputting "approve → reply go" during the awaiting-approval stage — no such step exists: invoking `$spec-apply` IS the approval, and apply appends the APPROVED marker itself
 - ❌ Proactively pushing "you can run $spec-archive now" at the verification-passed stage (user decides; do not push)
 - ❌ Generating "Recommended next step" from memory — MUST cross-reference the table above for the current stage
 

@@ -110,7 +110,7 @@ The fix direction is **replacement or a gate decision** (`/spec:revise how` to a
 
 ## --codex: heterogeneous Codex peer review
 
-When `--codex` is specified, after the independent review, invoke **Codex (a heterogeneous model)** to review the same set of changes — filling in the systematic blind spots of a single Claude pass (real-world result: Codex found 4 high-severity issues vs. Claude's 8, with only 1 overlap).
+When `--codex` is specified, after the independent review, invoke **Codex (a heterogeneous model)** to review the same set of changes — a heterogeneous reviewer fills in the systematic blind spots of a single Claude pass (in practice the two finding sets barely overlap).
 
 **All invocation mechanics are encapsulated in `${CLAUDE_PLUGIN_ROOT}/scripts/codex-exec.ps1`** — Windows workarounds (#336 bypass sandbox / #337 avoid node spawn), `effort=low` for cost control, timeout to prevent hangs, residual-process cleanup, session parsing. The "why this exact invocation is required" constraints are in the script header comments (single source of truth).
 

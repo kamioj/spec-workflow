@@ -14,7 +14,7 @@ Never edit `.loop-state` by hand or by model — the driver rewrites it wholesal
 
 ## loop.md format
 
-Frontmatter values are **plain scalars on their own line** — the template below is copy-safe as-is. (Since 0.5.1 the driver also tolerates a trailing `# comment` on a value line, but the canonical form is bare; the 0.5.0 driver silently ignored ledgers whose values carried inline comments, which is why the template no longer shows any.)
+Frontmatter values are **plain scalars on their own line** — the template below is copy-safe as-is. (A trailing `# comment` on a value line is tolerated, but the canonical form is bare.)
 
 ```markdown
 ---
