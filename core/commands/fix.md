@@ -17,8 +17,9 @@ per entry, honest self-check evidence per entry, and ONE independent verificatio
 - The batch always lives at `spec/changes/fixes/` with the ledger `fixes/fix.md`
   (format → [`skills/core/references/fix-spec.md`](../skills/core/references/fix-spec.md)).
   No naming, no per-batch setup: batch = the dir's lifetime between ships. **spec/ roots at
-  the directory the session was launched from — never inside a subproject** (the ship/archive
-  gates resolve it at that root only; see the root rule in SKILL).
+  the directory the session was launched from — never inside a subproject, never in another
+  worktree's or the main repository's tree** (the ship/archive gates resolve it at that root
+  only; see the root rule in SKILL).
 - No `fixes/` dir → create it with `status: open` and start at F-1.
 - **Collision guard**: `spec/changes/fixes/` exists WITHOUT fix.md → that is someone's
   normal change dir which happens to be named "fixes" — REFUSE to write into it, report the

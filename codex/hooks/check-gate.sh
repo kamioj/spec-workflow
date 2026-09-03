@@ -27,7 +27,7 @@ CWD=$(printf '%s' "$STDIN" | sed -n 's/.*"cwd":"\([^"]*\)".*/\1/p' | sed 's/\\\\
 CHANGES_DIR="$CWD/spec/changes"
 if [ ! -d "$CHANGES_DIR" ]; then
     block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose
-(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree anywhere else (a subdirectory, another worktree, the main repo) is invisible to every gate: move it to this root, or relaunch the session where that tree lives)'
 fi
 
 set --
@@ -35,23 +35,24 @@ for d in "$CHANGES_DIR"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [ "$name" = "archive" ] && continue
-    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
-    # an upgraded quick dir counts as a normal full change).
+    # Skip suspended changes and self-auditing tier dirs -- quick/fix/loop without proposal.md
+    # (precedence: proposal.md wins -- an upgraded tier dir counts as a normal full change).
     [ -f "$d/.paused" ] && continue
     [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
     [ -f "$d/fix.md" ] && [ ! -f "$d/proposal.md" ] && continue
+    [ -f "$d/loop.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done
 
 if [ $# -eq 0 ]; then
-    block 'SDD: no active change. Start with $spec-research -> $spec-propose'
+    block "SDD: no active change under $CHANGES_DIR (.paused / quick / fix / loop dirs do not count). Start with \$spec-research -> \$spec-propose. Already have one? It may sit in a DIFFERENT spec tree (another worktree / the main repo / a subproject) -- hooks only see the session cwd: move it here, or relaunch there"
 fi
 
 if [ $# -gt 1 ]; then
     names=''
     for d in "$@"; do names="$names$(basename "$d"), "; done
     names=${names%, }
-    block "SDD: multiple active changes detected ($names). This workflow assumes a single active change -- \$spec-archive the rest (or clean them up) before \$spec-apply (otherwise a draft change blocks the approved one)"
+    block "SDD: multiple active changes detected under $CHANGES_DIR ($names). This workflow assumes a single active change -- \$spec-archive the rest (or clean them up) before \$spec-apply (otherwise a draft change blocks the approved one)"
 fi
 
 change=$1
@@ -59,7 +60,13 @@ name=$(basename "$change")
 proposal="$change/proposal.md"
 
 if [ ! -f "$proposal" ]; then
-    block "SDD: $name is missing proposal.md. Run \$spec-propose first"
+    # Self-diagnosis: name what the gate actually saw, so a change created in a different
+    # spec tree (worktree / main repo / subproject) is recognizable at a glance (0.6.4).
+    found=$(ls -A "$change" 2>/dev/null | tr '\n' ' ')
+    found=${found% }
+    [ -n "$found" ] || found='(empty)'
+    block "SDD: change '$name' is missing proposal.md -- run \$spec-propose first.
+(gate inspected $CHANGES_DIR; '$name' holds: $found. Not the change you meant? Yours likely sits in a DIFFERENT spec tree -- another worktree / the main repo / a subproject: hooks only see the session cwd; move it here, or relaunch the session where it lives)"
 fi
 
 missing=''

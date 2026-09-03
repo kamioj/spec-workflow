@@ -37,32 +37,38 @@ try {
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) {
         Block 'SDD: no spec/changes/ directory. Start with $spec-research -> $spec-propose
-(note: hooks resolve spec/ at the session cwd -- a spec/ tree inside a subdirectory is invisible to every gate: move it to the root, or relaunch the session inside that subdirectory)'
+(note: hooks resolve spec/ at the session cwd -- a spec/ tree anywhere else (a subdirectory, another worktree, the main repo) is invisible to every gate: move it to this root, or relaunch the session where that tree lives)'
     }
 
-    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
-    # an upgraded quick dir counts as a normal full change).
+    # Skip suspended changes and self-auditing tier dirs -- quick/fix/loop without proposal.md
+    # (precedence: proposal.md wins -- an upgraded tier dir counts as a normal full change).
     $changes = Get-ChildItem $changesDir -Directory -ErrorAction SilentlyContinue |
                Where-Object {
                    $_.Name -ne 'archive' -and
                    -not (Test-Path (Join-Path $_.FullName '.paused')) -and
                    -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
-                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
+                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
+                   -not ((Test-Path (Join-Path $_.FullName 'loop.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 
     if (-not $changes -or $changes.Count -eq 0) {
-        Block 'SDD: no active change. Start with $spec-research -> $spec-propose'
+        Block "SDD: no active change under $changesDir (.paused / quick / fix / loop dirs do not count). Start with `$spec-research -> `$spec-propose. Already have one? It may sit in a DIFFERENT spec tree (another worktree / the main repo / a subproject) -- hooks only see the session cwd: move it here, or relaunch there"
     }
 
     if ($changes.Count -gt 1) {
         $names = ($changes | ForEach-Object { $_.Name }) -join ', '
-        Block "SDD: multiple active changes detected ($names). This workflow assumes a single active change -- `$spec-archive the rest (or clean them up) before `$spec-apply (otherwise a draft change blocks the approved one)"
+        Block "SDD: multiple active changes detected under $changesDir ($names). This workflow assumes a single active change -- `$spec-archive the rest (or clean them up) before `$spec-apply (otherwise a draft change blocks the approved one)"
     }
 
     foreach ($change in $changes) {
         $proposalPath = Join-Path $change.FullName 'proposal.md'
         if (-not (Test-Path $proposalPath)) {
-            Block "SDD: $($change.Name) is missing proposal.md. Run `$spec-propose first"
+            # Self-diagnosis: name what the gate actually saw, so a change created in a
+            # different spec tree (worktree / main repo / subproject) is recognizable (0.6.4).
+            $found = (Get-ChildItem $change.FullName -Force -Name -ErrorAction SilentlyContinue) -join ' '
+            if ([string]::IsNullOrWhiteSpace($found)) { $found = '(empty)' }
+            Block ("SDD: change '$($change.Name)' is missing proposal.md -- run `$spec-propose first.`n" +
+                   "(gate inspected $changesDir; '$($change.Name)' holds: $found. Not the change you meant? Yours likely sits in a DIFFERENT spec tree -- another worktree / the main repo / a subproject: hooks only see the session cwd; move it here, or relaunch the session where it lives)")
         }
 
         $content = Get-Content $proposalPath -Raw -Encoding UTF8

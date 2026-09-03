@@ -568,6 +568,29 @@ printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/fix.md"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/fixes/proposal.md"
 run_case archive-upgraded-fix-audits-approved check-archive block "$P" "$(json '/spec:archive')"
 
+# ---- 0.6.4: loop dirs join the skip filter (field finding: a legit loop change was
+#      counted as an active full change and blocked /spec:propose as "missing research.md") ----
+
+# loop coexists: running loop dir + active full change -> propose/apply on the full change allowed
+P=$(mkproj loop-coexist); mkdir -p "$P/spec/changes/g" "$P/spec/changes/live"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/live/research.md"
+run_case gate-loop-plus-active-allows check-gate allow "$P" "$(json '/spec:apply')"
+run_case tbd-loop-plus-active-allows check-tbd allow "$P" "$(json '/spec:propose')"
+
+# reminder window survives a coexisting loop dir (count filter)
+P=$(mkproj loop-rem-coexist); mkdir -p "$P/spec/changes/g" "$P/spec/changes/live"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/g/loop.md"
+printf '%s\n<!-- APPROVED: 2026-09-03 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case reminder-loop-coexist-nudges check-verify-reminder block "$P" "$(json_stop false)"
+
+# precedence: an upgraded loop dir (loop.md + proposal.md) is a NORMAL full change
+P=$(mkproj loop-upgraded); mkdir -p "$P/spec/changes/grown"
+printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/grown/loop.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
+run_case gate-upgraded-loop-counts check-gate allow "$P" "$(json '/spec:apply')"
+
 # ---- Claude-specific extras ----
 
 # V-2: non-ASCII project path — gate must still bite (env route is encoding-immune)

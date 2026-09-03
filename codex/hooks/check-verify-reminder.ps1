@@ -37,15 +37,17 @@ try {
     $changesDir = Join-Path $cwd 'spec' | Join-Path -ChildPath 'changes'
     if (-not (Test-Path $changesDir)) { exit 0 }
 
-    # Skip suspended changes and light-tier quick changes (precedence: proposal.md wins --
-    # an upgraded quick dir counts as a normal full change). Without this filter an
-    # unarchived quick/paused dir inflates the count and silences the single-active window.
+    # Skip suspended changes and self-auditing tier dirs -- quick/fix/loop without proposal.md
+    # (precedence: proposal.md wins -- an upgraded tier dir counts as a normal full change).
+    # Without this filter an unarchived quick/fix/loop/paused dir inflates the count and
+    # silences the single-active window.
     $changes = Get-ChildItem $changesDir -Directory -ErrorAction SilentlyContinue |
                Where-Object {
                    $_.Name -ne 'archive' -and
                    -not (Test-Path (Join-Path $_.FullName '.paused')) -and
                    -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
-                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
+                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
+                   -not ((Test-Path (Join-Path $_.FullName 'loop.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 
     # Only nudge in the unambiguous single-active-change window
