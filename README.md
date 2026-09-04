@@ -142,6 +142,8 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 `spec-verifier` is dispatched by `/spec:verify` with a **deliberately fresh context** — the conversation that implemented the change never audits itself. Its protocol: no pass without fresh evidence (a dev agent's self-reported success gets re-run, not trusted), evidence-or-drop findings (no quotable code = no finding, ≤3 per dimension), a refutation phase where a defense must cite a gate decision, and an ast-grep machine pass over the shipped `rules/dirty-data/` pack (validated: catches "return default in catch" even behind a log line; never flags a proper throw).
 
+> **Scope note — conformance audit, not defect hunt.** The verifier audits the diff *against the proposal* (verify: clauses, R-N citations, charter, reuse). For an open-ended bug hunt over the same diff — edge cases, concurrency, null-safety, security — compose with what your host already ships: Claude Code's built-in `/code-review` (effort levels, `--fix`, multi-agent `ultra`), or this plugin's `--codex` heterogeneous review. Both run on demand alongside the flow; neither is required by it.
+
 ### opt-in enhancement flags
 
 `/spec:apply` runs lean by default. Two flags pull in extra discipline on demand:

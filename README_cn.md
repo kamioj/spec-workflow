@@ -140,6 +140,8 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 `spec-verifier` 由 `/spec:verify` 派遣，**刻意给全新上下文**——写代码的对话不再自审。协议：无新鲜证据不得判 pass（dev agent 自报的成功要复跑，不采信）、证据先行（引用不出真实代码 = 不算发现，每维度上限 3 条）、反驳轮（辩护必须引用 gate 决策原文）、ast-grep 机器扫描自带 `rules/dirty-data/` 规则包（已实测：连"打了日志仍 return null"都能抓，正常 throw 零误报）。
 
+> **定位说明——符合性审计，不是缺陷猎杀。** verifier 对照*提案*审 diff（verify: 子句、R-N 引用、charter、复用）。要对同一份 diff 做开放式找 bug——边界条件、并发、空值、安全——用宿主自带的引擎搭配：Claude Code 内置 `/code-review`（分档、`--fix`、多代理 `ultra`），或本插件的 `--codex` 异构他审。两者都按需手动运行、与流程并行，流程不强制。
+
 ### opt-in 增强 flag
 
 `/spec:apply` 默认轻量。两个 flag 按需启用：
