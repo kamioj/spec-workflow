@@ -1,6 +1,6 @@
 ---
 name: spec-ask
-description: Interrogates preference-driven decision points. Works through the [TBD]s in research.md as batched plain-text questions (independent ones grouped into one message, lettered options, one-line combined reply); answered items are moved to ## Decided. Inside $spec-workflow it switches to auto triage (decide + mark, no questions). Can be triggered multiple times; new [TBD]s may surface during the process.
+description: Interrogates preference-driven decision points. Works through the [TBD]s in research.md via Codex's request_user_input tool when the session has it, else as batched plain-text questions (lettered options, one-line combined reply) after a one-line enablement tip; answered items are moved to ## Decided. Inside $spec-workflow it switches to auto triage (decide + mark, no questions). Can be triggered multiple times; new [TBD]s may surface during the process.
 ---
 <!-- GENERATED from core/commands/ask.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -11,10 +11,12 @@ description: Interrogates preference-driven decision points. Works through the [
 1. Read `spec/changes/<name>/research.md` and list every entry in `## Open [TBD]`
 2. For each [TBD], determine its nature:
    - **Factual** (determinable by reading code / docs) → Claude decides, marks "decided from status quo: X", moves to Decided
-   - **Preference-driven** (multiple valid options, depends on user trade-offs) → ask as a numbered plain-text question in the conversation
+   - **Preference-driven** (multiple valid options, depends on user trade-offs) → ask per the host protocol below (`request_user_input` tool when available, else plain text)
    - **Uncertain → treat as preference-driven** (never skip)
 3. **How to ask preference-driven questions** (inherits global *Asking Style* + SKILL "Self-Contained Prompts"):
-   - Ask as plain text in the conversation — no structured tool UI exists on this host. **Batch all mutually independent questions into ONE message** (≤4, per the shared rules below); only a mutually dependent chain goes one question at a time. Fixed format, no deviation: questions are numbered `Q1 / Q2 / …`; **options are ALWAYS lettered `A. / B. / C.` — never numbered** (numbered options visually continue the question sequence, and the user reads five questions where there is one); recommended option first, marked "(Recommended)". The message closes with ONE reply-protocol line (verbatim):
+   - **Tool first**: Codex gates its structured question tool behind an experimental feature flag — with `default_mode_request_user_input` enabled, sessions carry a `request_user_input` tool. When that tool is available in this session, preference-driven questions MUST use it (one call per question; it is **single-select only** — a multi-select question always uses the plain-text form below, whatever the tool state). When it is NOT available, say ONCE before the first question, then proceed in plain text:
+     `Tip: 'codex features enable default_mode_request_user_input' turns on structured questions (experimental; takes effect on a new task). Asking in plain text this run.`
+   - **Plain-text form** (the fallback, and the home of every multi-select question): **batch all mutually independent questions into ONE message** (≤4, per the shared rules below); only a mutually dependent chain goes one question at a time. Fixed format, no deviation: questions are numbered `Q1 / Q2 / …`; **options are ALWAYS lettered `A. / B. / C.` — never numbered** (numbered options visually continue the question sequence, and the user reads five questions where there is one); recommended option first, marked "(Recommended)". The message closes with ONE reply-protocol line (verbatim):
      `Reply in one line — e.g. "1A 3C". Multi-select: "2: A C". None fits: "3: <your answer>". "all recommended" takes every recommendation; questions you omit resolve to their (Recommended) option.`
    - **Echo the resolution before writing back**: after the reply, list every question's outcome (`Q1 → A · Q2 → B (default) · …`) with defaulted ones explicitly marked — a mistaken default must be overturnable with one line, never silently absorbed into Decided.
    - **Every question must be self-contained (top priority)**: ① one-sentence decision statement + ② why it must be settled now (what it affects / what breaks if left open) + ③ for each option, "choosing this leads to what — specific scenario / consequence". **The user must be able to answer without asking a follow-up**.

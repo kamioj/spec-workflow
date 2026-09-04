@@ -11,10 +11,10 @@ Run this once after installing the `sdd` Codex plugin. Codex plugins can bundle 
 and hooks, but there is no official bundled mechanism for `agents/*.toml`, so this skill
 guides the agent TOML copy step.
 
-Since 0.5.5 the spawn-heavy skills (`$spec-apply` / `$spec-verify`) also run a freshness
-pre-check at point of use — a stale or missing agent definition is detected and synced
-(or loudly escalated) before any spawn. This skill remains the first-install path and the
-place where hook trust + gate verification are walked through.
+The spawn-heavy skills (`$spec-apply` / `$spec-verify`) also run a freshness pre-check at
+point of use — a stale or missing agent definition is detected and synced (or loudly
+escalated) before any spawn. This skill remains the first-install path and the place
+where hook trust + gate verification are walked through.
 
 ## Agent TOML install
 
@@ -43,6 +43,20 @@ Process:
      and destination paths and ask the user whether to merge or replace.
 
 Do not silently overwrite existing agent files.
+
+## Optional: structured questions for $spec-ask
+
+Codex gates its structured question tool (`request_user_input`) behind an experimental
+feature flag. Recommend enabling it so `$spec-ask` can use single-select question
+controls instead of plain-text questions:
+
+```text
+codex features enable default_mode_request_user_input
+```
+
+Takes effect on a new task (restart the client if a fresh task still lacks the tool).
+Without it, `$spec-ask` degrades gracefully to batched plain-text questions and tells
+the user about this flag once per run.
 
 ## Hook trust
 

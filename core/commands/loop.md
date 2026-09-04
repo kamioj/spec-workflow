@@ -36,7 +36,7 @@ awk -v s="" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s} 1' spec/changes/<name>/.lo
 ## Cold start (touchpoint 1 of 2: goal confirmation)
 
 1. **Pre-check**: another `running` loop.md in this project → refuse (one loop at a time). Other active changes exist → warn: while a loop runs, its change dir counts toward the single-active-change rule (check-tbd/check-gate will block `/spec:propose`/`/spec:apply` in this project).
-2. **Goal confirmation** — the one interrogation of the whole run, so it must be complete (AskUserQuestion; self-contained options per SKILL Interrogation rules):
+2. **Goal confirmation** — the one interrogation of the whole run, so it must be complete (asked per SKILL Interrogation rules; self-contained options):
    - the goal, restated in one sentence (no restatement → no loop)
    - the **acceptance checklist**: 2–8 items, each independently verifiable with a `verify:` clause (an executable check or observable behavior — "feels better" is not acceptance); confirm items AND their verify clauses with the user
    - **max_rounds** (default 10 — the primary safety mechanism; budget generously for exploratory goals) and anything explicitly out of scope

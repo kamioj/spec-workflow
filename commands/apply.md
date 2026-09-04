@@ -116,10 +116,10 @@ The main conversation only steps in when dispatch fails / cross-executor coordin
 
 Dev agents implement permissively and reroute every tightening impulse into their summary's `Concerns` field (spec-dev § Concerns discipline). After the last agent returns, adjudicate by invocation mode:
 
-- **Standalone `/spec:apply`**: batch ALL concerns into ONE AskUserQuestion round (multi-select; each option self-contained per SKILL Interrogation rules — proposed tightening + trigger + cost of adopting). Adopted → append each as a **new R-N** to `spec/changes/<name>/index.md` and implement it in-session, **before** the closing verification, so the closing verifier round audits base change + adopted tightenings uniformly (concerns never seed V-N rows before a round exists). Rejected → one ledger note each (`concern rejected: <one line>`) so the same worry isn't re-litigated later.
+- **Standalone `/spec:apply`**: batch ALL concerns into ONE interrogation round (multi-select, asked per SKILL Interrogation rules; each option self-contained — proposed tightening + trigger + cost of adopting). Adopted → append each as a **new R-N** to `spec/changes/<name>/index.md` and implement it in-session, **before** the closing verification, so the closing verifier round audits base change + adopted tightenings uniformly (concerns never seed V-N rows before a round exists). Rejected → one ledger note each (`concern rejected: <one line>`) so the same worry isn't re-litigated later.
 - **Inside `/spec:workflow`** (two-touchpoint doctrine — no mid-flight pause): carry the Concerns list verbatim into the acceptance report (touchpoint 2); adopted ones enter the ledger via the acceptance-stage user-sourced-findings path and drive the scoped fix round.
 - No concerns returned → skip entirely, zero ceremony.
-- A **blocking** concern (the agent stopped: no permissive fallback exists) is not batch material — it already halted implementation; resolve it immediately (AskUserQuestion when standalone; in workflow mode it surfaces as the reason apply stopped).
+- A **blocking** concern (the agent stopped: no permissive fallback exists) is not batch material — it already halted implementation; resolve it immediately (an immediate interrogation per SKILL rules when standalone; in workflow mode it surfaces as the reason apply stopped).
 
 ## Implementation + verification model
 
