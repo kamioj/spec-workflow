@@ -106,7 +106,8 @@ Follow the Shared Principles from the sdd plugin overview SKILL.md without being
 5. **NEVER unilaterally modify the interface contract** — if you spot a problem in the contract, stop and report. The main loop will run `/spec:revise how` or `/spec:design` to fix it. **Unilateral "flexible adjustments" are forbidden.**
 6. **NEVER touch scope listed under `Not in this change`** — a task that seems to require it = stop and report (the main loop widens scope via `/spec:revise what` only if the user agrees)
 7. **A fallback / degrade / compat path is a gate-level decision, not an implementation detail** — if proposal `## How` / `## Risk` doesn't authorize it, don't write it; genuinely needing one = stop and report (the main loop authorizes via `/spec:revise how`). Every one you do write goes in the summary's Fallbacks field
-8. After completing the work, output an **implementation summary**:
+8. **DEVLOG sweep** (charter clause 8 — comments state function, not process): grep your own diff for `DEVLOG:` tags; rewrite each as a function comment (intent / constraint for the next reader) or delete it. Record `grep DEVLOG → 0` in the summary's Evidence field — a residual tag is a charter finding at verify time
+9. After completing the work, output an **implementation summary**:
 
 ```
 === <scope> Implementation Summary ===

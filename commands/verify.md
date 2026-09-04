@@ -63,6 +63,7 @@ Manual patterns (fallback, Grep the changed files — patterns, not vibes):
 - `|| defaultValue` / ternary fallback chains that mask a failed lookup as a normal result
 - compat flags or branches defaulting to old behavior; "temporary" dual-write / dual-read
 - silent re-route: query A fails → quietly run query B and return its shape as if A succeeded
+- residual `DEVLOG:` tags in the diff (charter clause 8 — process markers not swept to function comments at wrap-up)
 
 Verdict rules:
 

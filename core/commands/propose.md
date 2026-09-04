@@ -41,7 +41,7 @@ Stay disciplined at the prompt level too:
 When any one condition holds, **the propose stage generates** `spec/changes/<name>/tasks.md` as well:
 
 - Cross-stack project (in the apply stage, two spec-dev instances — frontend + backend scope — are dispatched concurrently to build in parallel)
-- The task splits into >5 independent subtasks (a large linear change)
+- The task splits into >5 subtasks — dependencies included, a large linear change counts. **Single-executor does not waive this trigger**: the checkbox ledger is the ONLY persistent progress record apply / status / a resumed session have on a long run (owner and deps are optional extras; progress visibility is the point) — skipping it leaves a broken session resuming on git-diff guesswork
 - Multi-executor collaboration (needs the owner field — assigning to different agents / people)
 
 **Simple single-threaded implementation gets none** — apply advances straight down the proposal `## What` list.
