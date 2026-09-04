@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -313,6 +313,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.7.0** — **问询与评审改版**：评审选择面从一排开关收敛到近零必答——propose 的镜头选择题取消（necessity + regression-compat 恒派；可证伪性成为 necessity 第五问；performance 仅在调研记录实测信号时加派；想补审在闸门回一句即可），Native 审并入 **Reuse & Conformance**（新建文件默认对照项目惯用法审，无需旗标），apply 的 `solid`+`verify` 合并为 `strict`，对外分类法统一为**四维度**（charter 审计为 Coherence 子审计）。问询重组为四段管线（派生 → 构造 → 送达 → 记账）：选项**从调研候选集引用而来，不再临场发明**；同主题的取舍类待决点聚合成一道多选；只剩一个真实选项的问题自动决定并在闸门报备；每轮以 `Open: N` 尾行收口，杜绝静默漏问。Codex 侧问询控件优先（实验开关下的 `request_user_input`，按形状压缩），批量文本兜底；所有命令的未知旗标一律提示疑似拼写错误，绝不静默吞没。另：loop 目录纳入闸门活跃豁免、拦截消息自诊断错树场景（worktree/主仓库/子项目）、research 收尾按 Open 状态推荐正确的下一步
 - **0.6.3** — **载体级保真（derive, don't mint）**：一次实战复盘显示 8 处返工共享同一形态——需求名词被 1:1 铸造成新代码实体（字段/参数/方法/校验/默认值）而非从既有真相源派生，且全部由用户人工 diff 审拦下、流程零拦截。修法是一条全部落在 verify 之前的预防链：
   - index.md 新增 `## Carriers` 节：research 测绘现状时把每个需求概念映射到**现有载体**；新铸只有在"按职责搜过、空手而归"记录在案时才合法，并上 HARD GATE 待批
   - 批评面板加读 index，必要性镜头逐项对账新载体（映射有现成载体还新铸 = 发现）——当年放行 bill_type 的镜头是弹药匮乏，不是失职
