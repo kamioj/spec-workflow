@@ -79,8 +79,7 @@ Stack detection: Read the root manifest file(s) (`pom.xml` / `build.gradle*` / `
 
 | Dispatch prompt contains | Triggered by flag | Load and Read |
 |---|---|---|
-| "enable anti-laziness" | `solid` | `agent-principles.md` § 1 |
-| "enable anti-hallucination" | `verify` | `agent-principles.md` § 2 |
+| "enable strict" | `strict` | `agent-principles.md` § 1 + § 2 |
 | "enable anti-ai-slop" | `design` | `frontend-aesthetics.md` (only meaningful for `frontend` scope) |
 
 **Not loaded by default** — keeps the agent lightweight and avoids excessive conservatism in routine implementations.

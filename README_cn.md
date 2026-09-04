@@ -107,7 +107,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
-|  | `/spec:verify [--codex] [--fix] [native]` | 独立验证代理审查（四维 + charter 审计）；`--codex` codex 异构他审，`--fix` codex 直接改，`native` 加可选的本项目惯用法一致性审 |
+|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:ship` | 收口 fix 批次：对累积 diff 做一次统一审计，通过后整批归档 |
 |  | `/spec:archive` | 归档当前 change |
 
@@ -142,18 +142,17 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 ### opt-in 增强 flag
 
-`/spec:apply` 默认轻量。三个 flag 按需启用：
+`/spec:apply` 默认轻量。两个 flag 按需启用：
 
 | flag | 启用规则 | 适用场景 |
 |---|---|---|
 | `design` | 反 AI slop | 营销页 / 作品集 / 视觉重要的前端 |
-| `solid` | 反偷懒（禁 workaround） | 一次性脚本怕走捷径 |
-| `verify` | 反幻觉（先读再写） | 复杂代码库怕乱猜 |
+| `strict` | 反偷懒 + 反幻觉 | 一次性脚本怕走捷径；复杂代码库怕乱猜 |
 
 可组合：
 
 ```
-/spec:apply design solid verify    # 三件套全启
+/spec:apply design strict    # 两个全启
 ```
 
 ---

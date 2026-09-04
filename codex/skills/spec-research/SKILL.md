@@ -36,7 +36,7 @@ Key references: <URL>
 - <constraint>: compatibility / performance target / dependency version / security requirement | consequence of violating it (a constraint you can't name consequences for is probably redundant)
 
 ## Open [TBD]
-- [TBD-1] <preference-driven decision point> (candidates A / B / C; leaning toward X; needs user confirmation)
+- [TBD-1] <preference-driven decision point> | candidates: <A> (evidence: Practices/Constraints line or status-quo observation) / <B> (…) / skip-or-minimal | select: one|several
 
 ## Decided
 (Moved here from Open after interrogation. Format: [DEC-N] <decision> | source [TBD-N] | rationale)
@@ -62,6 +62,7 @@ Key references: <URL>
    - Preference-driven (multiple valid options, depends on user trade-offs) → MUST mark `[TBD]` for `$spec-ask`
    - **Boundary-ownership questions are preference-driven BY DEFAULT**: which layer carries a permission boundary, who supplies default/filter values (frontend passes vs backend hardcodes), where validation lives — mark `[TBD]`. Sole exception: the codebase shows an established convention with **≥2 consistent occurrences and zero counter-examples, each cited by file** → decide from status quo, and the decision MUST surface on the gate's `Decided without asking` line (a misjudged convention is overturnable there, never silent)
    - When in doubt, treat it as preference-driven — **NEVER skip a preference-driven point by pretending it's factual**
+   - **Mint each [TBD] with its candidate set**: `| candidates: <option> (evidence: <Practices/Constraints line or status-quo observation>) / … / skip-or-minimal | select: one|several` — `$spec-ask` derives its question options from these citations ("options are citations, not inventions"); a decision point whose candidates you cannot yet name needs more research, not a bare TBD
 8. **Close with the next command, keyed to `## Open`**: end the research turn by reporting the Open [TBD] state and the matching next step — `## Open` holds [TBD-N] items → the next command is `$spec-ask` (name the open TBD-N ids so the user knows what will be asked); `## Open` empty → `$spec-propose`. **NEVER recommend $spec-propose while `## Open` still holds [TBD-N] entries** — the propose gate blocks exactly that, and a wrong recommendation sends the user straight into the bounce.
 
 ## Changing direction (user provides a new direction)

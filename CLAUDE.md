@@ -111,7 +111,7 @@ printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CL
 
 **spec-verifier** (verification agent): dispatched by verify with a **deliberately fresh context** — the implementing conversation never audits itself. Protocol: Iron Law (no pass without fresh evidence; self-reported success is a claim to re-run), evidence-or-drop (≤3 findings per dimension), refutation phase (a defense must cite a gate decision), ast-grep machine pass over the shipped rule pack (graceful `not run` declaration when absent).
 
-**opt-in flags** (`apply design solid verify`): no extra reference loads by default; `design`→frontend-aesthetics, `solid`→agent-principles §1, `verify`→agent-principles §2.
+**opt-in flags** (`apply design strict`): no extra reference loads by default; `design`→frontend-aesthetics, `strict`→agent-principles §1+§2.
 
 ## Artifact model (generated in the user's project)
 

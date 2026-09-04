@@ -3,14 +3,13 @@
 
 > ⚠️ **Important**: This file is **not auto-loaded by any agent** — for routine implementation tasks, the Shared Principles in the sdd plugin overview SKILL.md are sufficient.
 >
-> How to enable: add a flag after `$spec-apply`.
+> How to enable: add the `strict` flag after `$spec-apply`.
 >
 > | flag | enables |
 > |---|---|
-> | `solid` | § 1 Anti-Laziness |
-> | `verify` | § 2 Anti-Hallucination |
+> | `strict` | § 1 Anti-Laziness + § 2 Anti-Hallucination |
 >
-> The main loop appends "enable anti-laziness" or "enable anti-hallucination" to the dispatch prompt; the agent reads the corresponding section accordingly.
+> The main loop appends "enable strict" to the dispatch prompt; the agent reads both sections.
 >
 > **Why opt-in**: These rules make agents excessively conservative in routine implementation scenarios — they refuse reasonable workarounds, over-Read files, and treat formality as a goal. Enable only in specific contexts: evaluation environments under pressure, complex codebases where hallucination is a real risk, or one-off research scripts where cutting corners is unacceptable.
 

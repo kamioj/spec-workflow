@@ -24,7 +24,7 @@ Invoke each phase command in the order below. **If any phase encounters user rej
    - More than 3 interfaces
    - Architecture diagram / data-flow diagram / sequence diagram needed
    - Deep decision argumentation exceeding 300 words
-4. **`$spec-propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: auto default = necessity chief lens + regression-compat only (testability/performance are manual-pick lenses, available on request at the gate); one refutation round; findings → ledger round 0)
+4. **`$spec-propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: necessity chief + regression-compat auto-dispatched — performance joins only on a recorded measured signal; extra passes via gate reply; one refutation round; findings → ledger round 0)
    - Before writing, the hook scans research.md for any remaining `[TBD]` placeholders
 5. **HARD GATE — touchpoint 1 of 2** — output the fixed closing block; escalated decisions pinned on top; wait
    - **Write zero code before the user's next command**; satisfied (or silent on the flagged decisions) → `$spec-apply` (apply auto-appends APPROVED; no "reply go" step)

@@ -1,9 +1,9 @@
 ---
 <!-- host:claude -->
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions + charter audit; --codex adds a heterogeneous Codex peer review (read-only); --codex --fix lets Codex apply fixes directly; native adds the opt-in project-idiom conformance pass. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance); --codex adds a heterogeneous Codex peer review (read-only); --codex --fix lets Codex apply fixes directly. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
 <!-- /host -->
 <!-- host:codex -->
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions + charter audit; native adds the opt-in project-idiom conformance pass. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance). Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
 <!-- /host -->
 allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 ---
@@ -11,21 +11,20 @@ allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 # /spec:verify
 
 <!-- host:claude -->
-## Three modes (flags)
+## Modes (flags)
 
 | Command | Behavior | Modifies code |
 |---|---|---|
-| `/spec:verify` | independent spec-verifier review: four dimensions + charter audit | ❌ |
+| `/spec:verify` | independent spec-verifier review: four dimensions | ❌ |
 | `/spec:verify --codex` | + Codex heterogeneous peer review, produces findings | ❌ report only |
 | `/spec:verify --codex --fix` | Codex review + applies fixes + Claude second-pass sign-off | ✅ |
-| `/spec:verify native` | + the opt-in **Native pass**: project-idiom conformance over every touched file (E-N exemplar / nearest same-type neighbors as the reference set — verifier check 6) | ❌ |
 
-`--fix` MUST be paired with `--codex` — standalone `--fix` outputs exactly `--fix requires --codex; run /spec:verify --codex --fix` and stops. Default (no flags) performs the independent review only, maintaining a read-only reporter stance. `native` is a dimension switch, not a mode — combinable with any row above (`/spec:verify native --codex`).
+`--fix` MUST be paired with `--codex` — standalone `--fix` outputs exactly `--fix requires --codex; run /spec:verify --codex --fix` and stops. Default (no flags) performs the independent review only, maintaining a read-only reporter stance. **Any other token in the arguments matches no flag and is flagged to the user as a possible typo** (same contract as /spec:apply's parsing) — nothing is silently ignored.
 <!-- /host -->
 <!-- host:codex -->
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
 
-`/spec:verify native` adds the opt-in **Native pass** (project-idiom conformance over every touched file — E-N exemplar / nearest same-type neighbors as the reference set; verifier check 6) to the spawned verifier's checklist.
+This command takes no flags on this host. **Any token in the arguments is flagged to the user as a possible typo** — nothing is silently ignored.
 <!-- /host -->
 
 ## Independent verifier (why verify dispatches an agent instead of reviewing inline)
@@ -33,13 +32,13 @@ allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 <!-- host:claude -->
 The conversation that just ran `/spec:apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `/spec:verify` therefore **dispatches the `spec-verifier` agent** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself. The same rule binds `/spec:apply`'s closing verification: the review is ALWAYS performed by a dispatched spec-verifier, whoever initiates it — the implementing conversation only ever does bookkeeping:
 
-1. Dispatch `spec-verifier` with the change name and nothing else (plus the `native` switch when the user passed it — the ONLY extra the dispatch may carry) — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
+1. Dispatch `spec-verifier` with the change name and nothing else — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
 <!-- /host -->
 <!-- host:codex -->
 The conversation that just ran `/spec:apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `/spec:verify` therefore **spawns the spec-verifier agent (defined in ~/.codex/agents/spec-verifier.toml)** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself. The same rule binds `/spec:apply`'s closing verification: the review is ALWAYS performed by a spawned spec-verifier, whoever initiates it — the implementing conversation only ever does bookkeeping:
 
 0. **Agent freshness pre-check** (once per session): compare the shipped `${PLUGIN_ROOT}/agents/spec-verifier.toml` with `~/.codex/agents/spec-verifier.toml` — missing → copy + one-line notice; differs → one-line notice + ask once (sync / keep — never clobber a customized agent silently); identical → proceed. Codex cannot bundle agents; without this check a plugin upgrade leaves the OLD verifier running with no error
-1. Spawn spec-verifier with the change name and nothing else (plus the `native` switch when the user passed it — the ONLY extra the dispatch may carry) — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
+1. Spawn spec-verifier with the change name and nothing else — its ignorance of the implementation process is the mechanism, don't "helpfully" brief it
    (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references, with the task text as a `{type:"text"}` item; both together is rejected)
 <!-- /host -->
 2. Transcribe its findings into ledger rows **without softening, dropping, or re-judging them** — format conversion only (one finding = one table row; severity / location / text preserved). Derive the per-dimension pass/fail lines from its findings; its `conclusion` is authoritative and may never be upgraded fail → pass. Disagreement is recorded as a note next to the row, never by deletion
@@ -76,12 +75,10 @@ The conversation that just ran `/spec:apply` cannot audit its own output — sam
 <!-- /host -->
 - **Charter audit** (see the dedicated section below): every fallback / degrade / compat path in the diff must trace to an explicit proposal `## How` / `## Risk` decision
 
-### 4. Reuse
-- Each new class / shared util / shared component / page in the diff: does the host codebase already have an equivalent (grep by **responsibility**, not just name)? Does the dev summary's `New creations` field carry the A-N gap citation? Does a new page conform to its designated E-N exemplar (abstractions the exemplar lacks = additions; conventions it has that the page drops = findings)?
-
-### Native pass (opt-in — runs ONLY with the `native` flag)
-- Project-idiom conformance over every touched file: compare against the E-N exemplar (or 1–2 nearest same-type files when the index has none) — naming / component shape / styling approach / state & error idioms / API-call pattern. Findings need **dual citation** (project convention at file:line with ≥2 occurrences vs the change's deviation at file:line); the project's own code is the sole authority — generic stack references are not citations here, and consistency outranks elegance. Full definition: spec-verifier check 6.
-- Anchored to index.md `## Assets` / `## Exemplars`; index absent (legacy change) → declare it, flag blatant duplication only
+### 4. Reuse & Conformance
+- Each new class / shared util / shared component / page in the diff: does the host codebase already have an equivalent (grep by **responsibility**, not just name)? Does the dev summary's `New creations` field carry the A-N gap citation?
+- **Conformance (new files/pages by default)**: compare each NEW file against its designated E-N exemplar — or 1–2 nearest same-type files in this project when the index names none — on naming / component shape / styling approach / state & error idioms / API-call pattern. Findings need **dual citation** (project convention at file:line with ≥2 occurrences vs the change's deviation at file:line); the project's own code is the sole authority — generic stack references are not citations here, and **consistency outranks elegance** (a deviation toward an objectively cleaner pattern is still a finding; a deliberate convention change is a gate decision). Abstractions the exemplar lacks = additions; conventions it has that the file drops = findings
+- Index absent (legacy change) → declare it, flag blatant duplication only
 
 ## Charter audit (part of Coherence — hunts the dirty-data defect class)
 
@@ -151,8 +148,8 @@ Enabled only with `--codex --fix`. **Uses the same `codex-exec.ps1`**, but the p
 === Verify ===
 [independent] Completeness: <pass/fail/partial> - <explanation>
                Correctness:  <pass/fail/partial> - <explanation>
-               Coherence:    <pass/fail/partial> - <explanation>
-               Reuse:        <pass/fail/partial> - <explanation>
+               Coherence:    <pass/fail/partial> - <explanation> (incl. charter sub-audit)
+               Reuse&Conf:   <pass/fail/partial> - <explanation>
 
 <!-- host:claude -->
 Evidence (mandatory in all modes — one line per check actually executed):
@@ -236,7 +233,7 @@ When the review fails, **report the specific failure point**:
 <!-- host:codex -->
 | Coherence | Where the change diverges from `## How`; scope creep; violations of stack conventions |
 <!-- /host -->
-| Reuse | The new creation + the existing equivalent it duplicates (file:line), or the E-N exemplar convention dropped, or the missing A-N gap citation |
+| Reuse & Conformance | The new creation + the existing equivalent it duplicates (file:line), or the E-N exemplar / nearest-neighbor convention dropped (dual citation), or the missing A-N gap citation |
 
 **Guiding principle**: describe the problem; do not prescribe the fix — the remediation path is for the user / main conversation to decide.
 

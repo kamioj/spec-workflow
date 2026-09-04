@@ -29,10 +29,10 @@ Invoke each phase command in the order below. **If any phase encounters user rej
    - Architecture diagram / data-flow diagram / sequence diagram needed
    - Deep decision argumentation exceeding 300 words
 <!-- host:claude -->
-4. **`/spec:propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: auto default = necessity chief lens + regression-compat only (testability/performance are manual-pick lenses, available on request at the gate); one refutation round; findings → ledger round 0) (for major proposals, additionally add `--codex` for a heterogeneous critique)
+4. **`/spec:propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: necessity chief + regression-compat auto-dispatched — performance joins only on a recorded measured signal; extra passes via gate reply; one refutation round; findings → ledger round 0) (for major proposals, additionally add `--codex` for a heterogeneous critique)
 <!-- /host -->
 <!-- host:codex -->
-4. **`/spec:propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: auto default = necessity chief lens + regression-compat only (testability/performance are manual-pick lenses, available on request at the gate); one refutation round; findings → ledger round 0)
+4. **`/spec:propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: necessity chief + regression-compat auto-dispatched — performance joins only on a recorded measured signal; extra passes via gate reply; one refutation round; findings → ledger round 0)
 <!-- /host -->
    - Before writing, the hook scans research.md for any remaining `[TBD]` placeholders
 5. **HARD GATE — touchpoint 1 of 2** — output the fixed closing block; escalated decisions pinned on top; wait

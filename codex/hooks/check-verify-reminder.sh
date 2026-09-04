@@ -65,5 +65,5 @@ fi
 
 block "SDD: change '$name' has an approved proposal but no implementation-round verification (verify.md absent, or holds only the round-0 critique).
 If implementation is unfinished (unchecked tasks.md items / What items not landed): CONTINUE implementing -- do not end the turn.
-If implementation just finished: run the closing verification now (four dimensions + charter audit) and write the ledger round (see \$spec-verify -- findings with V-N IDs + Evidence).
+If implementation just finished: run the closing verification now (four dimensions) and write the ledger round (see \$spec-verify -- findings with V-N IDs + Evidence).
 If you are deliberately pausing (stuck self-check / awaiting a user decision): say so explicitly to the user, then stop."

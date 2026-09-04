@@ -89,15 +89,14 @@ The agent automatically loads the corresponding tech-stack references by scope (
 
 ### Optional flags: principles reinforcement
 
-`/spec:apply` supports three flags, space-separated, combinable, omittable.
+`/spec:apply` supports two flags, space-separated, combinable, omittable.
 
 | flag | Turns on | Effect |
 |---|---|---|
 | `design` | anti-AI-slop | `spec-dev` (frontend scope) reads `skills/core/references/frontend-aesthetics.md` |
-| `solid` | anti-laziness | the agent reads `skills/core/references/agent-principles.md` § 1 |
-| `verify` | anti-hallucination | the agent reads `skills/core/references/agent-principles.md` § 2 |
+| `strict` | anti-laziness + anti-hallucination | the agent reads `skills/core/references/agent-principles.md` § 1 + § 2 |
 
-**$ARGUMENTS parsing**: split on spaces, and for each token check whether it's in the `{design, solid, verify}` set. Matched ones turn into "turn on anti-X" instructions in the dispatch prompt; unmatched tokens are flagged to the user as possible typos.
+**$ARGUMENTS parsing**: split on spaces, and for each token check whether it's in the `{design, strict}` set. Matched ones turn into "turn on anti-X" instructions in the dispatch prompt; unmatched tokens are flagged to the user as possible typos.
 
 **Usage examples**:
 
@@ -105,8 +104,8 @@ The agent automatically loads the corresponding tech-stack references by scope (
 |---|---|
 | `/spec:apply` | default, lean implementation |
 | `/spec:apply design` | the frontend agent loads anti-AI-slop |
-| `/spec:apply solid verify` | anti-laziness + anti-hallucination |
-| `/spec:apply design solid verify` | all three on |
+| `/spec:apply strict` | anti-laziness + anti-hallucination |
+| `/spec:apply design strict` | both on |
 
 **No flag by default** — to avoid over-caution on routine tool-type UIs / internal pages / backend services.
 

@@ -109,7 +109,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:propose [--codex]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | dispatch agents to implement |
-|  | `/spec:verify [--codex] [--fix] [native]` | independent fresh-context verifier review (four dimensions + charter audit); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly, `native` adds the opt-in project-idiom conformance pass |
+|  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch |
 |  | `/spec:archive` | archive the current change |
 
@@ -144,18 +144,17 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 ### opt-in enhancement flags
 
-`/spec:apply` runs lean by default. Three flags pull in extra discipline on demand:
+`/spec:apply` runs lean by default. Two flags pull in extra discipline on demand:
 
 | flag | Turns on | Use it when |
 |---|---|---|
 | `design` | anti-AI-slop | marketing pages, portfolios — anywhere visuals matter |
-| `solid` | anti-laziness (no workarounds) | one-off scripts where cutting corners is tempting |
-| `verify` | anti-hallucination (read before you write) | large codebases where guessing is dangerous |
+| `strict` | anti-laziness + anti-hallucination | one-off scripts tempted to cut corners; large codebases where guessing is dangerous |
 
 Stack them:
 
 ```
-/spec:apply design solid verify    # all three on
+/spec:apply design strict    # both on
 ```
 
 ---

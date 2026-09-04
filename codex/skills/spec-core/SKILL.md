@@ -34,7 +34,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `$spec-propose` | write proposal.md |
 |  | `$spec-revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `$spec-apply` | implement the code |
-|  | `$spec-verify [--fix] [native]` | dispatches the independent spec-verifier agent (four dimensions + charter audit); `--fix` lets the agent edit, `native` adds the opt-in project-idiom conformance pass |
+|  | `$spec-verify` | dispatches the independent spec-verifier agent (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files) |
 | Wrap up | `$spec-archive` | archive the change |
 
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
@@ -149,6 +149,8 @@ Next:
   🔧 Tweak one section → $spec-revise [why | what | how | risk]
   💭 Want to talk the direction over → $spec-chat
   🔄 Research needs redoing → $spec-research "<new direction>"
+  🔍 Want an extra review pass (performance / a deeper look at one aspect) → say so in this
+     reply — a supplementary panel round answers it
 </HARD-GATE>
 ```
 
@@ -166,13 +168,10 @@ The `codex/hooks/check-gate` hook checks the prerequisites before `$spec-apply` 
 ### Interrogation rules (in the spirit of grill-me)
 
 - **Self-contained prompts** (most important; applies everywhere you "ask the user / give a recommendation" — ask's options, HARD GATE change points, status's next steps): what you present = ① the decision / action in one line + ② the reason (what it affects / the cost of not doing it) + ③ for each option, "what choosing it leads to (concrete scenario / consequence)". **Test: the user can decide on it without asking a follow-up.** Vague content (just listing "A / B / C", or just naming a command with no consequence / reason) is the primary failure mode.
-- **Classify the select type, then police the options** (the two structural failures of low-value questions): pick-ONE (mutually exclusive paths — architecture A/B/C) → single-select; pick-SEVERAL (independent inclusions — which edge cases are in scope, which pages to touch, which concerns to adopt) → **multi-select, never forced into pick-one** (forcing drops legitimate picks or shreds one decision into serial questions; "which of these…" phrasing is the signal). And options must differ in **consequence, not wording**: a pair of options whose outcome lines read the same is ONE option — merge them; option count follows the real decision space, never padded toward 4 (a dominated option nobody would rationally pick, or a restatement of the question stem, is noise that costs reading time and trust). Two honest options beat four manufactured ones.
 - **Claim Self-Review (four-question filter)** (the sibling of self-contained prompts: that one governs "questions put to the user", this one governs "content produced"): before committing any claim, run it through four questions — ① **Why** (what problem can't be solved without it) ② **When is it favorable** (anchor a concrete scenario, not an abstract "more elegant") ③ **Cost** (every option has a price; if you can't name the cost, you haven't thought it through) ④ **Can it be cut** (if removing it changes nothing, **don't write it**). **Rigor is precision, not length**: the four questions are a **thinking** act, applied to every claim; but **only the conclusion of question ④ becomes text** (what survives the cut) — the deep argument of ② and ③ is **internalized** by default, expanded in writing only for the 1–2 decisions that are **genuinely contested / high-risk** (the expansion goes in design `## Key Decisions`, not folded into research / proposal). Test: the user can't extract anything new by pressing with the four questions, **and not a single sentence can be cut without loss**.
-- Preference-type decisions **MUST** be put to the user — via the `request_user_input` tool whenever the session has it (Codex's structured question tool, experimental flag `default_mode_request_user_input`; single-select, max 3 options per call). Fit questions to the tool rather than falling back to text while it exists: >3 candidates → the 3 slots are recommended + strongest alternative + skip/minimal (never trimmed), the rest named in the question text as text-reply picks (genuinely wide spaces narrow across two calls: category, then specifics); multi-select → per-candidate include/skip single-select calls, combined outcome echoed once. Plain text is ONLY the no-tool fallback, after a one-line tip naming the flag. Plain-text form: **batch independent questions into one message** (≤4): number questions `Q1 / Q2 / …`, letter options `A. / B. / C.` (never numbered — they would visually continue the question sequence), recommended option first marked "(Recommended)" with a one-line reason; close with one combined reply line (`"1A 3C"`; omitted questions resolve to the recommended option) and echo the full resolution — defaults marked — before writing anything to Decided. Only a mutually dependent chain goes one question at a time.
-- 2–4 options / put the recommended one first, mark it "(Recommended)" + one line on why
-- More than 4 options → split into "multi-level narrowing"
+- Preference-type decisions **MUST** be put to the user — via the `request_user_input` tool when the session has it (Codex's structured question tool, experimental flag `default_mode_request_user_input`), otherwise as plain-text questions after a one-line tip naming the flag
+- **The operational protocol is $spec-ask § How to ask — single source**: deriving options from research candidate sets ("options are citations, not inventions"), option-quality tests (consequence-differ, no padding, mandatory skip/minimal), select-type and sibling aggregation, per-host delivery mechanics (option caps, compression, batching, combined reply, echo), and book-keeping. Any command that interrogates follows it; rounds repeat until every pending point is resolved or the user says stop — a point left silently unasked comes back as a gate block
 - Unsure whether it's fact-type or preference-type → treat it as preference-type
-- At most 4 questions per round — and round caps are not run caps: rounds repeat until every pending point is resolved or the user says stop; a point left silently unasked doesn't disappear, it comes back as a gate block
 - **Exception — inside the `$spec-workflow` orchestration**: the flow is two-touchpoint by
   design (HARD GATE + acceptance), so preference points are NOT asked mid-flight — they are
   triaged (see $spec-ask § Auto triage): decided with an `auto` or `escalated` mark and

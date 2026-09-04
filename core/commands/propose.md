@@ -80,16 +80,16 @@ The proposal's quality guard is structural adversarialism, not a smarter single 
 (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references; both together is rejected.)
 <!-- /host -->
 
-**Lens selection depends on who invoked propose:**
-- **Standalone (manual) `/spec:propose`** — before dispatching, put the lens choice to the user as ONE multi-select question (per SKILL Interrogation rules; self-contained — each option names what that lens catches and what skipping it risks). Options = the four lenses below, with **necessity + regression-compat pre-recommended** and performance annotated "select only with a measured problem" (an evidence-free perf lens manufactures pre-optimization — field-verified failure mode). Dispatch exactly what the user picked.
-- **Workflow-invoked (auto orchestration)** — no mid-flight questions (two-touchpoint doctrine): dispatch **necessity + regression-compat only**. The other lenses stay available to the user at the gate ("want a testability/performance pass → say so" is a legal gate reply, answered with a supplementary panel round).
+**Lens dispatch is automatic — there is no selection question, whoever invoked propose:**
+- **Every invocation** dispatches **necessity + regression-compat**. The necessity brief carries the falsifiability question (fifth question below) — falsifiability is a per-item mechanical check, not a separate stance.
+- **performance joins by evidence, never by menu**: dispatch it ONLY when research.md / index.md carries a line explicitly recorded as a **measured signal** (profile output / slow-query log / user report). No such line → not dispatched: an evidence-free perf lens manufactures pre-optimization (field-verified failure mode), and its only legal output would be "nothing to say".
+- **Extra review depth is one gate reply away**: the gate's Next block offers a supplementary panel round ("want a performance / deeper pass → say so in your reply") — the escape hatch, not a menu, is how the user adds depth.
 
-| Lens | Locked stance | Auto default |
+| Lens | Locked stance | Dispatched |
 |---|---|---|
-| **necessity** (chief) | "Oppose every measure by default." Four-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal. **Anti-minting check** (the ammunition is index.md `## Carriers`): every new carrier in What/How — field / param / method / endpoint / validation / default — is reconciled against the map; a concept whose row names an existing carrier yet the proposal mints a new one = finding; a minting with no C-N row = finding. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | yes |
-| **regression-compat** | what existing behavior, consumer, or installed user does this change break | yes |
-| **testability** | is every What item's `verify:` clause actually falsifiable — could it pass while the feature is broken | manual pick only |
-| **performance** | hot paths / loops / batch queries / N+1 — **evidence-gated**: a finding must carry either a measured signal (profile / slow-query log / user report) or a structural argument that itself meets the evidence bar (the specific code path cited file:line PLUS the growth reasoning, e.g. an unbounded collection driving a per-item query); "looks slow" is not evidence, and absent evidence the lens's only legal output is "no measured problem — nothing to say" (pre-optimization suggestions are gold-plating, not findings) | manual pick only — select only when a measured problem exists |
+| **necessity** (chief) | "Oppose every measure by default." Five-question refutation of every `## What` item and every fallback / degrade / compat path in `## How`: why is it needed / what breaks if removed / does the triggering scenario actually occur in this business / is this optimal / **is the item's `verify:` clause falsifiable — could it pass while the feature is broken**. **Anti-minting check** (the ammunition is index.md `## Carriers`): every new carrier in What/How — field / param / method / endpoint / validation / default — is reconciled against the map; a concept whose row names an existing carrier yet the proposal mints a new one = finding; a minting with no C-N row = finding. **Verdict split**: a **silent fallback** (swallows failure, falls back to old logic, degrades pretending to be normal) with no real triggering-scenario evidence → recommend deletion; a **loud guard** (boundary validation / idempotency / CAS / throws on failure) is judged by "what invariant does it protect + blast radius if broken", **never** by incident history — tail-risk defenses may survive without one | always |
+| **regression-compat** | what existing behavior, consumer, or installed user does this change break | always |
+| **performance** | hot paths / loops / batch queries / N+1 — **evidence-gated twice**: dispatched only on a recorded measured signal (rule above), and each finding must carry that signal or a structural argument that itself meets the evidence bar (the specific code path cited file:line PLUS the growth reasoning, e.g. an unbounded collection driving a per-item query); "looks slow" is not evidence | only when research/index records a measured signal |
 
 **Discipline** (reuses the spec-verifier protocol — the anti-sycophancy measures are structural, not tonal):
 - **evidence-or-drop**: a finding must cite the concrete proposal line + the concrete scenario where it bites; "this might be risky" is dropped unwritten
@@ -183,6 +183,8 @@ Next:
   🔧 Tweak one section → /spec:revise [why | what | how | risk]
   💭 Want to talk the direction over → /spec:chat
   🔄 Research needs redoing → /spec:research "<new direction>"
+  🔍 Want an extra review pass (performance / a deeper look at one aspect) → say so in this
+     reply — a supplementary panel round answers it
 </HARD-GATE>
 ```
 
