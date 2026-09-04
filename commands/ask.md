@@ -19,6 +19,7 @@ allowed-tools: Read, Edit, AskUserQuestion
    - **Always include a "skip / minimal" option** (SKILL Claim Self-Review fourth question applied at the ask stage): preference-driven questions MUST include a "don't do it yet (cost = X)" or "minimal viable (cost = Y)" candidate, to force the question "is this even necessary?" — unless there is genuinely no "skip" path for this decision (the cache example below is the canonical model). Not every option should be a variant of "which way to do it".
    - More than 4 options → use progressive narrowing: ask the broad category first, then narrow
    - Mutually dependent decision points: one question at a time, expand the next question based on the answer (don't pre-enumerate); mutually independent points: batch up to 4 questions at once
+   - **Round caps are not run caps**: the per-round limits (max 4 questions; host option caps) never justify dropping a decision point — run as many rounds as it takes, until `## Open` is empty or the user says stop. Ending the run with items still Open is legal ONLY with an explicit declaration (`N decisions remain open — /spec:propose stays blocked until they're resolved`); a silently unasked item is exactly the miss the check-tbd gate bounces later
 
    **Anti-example → Correct example** (same [TBD]: cache library selection):
    - ❌ Empty question (will get follow-ups like "what does it affect / why recommend"): `Which cache? Redis(recommended) / Caffeine / Neither`

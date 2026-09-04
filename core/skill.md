@@ -198,12 +198,12 @@ The `codex/hooks/check-gate` hook checks the prerequisites before `/spec:apply` 
 - 2–4 options / put the recommended one first, mark it "(recommended)" + one line on why
 <!-- /host -->
 <!-- host:codex -->
-- Preference-type decisions **MUST** be put to the user — via the `request_user_input` tool when the session has it (Codex's structured question tool, gated behind the experimental `default_mode_request_user_input` flag; single-select per call — multi-select questions stay plain text), otherwise as plain-text questions after a one-line tip naming the flag. Plain-text form: **batch independent questions into one message** (≤4): number questions `Q1 / Q2 / …`, letter options `A. / B. / C.` (never numbered — they would visually continue the question sequence), recommended option first marked "(Recommended)" with a one-line reason; close with one combined reply line (`"1A 3C"`; omitted questions resolve to the recommended option) and echo the full resolution — defaults marked — before writing anything to Decided. Only a mutually dependent chain goes one question at a time.
+- Preference-type decisions **MUST** be put to the user — via the `request_user_input` tool when the session has it (Codex's structured question tool, gated behind the experimental `default_mode_request_user_input` flag; single-select, at most 3 options per call — multi-select or 4-option questions stay plain text, and the skip/minimal candidate is never trimmed to fit the tool), otherwise as plain-text questions after a one-line tip naming the flag. Plain-text form: **batch independent questions into one message** (≤4): number questions `Q1 / Q2 / …`, letter options `A. / B. / C.` (never numbered — they would visually continue the question sequence), recommended option first marked "(Recommended)" with a one-line reason; close with one combined reply line (`"1A 3C"`; omitted questions resolve to the recommended option) and echo the full resolution — defaults marked — before writing anything to Decided. Only a mutually dependent chain goes one question at a time.
 - 2–4 options / put the recommended one first, mark it "(Recommended)" + one line on why
 <!-- /host -->
 - More than 4 options → split into "multi-level narrowing"
 - Unsure whether it's fact-type or preference-type → treat it as preference-type
-- At most 4 questions at a time
+- At most 4 questions per round — and round caps are not run caps: rounds repeat until every pending point is resolved or the user says stop; a point left silently unasked doesn't disappear, it comes back as a gate block
 - **Exception — inside the `/spec:workflow` orchestration**: the flow is two-touchpoint by
   design (HARD GATE + acceptance), so preference points are NOT asked mid-flight — they are
   triaged (see /spec:ask § Auto triage): decided with an `auto` or `escalated` mark and

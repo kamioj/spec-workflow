@@ -89,11 +89,12 @@ the Claude Code plugin — see the [root README](../README.md).
 - **`$spec-ask` structured questions need an experimental flag**: `codex features
   enable default_mode_request_user_input` (takes effect on a new task) gives sessions
   a `request_user_input` tool, and `$spec-ask` uses it — one single-select call per
-  question. Without the flag, interrogation falls back to plain text after a one-line
-  tip naming it: independent questions batched into a single message with lettered
-  options and a one-line combined reply (`1A 3C`; omitted questions take the
-  recommended option). Multi-select questions are always plain text (the tool has no
-  multi-select).
+  question that fits the tool's shape (single-select, ≤3 options). Without the flag,
+  interrogation falls back to plain text after a one-line tip naming it: independent
+  questions batched into a single message with lettered options and a one-line
+  combined reply (`1A 3C`; omitted questions take the recommended option).
+  Multi-select and 4-option questions are always plain text (the tool is
+  single-select and caps options at 3).
 - **No heterogeneous peer review**: the Claude-side `--codex` flag (Codex as an
   adversarial second opinion) has no equivalent here — Codex cannot be its own
   heterogeneous reviewer.

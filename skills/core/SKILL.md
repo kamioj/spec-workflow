@@ -169,7 +169,7 @@ The `check-gate.sh` hook checks the prerequisites before `/spec:apply` runs (pro
 - 2–4 options / put the recommended one first, mark it "(recommended)" + one line on why
 - More than 4 options → split into "multi-level narrowing"
 - Unsure whether it's fact-type or preference-type → treat it as preference-type
-- At most 4 questions at a time
+- At most 4 questions per round — and round caps are not run caps: rounds repeat until every pending point is resolved or the user says stop; a point left silently unasked doesn't disappear, it comes back as a gate block
 - **Exception — inside the `/spec:workflow` orchestration**: the flow is two-touchpoint by
   design (HARD GATE + acceptance), so preference points are NOT asked mid-flight — they are
   triaged (see /spec:ask § Auto triage): decided with an `auto` or `escalated` mark and
