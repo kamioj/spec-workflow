@@ -1,6 +1,6 @@
 ---
 name: spec-ask
-description: Interrogates preference-driven decision points. Works through each [TBD] in research.md one by one as numbered plain-text questions; answered items are moved to ## Decided. Inside $spec-workflow it switches to auto triage (decide + mark, no questions). Can be triggered multiple times; new [TBD]s may surface during the process.
+description: Interrogates preference-driven decision points. Works through the [TBD]s in research.md as batched plain-text questions (independent ones grouped into one message, lettered options, one-line combined reply); answered items are moved to ## Decided. Inside $spec-workflow it switches to auto triage (decide + mark, no questions). Can be triggered multiple times; new [TBD]s may surface during the process.
 ---
 <!-- GENERATED from core/commands/ask.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -14,7 +14,9 @@ description: Interrogates preference-driven decision points. Works through each 
    - **Preference-driven** (multiple valid options, depends on user trade-offs) → ask as a numbered plain-text question in the conversation
    - **Uncertain → treat as preference-driven** (never skip)
 3. **How to ask preference-driven questions** (inherits global *Asking Style* + SKILL "Self-Contained Prompts"):
-   - Ask each question as plain text in the conversation. Do **not** use a structured tool UI. Fixed format, no deviation: questions are numbered `Q1 / Q2 / …`; **options are ALWAYS lettered `A. / B. / C.` — never numbered** (numbered options visually continue the question sequence, and the user reads five questions where there is one); recommended option first, marked "(Recommended)"; close each question with `Reply with a letter (e.g. "A").`; wait for the answer before the next question.
+   - Ask as plain text in the conversation — no structured tool UI exists on this host. **Batch all mutually independent questions into ONE message** (≤4, per the shared rules below); only a mutually dependent chain goes one question at a time. Fixed format, no deviation: questions are numbered `Q1 / Q2 / …`; **options are ALWAYS lettered `A. / B. / C.` — never numbered** (numbered options visually continue the question sequence, and the user reads five questions where there is one); recommended option first, marked "(Recommended)". The message closes with ONE reply-protocol line (verbatim):
+     `Reply in one line — e.g. "1A 3C". Multi-select: "2: A C". None fits: "3: <your answer>". "all recommended" takes every recommendation; questions you omit resolve to their (Recommended) option.`
+   - **Echo the resolution before writing back**: after the reply, list every question's outcome (`Q1 → A · Q2 → B (default) · …`) with defaulted ones explicitly marked — a mistaken default must be overturnable with one line, never silently absorbed into Decided.
    - **Every question must be self-contained (top priority)**: ① one-sentence decision statement + ② why it must be settled now (what it affects / what breaks if left open) + ③ for each option, "choosing this leads to what — specific scenario / consequence". **The user must be able to answer without asking a follow-up**.
    - Single-select (architecture A/B/C) or multi-select (which edge cases are in scope); 2–4 options; recommended option goes first, labeled "(Recommended)" with a one-line reason
    - **Always include a "skip / minimal" option** (SKILL Claim Self-Review fourth question applied at the ask stage): preference-driven questions MUST include a "don't do it yet (cost = X)" or "minimal viable (cost = Y)" candidate, to force the question "is this even necessary?" — unless there is genuinely no "skip" path for this decision (the cache example below is the canonical model). Not every option should be a variant of "which way to do it".
@@ -29,8 +31,8 @@ description: Interrogates preference-driven decision points. Works through each 
      > A. Redis (Recommended): shared across instances, strongly consistent across machines; cost = extra dependency + network round-trip per read
      > B. Caffeine: fastest in-process, zero dependencies; cost = each instance holds its own copy, **data inconsistent across machines**
      > C. Skip for now: simplest; cost = high-frequency reads hit the DB directly, revisit when load demands it
-     >
-     > Reply with a letter (e.g. "A").
+
+     (the reply-protocol line closes the whole batched message once — never repeated per question)
 4. Before the first question, one-line declaration:
    ```
    Found N open decisions — working through them one by one. This may not be exhaustive; flag anything I miss.

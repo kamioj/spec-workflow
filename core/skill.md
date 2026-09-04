@@ -198,7 +198,7 @@ The `codex/hooks/check-gate` hook checks the prerequisites before `/spec:apply` 
 - 2–4 options / put the recommended one first, mark it "(recommended)" + one line on why
 <!-- /host -->
 <!-- host:codex -->
-- Preference-type decisions **MUST** be put to the user as numbered plain-text questions (ask in the conversation, do not use a structured tool). Each question must be self-contained with candidates listed as numbered options, the recommended option marked "(Recommended)" with a one-line reason. Wait for the user's answer before proceeding to the next question.
+- Preference-type decisions **MUST** be put to the user as plain-text questions in the conversation (no structured question tool exists on this host). **Batch independent questions into one message** (≤4): number questions `Q1 / Q2 / …`, letter options `A. / B. / C.` (never numbered — they would visually continue the question sequence), recommended option first marked "(Recommended)" with a one-line reason; close with one combined reply line (`"1A 3C"`; omitted questions resolve to the recommended option) and echo the full resolution — defaults marked — before writing anything to Decided. Only a mutually dependent chain goes one question at a time.
 - 2–4 options / put the recommended one first, mark it "(Recommended)" + one line on why
 <!-- /host -->
 - More than 4 options → split into "multi-level narrowing"
