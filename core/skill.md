@@ -17,6 +17,8 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 
 ## Command index
 
+**This table is the authority on what exists.** The host's tool/skill roster is a display surface that can omit entries — a `/spec:x` command absent from your roster is NOT absent from the plugin: every command below works as a typed slash command regardless. Never declare a command nonexistent (or improvise a replacement flow) from roster absence; check this table.
+
 | Category | Command | Responsibility |
 |---|---|---|
 <!-- host:claude -->
