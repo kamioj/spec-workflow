@@ -96,7 +96,7 @@ Every `auto` / `escalated` decision runs the four-question filter first (SKILL "
 
 | Situation | Action |
 |---|---|
-| Open [TBD] cleared | Stop; prompt "ready for /spec:propose" |
+| Open [TBD] cleared | Stop — then **pre-flight propose's other gate preconditions before naming it** (SKILL § Gate-aware next steps): exactly one active change → prompt "ready for /spec:propose"; more than one → the next step is disposition, not propose: list the extra changes with a per-change recommendation (stash = zero-loss default, archive those whose record shows them finished) and offer to write the `.paused` markers yourself |
 | User says "stop asking" / "that's enough" | Stop; leave remaining items Open with the pending declaration (the pre-/spec:propose hook will block execution) |
 | Interrogation diverges and can't be resolved | Stop; report "collected N decisions, K items remain — suggest revisiting later" |
 
