@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.7.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -100,8 +100,8 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:loop <goal>` | goal-driven **autonomous round loop**: approve the goal + acceptance checklist + round budget once, then it researches / implements / verifies / retrospects round after round — hook-driven, ledger-remembered — until acceptance or a fuse |
 |  | `/spec:fix <task>` | **streaming light tier** for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to the standing `fixes/` batch; size is advisory, never a refusal |
 |  | `/spec:status` | report where the current change stands (including paused changes and the fix batch's pending count) |
-|  | `/spec:stash` | **suspend** the active change — frees the single-active slot; ledger, index, and proposal stay warm |
-|  | `/spec:resume` | bring a paused change back with re-entry context (where it left off, what's open) |
+|  | `/spec:stash` | **park** a change deliberately (`.paused`: date + reason) — optional bookkeeping; every artifact stays warm |
+|  | `/spec:resume [name]` | **the switcher**: writes the current pointer (`spec/changes/.current`) to the named change (unpausing it if parked) — parallel changes coexist, gates target the pointed one; no name → list what there is to switch to |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
 |  | `/spec:ask` | work through the `[TBD]` questions with you |
 |  | `/spec:chat` | discussion mode — never touches a file |
@@ -120,9 +120,9 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 | Hook | Fires on | What it does |
 |---|---|---|
 | `check-tbd.sh` | before `/spec:propose` | blocks if research.md still has a `[TBD-N]` |
-| `check-gate.sh` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or more than one active change |
+| `check-gate.sh` | before `/spec:apply` | blocks if the proposal isn't ready: missing / incomplete proposal.md (four sections), or an ambiguous target (multiple active changes with no current pointer selecting one) |
 | `check-archive.sh` | before `/spec:archive` & `/spec:ship` | blocks if the change bypassed the flow (unapproved proposal / unchecked tasks / no proposal; fix batches: archive requires shipped + Audit, ship requires a non-empty batch); override deliberately with `force` or `abandoned` |
-| `check-verify-reminder.sh` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
+| `check-verify-reminder.sh` | Stop (end of a Claude turn) | nudges Claude to run the closing verification when a turn ends with the targeted change (current pointer, or the single active one) holding an approved proposal but no `verify.md` ledger (one nudge per stop, loop-guarded) |
 | `loop-driver.sh` | Stop, when exactly one `running` loop ledger exists | re-injects the next `/spec:loop` round (probe-verified Stop JSON contract) — or releases the stop with a **distinct notice** per ending: acceptance met / round cap / no progress / refusal-to-retrospect / corrupt ledger. All fuse signals are mechanical (checkbox counts, worktree fingerprint) — the model's own "I made progress" is never consulted |
 
 **Soft vs hard constraints.** A prompt that says "you must do X" can be ignored by the model. A hook is a shell script — it can't be: a **0% violation rate**.
@@ -241,7 +241,9 @@ What the plugin writes into your project when you run it:
 
 ```
 <your-project>/spec/
-├── knowledge.md                    # project-level durable facts (cross-change; archive maintains, research reads first)
+├── knowledge.md                    # knowledge INDEX — one line per subdoc (`- [kind/domain] file — hook`)
+├── knowledge/                      # knowledge subdocs: domain fact files + long-form experience docs (two-step reads: index first, open only what's relevant)
+├── changes/.current                # current-change pointer — gates target it; /spec:resume <name> switches it
 ├── changes/<change-name>/          # active change workspace
 │   ├── research.md   required      # current research (practices + constraints + open decisions), single file
 │   ├── research/     optional      # discarded-direction drafts for this change (research.md snapshots, no markers/links, revivable)
@@ -317,6 +319,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.8.0** — **the knowledge & lifecycle overhaul**: the knowledge base becomes an index + subdocs architecture (`spec/knowledge.md` holds one line per subdoc, facts live in `spec/knowledge/` domain files and long-form docs; format authority `references/knowledge-spec.md`, with a legacy predicate that migrates old flat files lazily) and is consumed as a **verified-fact cache** at five seams (research status-quo mapping, dev-agent startup, fix locate, verifier rulings, propose panel) under a new shared principle — recorded facts are trusted until contradicted, never re-derived; all three sediment writers (archive / ship / verify false-positive rulings) route into subdocs + index, with threshold-triggered consolidation that lets new experience supersede stale facts. Archiving stops being decorative: status and the next-step recommender actively flag verify-passed changes as archive candidates, and starting a new change with old actives triages them in one structured question (archive / stash / keep parallel) instead of erroring. Parallel changes get an O(1) switcher: `spec/changes/.current` is a one-line current-change pointer — the three counting gates and the Stop reminder resolve their target pointer-first (dangling pointer falls back silently, fail-open), `/spec:resume <name>` switches it, research writes it at change creation, archive/stash clear it; `/spec:stash` is repositioned as optional parking, no longer a prerequisite for coexistence
 - **0.7.1** — **comments state function, not process** (charter clause 8): change-narrative comments belong in spec artifacts and commit messages, never in merged code — during implementation a process marker is legal only with the uniform `DEVLOG:` tag, and the coding phase ends with a mechanical sweep to zero (each tag rewritten as a function comment or deleted; residual tags are charter findings). Plus: the tasks.md >5-subtask trigger now carries its reason and admits no single-executor waiver — the checkbox ledger is the only persistent progress record a long run has
 - **0.7.0** — **the interrogation & review overhaul**: the review surface collapses from a wall of switches to near-zero mandatory choices — propose's lens-selection question is gone (necessity + regression-compat always dispatch; falsifiability is necessity's fifth question; performance joins only when research records a measured signal; extra passes are one gate reply away), the Native pass merges into **Reuse & Conformance** (new files audited against project idiom by default, no flag), apply's `solid`+`verify` collapse into `strict`, and the public taxonomy is uniformly **four dimensions** with the charter audit as Coherence's sub-audit. Interrogation becomes a four-stage pipeline (Derive → Craft → Deliver → Book-keep): question options are **citations from research's candidate sets, not inventions**; sibling include/skip decisions aggregate into one multi-select; questions left with fewer than two real options self-decide and surface at the gate; every round ends with an `Open: N` tail line so nothing is silently unasked. Codex-side asking is tool-first (`request_user_input` behind its experimental flag, shape-compressed) with a batched plain-text fallback; unknown flags on any command are flagged as possible typos, never silently swallowed. Plus: loop dirs join the gates' active-change exemption, gate block messages self-diagnose wrong-spec-tree cases (worktree / main repo / subproject), and research must close by recommending the step its own Open list actually requires
 - **0.6.3** — **carrier-level fidelity (derive, don't mint)**: a field run showed 8 reworks sharing one shape — requirement nouns minted 1:1 into new code entities (field / param / method / validation / default) instead of derived from existing truth sources, with every catch made by the user's manual diff review and none by the flow. The fix is a prevention chain, entirely upstream of verify:

@@ -50,7 +50,21 @@ try {
                    -not ((Test-Path (Join-Path $_.FullName 'loop.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 
-    # Only nudge in the unambiguous single-active-change window
+    # Current-change pointer: when spec/changes/.current names a member of the active list,
+    # the reminder binds to that change. Dangling/invalid pointer = silently ignored
+    # (fail-open family), falling back to single-active.
+    $changes = @($changes)
+    $currentFile = Join-Path $changesDir '.current'
+    if ($changes.Count -gt 1 -and (Test-Path $currentFile)) {
+        $cur = (Get-Content $currentFile -TotalCount 1 -ErrorAction SilentlyContinue)
+        if ($cur) { $cur = $cur.Trim() }
+        if ($cur) {
+            $hit = @($changes | Where-Object { $_.Name -eq $cur })
+            if ($hit.Count -eq 1) { $changes = $hit }
+        }
+    }
+
+    # Only nudge with an unambiguous target (the pointed change, or the single active one)
     if (-not $changes -or $changes.Count -ne 1) { exit 0 }
 
     $change = $changes[0]

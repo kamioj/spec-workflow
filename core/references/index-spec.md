@@ -6,7 +6,7 @@
 
 Built by `/spec:research` at **first contact** with the requirement source (user words / prototype / defect) — one extraction, verbatim quotes, never paraphrases. Frozen at the HARD GATE; **append-only** afterwards: adjudicated concerns and newly discovered requirements append new IDs; existing IDs are never renumbered or rewritten (downstream citations would become dead pointers).
 
-Afterward proposal `## What` items cite it (`| refs: R-N`), spec-dev reads it at startup, spec-verifier audits the diff against it, and `/spec:archive` sediments its Assets/Exemplars into `spec/knowledge.md`.
+Afterward proposal `## What` items cite it (`| refs: R-N`), spec-dev reads it at startup, spec-verifier audits the diff against it, and `/spec:archive` sediments its Assets/Exemplars into the knowledge base (`spec/knowledge/` subdocs + the `spec/knowledge.md` index).
 
 ## Format
 
@@ -67,7 +67,7 @@ The index stores only what does not change: quotes, asset names, exemplar design
 | Freeze | `/spec:propose` (HARD GATE) | What items cite entries; the gate lists unsourced additions and approves C-N minting rows |
 | Append | `/spec:apply` concern adjudication | adopted concerns → new R-N |
 | Audit | `/spec:verify` | Coherence anchors to R-N; Reuse anchors to A-N / E-N |
-| Sediment | `/spec:archive` | durable A-N / E-N facts → spec/knowledge.md |
+| Sediment | `/spec:archive` | durable A-N / E-N facts → the knowledge base (domain subdocs under spec/knowledge/ + index line; format → knowledge-spec.md) |
 
 ## Anti-patterns
 

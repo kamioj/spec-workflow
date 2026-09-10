@@ -28,7 +28,7 @@ awk -v s="${CLAUDE_CODE_SESSION_ID:-}" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s}
 
 ## Cold start (touchpoint 1 of 2: goal confirmation)
 
-1. **Pre-check**: another `running` loop.md in this project → refuse (one loop at a time). Other active changes exist → warn: while a loop runs, its change dir counts toward the single-active-change rule (check-tbd/check-gate will block `/spec:propose`/`/spec:apply` in this project).
+1. **Pre-check**: another `running` loop.md in this project → refuse (one loop at a time). Other active changes coexist fine — loop dirs without proposal.md are exempt from the gates' active count, and the current pointer keeps propose/apply targeting their own change while the loop runs.
 2. **Goal confirmation** — the one interrogation of the whole run, so it must be complete (asked per SKILL Interrogation rules; self-contained options):
    - the goal, restated in one sentence (no restatement → no loop)
    - the **acceptance checklist**: 2–8 items, each independently verifiable with a `verify:` clause (an executable check or observable behavior — "feels better" is not acceptance); confirm items AND their verify clauses with the user
@@ -67,7 +67,7 @@ Implications:
 <!-- KEPT IN SYNC with the loop-driver final-acceptance reinject template (hooks/loop-driver.sh + codex twins). -->
 
 
-When every Acceptance item is checked, the driver injects the final-acceptance turn: dispatch a **fresh spec-verifier** to independently re-verify EVERY Acceptance item against its `verify:` clause — mid-loop checkmarks are claims; **this is the loop's ONLY independent audit, so it is exhaustive**. The audit is iterative by design: items that fail get **unchecked**, the findings recorded in the current round, and the loop continues fixing (the driver re-arms automatically; each audit pass counts toward the round cap). Only when every item holds: **report per-item results to the user** and set `status: done`. Then `/spec:archive` closes the change (loop.md travels with it, `.loop-state` is deleted, durable Lessons feed `spec/knowledge.md`).
+When every Acceptance item is checked, the driver injects the final-acceptance turn: dispatch a **fresh spec-verifier** to independently re-verify EVERY Acceptance item against its `verify:` clause — mid-loop checkmarks are claims; **this is the loop's ONLY independent audit, so it is exhaustive**. The audit is iterative by design: items that fail get **unchecked**, the findings recorded in the current round, and the loop continues fixing (the driver re-arms automatically; each audit pass counts toward the round cap). Only when every item holds: **report per-item results to the user** and set `status: done`. Then `/spec:archive` closes the change (loop.md travels with it, `.loop-state` is deleted, durable Lessons feed the knowledge base (subdocs + index, per knowledge-spec.md)).
 
 A fuse stop instead of acceptance → report the driver's notice verbatim, plus: what the ledger shows, what you would change (plan / acceptance list / budget), and wait — resuming is the user's call (`/spec:loop`).
 

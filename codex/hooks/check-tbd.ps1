@@ -42,13 +42,27 @@ try {
                    -not ((Test-Path (Join-Path $_.FullName 'loop.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 
+    # Current-change pointer: when spec/changes/.current names a member of the active list,
+    # that member IS the target. Dangling/paused/invalid pointer = silently ignored
+    # (fail-open family), falling back to the single-active rule.
+    $changes = @($changes)
+    $currentFile = Join-Path $changesDir '.current'
+    if ($changes.Count -gt 1 -and (Test-Path $currentFile)) {
+        $cur = (Get-Content $currentFile -TotalCount 1 -ErrorAction SilentlyContinue)
+        if ($cur) { $cur = $cur.Trim() }
+        if ($cur) {
+            $hit = @($changes | Where-Object { $_.Name -eq $cur })
+            if ($hit.Count -eq 1) { $changes = $hit }
+        }
+    }
+
     if (-not $changes -or $changes.Count -eq 0) {
         Block "SDD: no active change under $changesDir (.paused / quick / fix / loop dirs do not count). Start with `$spec-research <direction>. Already researched one? It may sit in a DIFFERENT spec tree (another worktree / the main repo / a subproject) -- hooks only see the session cwd: move it here, or relaunch there"
     }
 
     if ($changes.Count -gt 1) {
         $names = ($changes | ForEach-Object { $_.Name }) -join ', '
-        Block "SDD: multiple active changes detected under $changesDir ($names). This workflow assumes a single active change -- `$spec-archive the rest (or clean them up) before `$spec-propose"
+        Block "SDD: multiple active changes detected under $changesDir ($names) and no current pointer selects one. Pick the target with `$spec-resume <name> (writes spec/changes/.current), or `$spec-archive / `$spec-stash the rest before `$spec-propose"
     }
 
     foreach ($change in $changes) {

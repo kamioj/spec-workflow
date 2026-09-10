@@ -20,7 +20,7 @@ description: Implement the code, advancing by proposal/tasks. A pre-command hook
      Timestamp uses the current ISO local time
    - Already has an APPROVED marker (from the `$spec-workflow` flow or a previous apply) → don't append again
 
-3. **Hook check**: `codex/hooks/check-gate` fires at the prompt-submission moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections, single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `codex/hooks/check-archive` audits it at archive time.
+3. **Hook check**: `codex/hooks/check-gate` fires at the prompt-submission moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections; an unambiguous target — the current pointer or the single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `codex/hooks/check-archive` audits it at archive time.
 
    If the hook blocks (outputs `{"decision":"block"}` to stdout — no/incomplete proposal, multiple active changes) → handle per its error message, don't force a bypass.
 

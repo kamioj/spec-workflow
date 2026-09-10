@@ -75,7 +75,7 @@ When any one condition holds, **the propose stage generates** `spec/changes/<nam
 
 ## Critique panel (runs after proposal.md is written, before the HARD GATE)
 
-The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` + index.md — never this conversation; index.md absent → legacy change: note it in the dispatch, critics proceed without) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
+The proposal's quality guard is structural adversarialism, not a smarter single author. Dispatch independent critics **in parallel (one message)**, each with a **fresh context** (it reads only proposal.md + design.md + research.md `## Decided` + index.md + the knowledge base's relevant lines — scan `spec/knowledge.md`, open matching `[ruling]`/`[fact]` subdocs; past rulings are refutation ammunition — never this conversation; index.md absent → legacy change: note it in the dispatch, critics proceed without) and **one locked stance**. Describe the role inline in the dispatch prompt — no dedicated critic agent file ships with sdd.
 <!-- host:codex -->
 (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references; both together is rejected.)
 <!-- /host -->
@@ -193,7 +193,7 @@ reply is an evaluation, not a command sheet. Respond to EVERY item in it explici
 **adopt** (apply via /spec:revise) / **refute** (state the reason: evidence or a Decided
 entry) / **partial** (which half and why). One response round only; the user has the final
 say — an item the user insists on after your refutation is applied AND recorded in the
-ledger as a user-override (the lesson later lands in spec/knowledge.md at archive time).
+ledger as a user-override (the lesson later lands in the knowledge base at archive time).
 Absorbing every point without examination is sycophancy toward the user — the flow's
 quality depends on criticism running in both directions.
 

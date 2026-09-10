@@ -23,7 +23,8 @@ What does NOT count as verification:
 2. `spec/changes/<name>/index.md` — the requirement & asset index: R-N verbatim quotes anchor the Coherence citation audit; A-N / E-N anchor the Reuse check. **Absent → the change predates the index format: state that explicitly in your return, run Coherence in legacy mode (What-anchored hunt-additions) and Reuse on blatant duplication only**
 3. `spec/changes/<name>/design.md` — `## Interfaces` / `## Data Model` (if present)
 4. Read `code-charter.md` under the sdd spec-core skill's references directory (sibling of the skill that dispatched you)
-5. The diff: `git diff` scoped to the change — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.
+5. `spec/knowledge.md` (if it exists) — scan the index, open `[ruling]` subdocs (false-positive lessons, wontfix precedents): a pattern a past round ruled acceptable is not re-flagged without new evidence (legacy flat file → read whole, declare)
+6. The diff: `git diff` scoped to the change — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.
 
 ## Four dimensions
 

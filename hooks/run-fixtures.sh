@@ -591,6 +591,46 @@ printf '%s' "$LOOP_RUNNING" > "$P/spec/changes/grown/loop.md"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/grown/proposal.md"
 run_case gate-upgraded-loop-counts check-gate allow "$P" "$(json '/spec:apply')"
 
+# ---- current-change pointer (spec/changes/.current): hit / dangling fallback /
+#      paused-target fallback / reminder binding ----
+
+P=$(mkproj ptr-hit); mkdir -p "$P/spec/changes/a" "$P/spec/changes/b"
+printf '# R\n\n## Open [TBD]\n- [TBD-1] x\n' > "$P/spec/changes/a/research.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] ok\n' > "$P/spec/changes/b/research.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/b/proposal.md"
+printf 'b\n' > "$P/spec/changes/.current"
+run_case tbd-pointer-selects-target check-tbd allow "$P" "$(json '/spec:propose')"
+run_case gate-pointer-selects-target check-gate allow "$P" "$(json '/spec:apply')"
+
+# dangling pointer (e.g. after archiving the pointed change): multi remains -> fallback block
+P=$(mkproj ptr-dangle-multi); mkdir -p "$P/spec/changes/a" "$P/spec/changes/b"
+printf '# R\n\n## Open [TBD]\n(none)\n' > "$P/spec/changes/a/research.md"
+printf '# R\n\n## Open [TBD]\n(none)\n' > "$P/spec/changes/b/research.md"
+printf 'ghost\n' > "$P/spec/changes/.current"
+run_case tbd-pointer-dangling-multi-blocks check-tbd block "$P" "$(json '/spec:propose')"
+
+# dangling pointer with a single active -> falls back to single-active, allowed
+P=$(mkproj ptr-dangle-one); mkdir -p "$P/spec/changes/only"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/only/proposal.md"
+printf 'ghost\n' > "$P/spec/changes/.current"
+run_case gate-pointer-dangling-single-falls-back check-gate allow "$P" "$(json '/spec:apply')"
+
+# pointer at a paused dir (not in the active list) -> ignored, single-active fallback
+P=$(mkproj ptr-paused); mkdir -p "$P/spec/changes/parked" "$P/spec/changes/live"
+printf 'paused: 2026-09-10 | reason: t\n' > "$P/spec/changes/parked/.paused"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] ok\n' > "$P/spec/changes/live/research.md"
+printf 'parked\n' > "$P/spec/changes/.current"
+run_case tbd-pointer-paused-target-falls-back check-tbd allow "$P" "$(json '/spec:propose')"
+
+# reminder binds to the pointed change: pointed=approved-no-ledger -> nudge; pointed=other -> silent
+P=$(mkproj ptr-rem); mkdir -p "$P/spec/changes/appr" "$P/spec/changes/draft"
+printf '%s\n<!-- APPROVED: 2026-09-10 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/appr/proposal.md"
+printf '# R\nwip\n' > "$P/spec/changes/draft/research.md"
+printf 'appr\n' > "$P/spec/changes/.current"
+run_case reminder-pointer-binds-nudge check-verify-reminder block "$P" "$(json_stop false)"
+printf 'draft\n' > "$P/spec/changes/.current"
+run_case reminder-pointer-other-allows check-verify-reminder allow "$P" "$(json_stop false)"
+
 # ---- Claude-specific extras ----
 
 # V-2: non-ASCII project path — gate must still bite (env route is encoding-immune)

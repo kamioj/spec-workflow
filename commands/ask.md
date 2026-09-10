@@ -10,7 +10,7 @@ allowed-tools: Read, Edit, AskUserQuestion
 
 1. Read `spec/changes/<name>/research.md` and list every entry in `## Open [TBD]`
 2. **Classify — shared step 0 for BOTH modes** (interactive and workflow auto-triage run the same classification; only the delivery differs):
-   - **Factual** (determinable by reading code / docs / spec/knowledge.md) → decide from evidence, mark "decided from status quo: X", move to Decided
+   - **Factual** (determinable by reading code / docs / the knowledge base (spec/knowledge.md index, then relevant subdocs)) → decide from evidence, mark "decided from status quo: X", move to Decided
    - **Preference-driven** → tag it **reversible** or **irreversible** (irreversible = any of: data migration / schema change / public API surface / new dependency / destructive operation / user-visible product semantics; **when unsure, it is irreversible**)
    - Unsure whether factual or preference → **treat as preference-driven** (never skip)
    - After classification the modes fork at delivery only: interactive asks (§ How to ask); workflow auto-triage marks (§ Auto triage)
@@ -81,7 +81,7 @@ Every `auto` / `escalated` decision runs the four-question filter first (SKILL "
 
 | Situation | Action |
 |---|---|
-| Open [TBD] cleared | Stop — then **pre-flight propose's other gate preconditions before naming it** (SKILL § Gate-aware next steps): exactly one active change → prompt "ready for /spec:propose"; more than one → the next step is disposition, not propose: list the extra changes with a per-change recommendation (stash = zero-loss default, archive those whose record shows them finished) and offer to write the `.paused` markers yourself |
+| Open [TBD] cleared | Stop — then **pre-flight propose's other gate preconditions before naming it** (SKILL § Gate-aware next steps): current pointer set or exactly one active change → prompt "ready for /spec:propose"; ambiguous (>1 active, no pointer) → the one-command fix is `/spec:resume <this change>` (sets the pointer); alongside it list the other actives with their states (archive candidates flagged) |
 | User says "stop asking" / "that's enough" | Stop; leave remaining items Open with the pending declaration (the pre-/spec:propose hook will block execution) |
 | Interrogation diverges and can't be resolved | Stop; report "collected N decisions, K items remain — suggest revisiting later" |
 

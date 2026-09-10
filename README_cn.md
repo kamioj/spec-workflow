@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.7.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -98,8 +98,8 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
 |  | `/spec:fix <task>` | 修 bug/小改动的**流式轻量档**：先定位确认 → 直接修（没把握先调研备选）→ 追加 F-N 条目进固定 `fixes/` 批次；尺寸只提醒不拒收 |
 |  | `/spec:status` | 报告当前 change 在哪一步（含暂停变更与 fix 批次待审数） |
-|  | `/spec:stash` | **挂起**当前变更——释放唯一活动槽位；台账、索引、提案全部保温 |
-|  | `/spec:resume` | 解冻暂停的变更，附带续接上下文（停在哪、什么还开着） |
+|  | `/spec:stash` | **停放**变更（`.paused`：日期+理由）——可选的记账动作；工件全部保温 |
+|  | `/spec:resume [名字]` | **切换器**：把 current 指针（`spec/changes/.current`）写为目标变更（暂停的顺带解冻）——多变更自由并存，闸门只认指针所指；不带名字 → 列出可切换项 |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
 |  | `/spec:chat` | 讨论模式，不动文档 |
@@ -118,9 +118,9 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | Hook | 何时触发 | 做什么 |
 |---|---|---|
 | `check-tbd.sh` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
-| `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或活跃 change 不唯一 |
+| `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或目标不明（多活跃变更且无 current 指针选定） |
 | `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：归档要求 shipped+Audit，ship 要求批次非空）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
-| `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 活跃 change 已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
+| `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 目标变更（指针所指或唯一活跃）已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 | `loop-driver.sh` | Stop，且恰好存在 1 份 `running` 状态的循环账本时 | 再注入 `/spec:loop` 的下一轮（Stop 事件 JSON 契约，探针实证）——或按**四种互异的终止说明**放行：验收达成 / 轮次上限 / 无进展 / 拒写复盘 / 账本损坏。所有熔断信号全部机械（checkbox 计数、工作树指纹），从不采信模型自报"有进展" |
 
 **软约束 vs 硬约束**：prompt 里写"必须做 X"，模型可能违反；hook 是 shell 脚本拦截，**违反率 0**。
@@ -239,7 +239,9 @@ graph LR
 
 ```
 <your-project>/spec/
-├── knowledge.md                    # 项目级恒定事实（跨 change 沉淀；archive 维护、research 先读）
+├── knowledge.md                    # 知识索引——一行一子文档（`- [种类/领域] 文件 — 钩子句`）
+├── knowledge/                      # 知识子文档：领域事实文件 + 成篇经验文档（两步读取：先索引，只翻相关篇）
+├── changes/.current                # current 变更指针——闸门只认它；/spec:resume <名字> 切换
 ├── changes/<change-name>/          # 活跃 change 工作区
 │   ├── research.md   必有          # 当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
 │   ├── research/     可选          # 调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
@@ -315,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.8.0** — **知识与生命周期改造**：知识库改为索引+子文档架构（`spec/knowledge.md` 一行一子文档，事实落在 `spec/knowledge/` 领域文件与成篇经验文档；格式权威 `references/knowledge-spec.md`，legacy 谓词对旧平面文件惰性迁移），并以**已验证事实缓存**身份接入五个检索接缝（research 现状勘测、dev agent 启动读、fix 定位、verifier 裁定核对、propose 面板）——新共享原则：已录事实信任至遇矛盾，绝不重复推导；三个沉淀写入者（archive / ship / verify 误报裁定）统一走子文档+索引路由，阈值触发的整理压缩让新经验覆盖过时事实。归档不再是摆设：status 与下一步推荐主动把 verify 通过的变更标为候归档，开新变更遇旧活跃变更时以一轮结构化问询分诊（归档/暂存/并行）而非报错。多变更并行获得 O(1) 切换：`spec/changes/.current` 一行 current 指针——三个计数闸门与 Stop 提醒指针优先定位目标（指针悬空静默回退，fail-open），`/spec:resume <名字>` 切换、research 建变更时写入、archive/stash 清除；`/spec:stash` 重新定位为可选停放，不再是并存的前提
 - **0.7.1** — **注释只述功能，不述过程**（charter 第 8 条）：改动叙事归 spec 工件与 commit message，绝不进合入代码——实施期过程标记仅在携带统一 `DEVLOG:` 标签时合法，coding 收尾以机械清扫归零（逐条改写为功能注释或删除；残留标签即 charter finding）。另：tasks.md 的 >5 子任务触发器补足理由并取消"单执行者"豁免——勾选账本是长跑中唯一的持久进度记录
 - **0.7.0** — **问询与评审改版**：评审选择面从一排开关收敛到近零必答——propose 的镜头选择题取消（necessity + regression-compat 恒派；可证伪性成为 necessity 第五问；performance 仅在调研记录实测信号时加派；想补审在闸门回一句即可），Native 审并入 **Reuse & Conformance**（新建文件默认对照项目惯用法审，无需旗标），apply 的 `solid`+`verify` 合并为 `strict`，对外分类法统一为**四维度**（charter 审计为 Coherence 子审计）。问询重组为四段管线（派生 → 构造 → 送达 → 记账）：选项**从调研候选集引用而来，不再临场发明**；同主题的取舍类待决点聚合成一道多选；只剩一个真实选项的问题自动决定并在闸门报备；每轮以 `Open: N` 尾行收口，杜绝静默漏问。Codex 侧问询控件优先（实验开关下的 `request_user_input`，按形状压缩），批量文本兜底；所有命令的未知旗标一律提示疑似拼写错误，绝不静默吞没。另：loop 目录纳入闸门活跃豁免、拦截消息自诊断错树场景（worktree/主仓库/子项目）、research 收尾按 Open 状态推荐正确的下一步
 - **0.6.3** — **载体级保真（derive, don't mint）**：一次实战复盘显示 8 处返工共享同一形态——需求名词被 1:1 铸造成新代码实体（字段/参数/方法/校验/默认值）而非从既有真相源派生，且全部由用户人工 diff 审拦下、流程零拦截。修法是一条全部落在 verify 之前的预防链：

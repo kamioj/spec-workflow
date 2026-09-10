@@ -63,7 +63,7 @@ Paused changes:
 
 A fix batch reports its own two-line form: `Fix batch: <N> entries pending audit — <open/shipped> (streaming light tier; $spec-fix appends, $spec-ship audits + archives)`. A legacy quick change reports: `Quick change: <name> — <in-flight/done> (legacy quick.md light tier; archive when done)`.
 
-Multiple un-archived ACTIVE changes → list all, and add a note: this workflow is designed for **a single active change**; there is no switch command. When multiple exist, `$spec-archive` the completed one(s) or `$spec-stash` the not-current one(s) first.
+Multiple un-archived ACTIVE changes → list all with the **current one marked** (read `spec/changes/.current`; parallel changes coexist freely — `$spec-resume <name>` switches the pointer). No pointer set → note that gates will ask for one; flag verify-passed changes as archive candidates.
 
 ## State machine mapping (authoritative definition of "Current stage" + "Recommended next step" output)
 
@@ -84,7 +84,7 @@ Multiple un-archived ACTIVE changes → list all, and add a note: this workflow 
 | `proposal.md` has APPROVED + tasks.md (if present) has unchecked tasks, or code changes have not been through verify | In progress | `$spec-apply` to continue; when the last item lands, `$spec-verify` runs the ONE closing independent pass |
 | Main implementation done but no `verify.md` ledger yet (or code changed since its last round) | Awaiting verification | `$spec-verify` to run the four-dimension check |
 | `verify.md` latest round `conclusion: fail` (incl. escalated still-open findings) | Verification failed | Review the ledger's open findings: `$spec-apply` to continue fixing / `$spec-revise` to fix the proposal (if the proposal itself is wrong) |
-| `verify.md` latest round `conclusion: pass` | Verification passed (independent review) | **Do not proactively recommend archive** — call `$spec-archive` when you want to archive |
+| `verify.md` latest round `conclusion: pass` | **Archive candidate** — verification passed, no follow-up in flight | Recommend closing: `$spec-archive` sediments its knowledge and frees the slot (the archive act itself stays yours to say) |
 | The user explicitly said "archive" in conversation (not file-detectable — never inferred from artifacts alone) | Ready to archive | `$spec-archive` |
 
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
@@ -92,7 +92,7 @@ Multiple un-archived ACTIVE changes → list all, and add a note: this workflow 
 **Key anti-patterns**:
 
 - ❌ Outputting "approve → reply go" during the awaiting-approval stage — no such step exists: invoking `$spec-apply` IS the approval, and apply appends the APPROVED marker itself
-- ❌ Proactively pushing "you can run $spec-archive now" at the verification-passed stage (user decides; do not push)
+- ❌ Executing an archive the user didn't ask for (recommending "this change is an archive candidate" is required; running `$spec-archive` on their behalf is not — the act stays user-explicit)
 - ❌ Generating "Recommended next step" from memory — MUST cross-reference the table above for the current stage
 
 ## What this command does NOT do

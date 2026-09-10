@@ -26,7 +26,7 @@ per entry, honest self-check evidence per entry, and ONE independent verificatio
   normal change dir which happens to be named "fixes" — REFUSE to write into it, report the
   collision, and ask how to proceed (rename their change dir, or archive it first). Never
   mix a fix ledger into a foreign change.
-- `fixes/` never counts toward the single-active-change slot (gates exempt dirs with fix.md
+- `fixes/` never counts toward the gates' active-change count (gates exempt dirs with fix.md
   present and proposal.md absent) — a full change and the fix stream run in parallel,
   neither blocking the other. fix is ungated by design; its protection is the batch audit.
 
@@ -40,9 +40,12 @@ call, not the model's.
 
 ## Per-entry flow
 
-1. **Locate & confirm before touching anything**: find the exact code lines, state the
-   problem point and your root-cause reading. The user's ask is quoted **verbatim** into the
-   entry (the mini anchor — interpretation happens against the quote, never a paraphrase).
+1. **Locate & confirm before touching anything**: consult the knowledge base first — scan
+   `spec/knowledge.md` (the index) and open relevant `[fact]` subdocs before hunting the
+   codebase (a recorded trap or call-chain fact beats a fresh scan; legacy flat file → read
+   whole, declare); then find the exact code lines, state the problem point and your
+   root-cause reading. The user's ask is quoted **verbatim** into the entry (the mini
+   anchor — interpretation happens against the quote, never a paraphrase).
 2. **Fork on confidence**:
    - Confident and small → implement directly. The Coding Charter binds (Read
      `../spec-core/references/code-charter.md` before the first

@@ -43,6 +43,19 @@ for d in "$CHANGES_DIR"/*/; do
     set -- "$@" "$d"
 done
 
+# Current-change pointer: when spec/changes/.current names a member of the active list,
+# that member IS the target -- coexisting changes stop mattering. Dangling/paused/invalid
+# pointer = silently ignored (fail-open family: pointer trouble must never block), falling
+# back to the single-active rule below.
+if [ $# -gt 1 ] && [ -f "$CHANGES_DIR/.current" ]; then
+    cur=$(head -n1 "$CHANGES_DIR/.current" | tr -d '[:space:]')
+    if [ -n "$cur" ]; then
+        for d in "$@"; do
+            if [ "$(basename "$d")" = "$cur" ]; then set -- "$d"; break; fi
+        done
+    fi
+fi
+
 if [ $# -eq 0 ]; then
     block "SDD: no active change under $CHANGES_DIR (.paused / quick / fix / loop dirs do not count). Start with /spec:research <direction>. Already researched one? It may sit in a DIFFERENT spec tree (another worktree / the main repo / a subproject) -- hooks only see the root this session was launched from: move it here, or relaunch there"
 fi
@@ -51,7 +64,7 @@ if [ $# -gt 1 ]; then
     names=''
     for d in "$@"; do names="$names$(basename "$d"), "; done
     names=${names%, }
-    block "SDD: multiple active changes detected under $CHANGES_DIR ($names). This workflow assumes a single active change -- /spec:archive the rest (or clean them up) before /spec:propose"
+    block "SDD: multiple active changes detected under $CHANGES_DIR ($names) and no current pointer selects one. Pick the target with /spec:resume <name> (writes spec/changes/.current), or /spec:archive / /spec:stash the rest before /spec:propose"
 fi
 
 change=$1

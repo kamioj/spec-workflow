@@ -98,7 +98,7 @@ Follow the Shared Principles from the sdd plugin overview SKILL.md without being
 ## Workflow
 
 1. Complete mandatory startup reads + load scope/stack-specific references
-2. Grep the project for relevant modules (backend: Service / Controller / DAO / Migration / Config; frontend: components / routing / store / API client) — map the call chain (anti-hallucination)
+2. **Knowledge base first, then Grep**: scan `spec/knowledge.md` (the index, if it exists) and open relevant `[fact]` subdocs — recorded call chains / ownership / traps are trusted facts, not re-derived (legacy flat file → read whole, declare); then Grep the project for relevant modules (backend: Service / Controller / DAO / Migration / Config; frontend: components / routing / store / API client) — map the call chain (anti-hallucination), scanning only what the knowledge base doesn't already answer
 3. Implement per proposal `## What` + design `## Interfaces` / `## Data Model`
 4. **Scope-specific watch points**:
    - **backend**: Read the existing schema before writing any migration; migrations are irreversible — MUST include rollback SQL (not just a comment that implies rollback, but actual SQL); strictly match the signatures and error codes in `## Interfaces`

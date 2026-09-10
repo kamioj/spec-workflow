@@ -47,7 +47,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
    ## Auto-decision calibration
    Only for changes that carried auto/escalated decisions (workflow auto triage): how many
    held up vs. were overturned (at the gate or later). Each misjudgment gets one line —
-   the pattern, not the instance — and is synced into spec/knowledge.md (step 3): that is
+   the pattern, not the instance — and is synced into the knowledge base (step 3): that is
    the only channel through which the triage rules learn this project. All held → "all held".
 
    ## Force / abandon note
@@ -55,22 +55,23 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
    ```
 
    Why the divergence review earns its cost: "docs say A, code does B" is precisely the defect class that implementation and verify most often both miss — the archive review is the last set of eyes on it.
-3. **Maintain `spec/knowledge.md`** (project-level, lives OUTSIDE the change dir so it survives archiving; create on first use):
-   - Extract from this change the durable facts future changes will need: topology / table ownership ("ICMP and mallcoo share one physical DB"), verified mechanisms, hard-won gotchas
-   - **Sediment the index**: durable A-N assets and E-N exemplar designations from `index.md` become knowledge.md facts (`<asset — role> | evidence: index.md (<change>) | <date>`) — the next change's research reads them instead of re-surveying; change-specific R-N quotes stay in the archived change
-   - **For a `/spec:loop` change, `loop.md ## Lessons` is a primary input to this step** — its durable operational lessons (correct build/verify commands, known traps) are exactly knowledge.md material; read it here, before the move
-   - One line per fact: `<fact> | evidence: <source> | <YYYY-MM-DD> (<change-name>)`
+3. **Sediment the knowledge base** (`spec/knowledge.md` index + `spec/knowledge/` subdocs — format authority: `references/knowledge-spec.md`; lives OUTSIDE the change dir so it survives archiving; create on first use):
+   - Extract from this change the durable facts future changes will need: topology / table ownership, verified mechanisms, hard-won gotchas; durable A-N assets and E-N exemplar designations from `index.md` sediment too (the next change's research reads them instead of re-surveying); a `/spec:loop` change's `loop.md ## Lessons` is a primary input — read it before the move. Change-specific R-N quotes stay in the archived change
+   - **Route by kind into subdocs, never into the index**: each fact lands as a `- <fact> | evidence: <source> | <date> (<change>)` line in its domain file under `spec/knowledge/` (create on demand), or as a long-form experience doc (frontmatter `status: current`); then maintain the file's index line in knowledge.md (`- [kind/domain] file — hook`). A flat fact line written into the index re-flags it legacy — the one way to break the architecture
+   - **Lazy migration**: knowledge.md still in legacy flat format (contains `^- ` lines with `| evidence:`) → restructure it in this same pass (facts into domain subdocs, index written, nothing dropped)
+   - **Consolidation pass** (when triggered: index > 40 lines / a domain file > 60 lines / writing next to a same-topic entry): merge duplicates, compress wording, newer evidence+date on the same topic overrides the stale fact, long-form docs get `status: superseded by <new>` (kept, never deleted)
    - **Correct, don't contradict**: a recorded fact this change proved wrong is replaced (correction noted), never left standing next to its refutation
-   - Change-specific details stay in the change's artifacts; nothing durable to record → skip, never pad
+   - Nothing durable to record → skip, never pad
 4. Compute the archive path: `spec/archive/<YYYY-MM-DD>-<name>/` (use today's date — it is already in context; no shell call needed)
 5. If the change was a `/spec:loop` run: delete `.loop-state` (the driver's machine state — dead weight once archived; loop.md itself travels with the directory; its Lessons were already consumed by step 3)
 6. `mv` the entire directory there
-7. Output a summary:
+7. **Pointer upkeep**: `spec/changes/.current` points at the archived change → delete the pointer; other active changes remain → list them per SKILL § Gate-aware next steps and recommend the next `/spec:resume <name>` target (a dangling pointer is harmless — gates fall back — but the recommendation saves the bounce)
+8. Output a summary:
    ```
    Archived: spec/archive/YYYY-MM-DD-<name>/
    Artifacts included: research.md, research/ (if present), index.md, design.md, proposal.md, tasks.md, verify.md, loop.md (if present), retrospect.md
    Retrospect: divergences <N / none> · evidence <attached / not verified> · deferred <M items / none>
-   Knowledge: <K facts added/corrected in spec/knowledge.md / nothing durable>
+   Knowledge: <K facts sedimented/corrected (which subdocs) / nothing durable>
    ```
 
 ## Multi-owner scenario

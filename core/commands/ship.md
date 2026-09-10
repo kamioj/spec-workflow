@@ -40,8 +40,9 @@ counterpart of the full flow's /spec:verify + /spec:archive, collapsed into one 
    `spec/archive/<YYYY-MM-DD>-fixes/`. Target already exists (second ship the same day) →
    append a counter: `<YYYY-MM-DD>-fixes-2`, `-3`, … — never overwrite an earlier batch.
 5. **Sediment knowledge**: a root-cause pattern that recurred across entries (or matches a
-   prior batch) is worth one line in `spec/knowledge.md` — same rule as /spec:archive,
-   correct rather than contradict.
+   prior batch) is worth one fact line — into its domain subdoc under `spec/knowledge/` with
+   the index line maintained (format → references/knowledge-spec.md; never a flat fact line
+   into the index), same correct-rather-than-contradict rule as /spec:archive.
 6. **Report**: entries audited, findings fixed, archive path. The next `/spec:fix`
    recreates a fresh batch automatically.
 

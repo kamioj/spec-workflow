@@ -19,7 +19,7 @@ The conversation that just ran `$spec-apply` cannot audit its own output — sam
    (`spawn_agent` parameter contract: EITHER `message` — plain text only — OR `items` when attaching skill references, with the task text as a `{type:"text"}` item; both together is rejected)
 2. Transcribe its findings into ledger rows **without softening, dropping, or re-judging them** — format conversion only (one finding = one table row; severity / location / text preserved). Derive the per-dimension pass/fail lines from its findings; its `conclusion` is authoritative and may never be upgraded fail → pass. Disagreement is recorded as a note next to the row, never by deletion
 3. Run the round rules below (diff vs previous round, escalation)
-4. The user overrules a finding as a false positive → distill the generalized lesson (what pattern + why it's acceptable here) into `spec/knowledge.md`, so later rounds and later changes stop repeating it
+4. The user overrules a finding as a false positive → distill the generalized lesson (what pattern + why it's acceptable here) into the knowledge base as a `[ruling]` — a fact line in the rulings subdoc under `spec/knowledge/` with its index line maintained (format → references/knowledge-spec.md; never a flat line into the index) — so later rounds and later changes stop repeating it
 
 ## Four-dimension verification framework (executed by the spawned spec-verifier; runs in all modes)
 
@@ -125,7 +125,7 @@ Round rules:
 3. New findings take the next V-N ID; IDs are never reused or renumbered
 4. `wontfix` requires a written reason (inside `Not in this change` / explicit user decision) — silence is not a status
 5. Keep the latest round's Evidence in full; collapse earlier rounds' Evidence to one line each
-6. **User-sourced findings**: acceptance-stage user evaluations enter the ledger too — after the per-item adopt/refute/partial response (one round; the user has the final say), each accepted or insisted-on item becomes a finding row with the next V-N ID and `source: user` noted in the Finding column; an item applied over your refutation is additionally marked `user-override`. They then drive the next fix round exactly like verifier findings. A user-overruled false positive still follows rule "distill the lesson into spec/knowledge.md"
+6. **User-sourced findings**: acceptance-stage user evaluations enter the ledger too — after the per-item adopt/refute/partial response (one round; the user has the final say), each accepted or insisted-on item becomes a finding row with the next V-N ID and `source: user` noted in the Finding column; an item applied over your refutation is additionally marked `user-override`. They then drive the next fix round exactly like verifier findings. A user-overruled false positive still follows rule 4 (distill the lesson into the knowledge base)
 
 The user-facing output ends with the round summary:
 

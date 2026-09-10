@@ -20,7 +20,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task
      Timestamp uses the current ISO local time
    - Already has an APPROVED marker (from the `/spec:workflow` flow or a previous apply) → don't append again
 
-3. **Hook check**: `check-gate.sh` fires at the `UserPromptSubmit` moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections, single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `check-archive.sh` audits it at archive time.
+3. **Hook check**: `check-gate.sh` fires at the `UserPromptSubmit` moment — BEFORE this command runs — so it deliberately checks **prerequisites only** (proposal.md exists with all four sections; an unambiguous target — the current pointer or the single active change) and never the APPROVED marker: this command appends the marker afterwards, so requiring it in the hook would deadlock the happy path. The marker is enforced later — `check-archive.sh` audits it at archive time.
 
    If the hook blocks (no/incomplete proposal, multiple active changes) → handle per its error message, don't force a bypass.
 

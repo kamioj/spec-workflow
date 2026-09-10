@@ -73,7 +73,7 @@ tree_fp_history=<csv>      # worktree fingerprint at each injection (na = git un
 | Resume | `/spec:loop` | set status back to `running` + **re-bind the session_id line** in `.loop-state` (the documented awk one-liner in the loop command — without it the session guard silently ignores every Stop from the new session) → continue from the latest Retrospect's plan |
 | Every turn end | `loop-driver` hook | decision table: corrupt? acceptance met (≤1 cap overrun)? cap? retrospect written? progress? → re-inject or release |
 | Final acceptance | injected by the driver | fresh spec-verifier re-checks every Acceptance item (the loop's ONLY independent audit) → failures unchecked, loop continues fixing; clean audit → report (touchpoint 2) → status: done |
-| Close out | `/spec:archive` | loop.md travels with the change directory; `.loop-state` is deleted; durable Lessons feed knowledge.md |
+| Close out | `/spec:archive` | loop.md travels with the change directory; `.loop-state` is deleted; durable Lessons feed the knowledge base (subdocs + index, per knowledge-spec.md) |
 
 ## Anti-patterns
 

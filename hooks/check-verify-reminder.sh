@@ -43,7 +43,19 @@ for d in "$CHANGES_DIR"/*/; do
     set -- "$@" "$d"
 done
 
-# Only nudge in the unambiguous single-active-change window
+# Current-change pointer: when spec/changes/.current names a member of the active list,
+# the reminder binds to that change (coexisting ones are not its business). Dangling/
+# invalid pointer = silently ignored (fail-open family), falling back to single-active.
+if [ $# -gt 1 ] && [ -f "$CHANGES_DIR/.current" ]; then
+    cur=$(head -n1 "$CHANGES_DIR/.current" | tr -d '[:space:]')
+    if [ -n "$cur" ]; then
+        for d in "$@"; do
+            if [ "$(basename "$d")" = "$cur" ]; then set -- "$d"; break; fi
+        done
+    fi
+fi
+
+# Only nudge with an unambiguous target (the pointed change, or the single active one)
 [ $# -eq 1 ] || exit 0
 
 change=$1
