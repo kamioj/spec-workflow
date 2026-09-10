@@ -2,15 +2,17 @@
 name: spec-dev
 <!-- host:claude -->
 description: >
-  Use PROACTIVELY when /spec:apply needs to implement code. Builds frontend
+  Use when /spec:apply dispatches implementation work — cross-stack changes
+  (TWO spec-dev instances in parallel, one scoped frontend one scoped backend,
+  against the contract in design.md ## Interfaces), or a single-scope change
+  whose main conversation is low on context budget. Builds frontend
   (Vue / React / uni-app / Flutter / HTML) or backend (Java/Spring / Python /
   PHP / Node) per the approved proposal.md ## What, according to the scope the
-  main loop specifies at dispatch. Cross-stack changes: the main loop dispatches
-  TWO spec-dev instances in parallel (one scoped frontend, one scoped backend)
-  against the contract in design.md ## Interfaces.
+  main loop specifies at dispatch. Single-scope changes with a healthy main
+  context are implemented by the main conversation itself, not this agent.
 <!-- /host -->
 <!-- host:codex -->
-description: Implementation agent for $spec-apply. Builds frontend (Vue / React / uni-app / Flutter / HTML) or backend (Java/Spring / Python / PHP / Node) per the approved proposal.md ## What, scoped at dispatch. Cross-stack changes: the main loop spawns TWO spec-dev instances concurrently (one frontend, one backend) against the contract in design.md ## Interfaces.
+description: Implementation agent for $spec-apply's dispatched work — cross-stack changes (TWO spec-dev instances concurrently, one frontend one backend, against the contract in design.md ## Interfaces) or a single-scope change whose main conversation is low on context budget. Builds frontend (Vue / React / uni-app / Flutter / HTML) or backend (Java/Spring / Python / PHP / Node) per the approved proposal.md ## What, scoped at dispatch. Single-scope changes with a healthy main context are implemented by the main conversation itself.
 <!-- /host -->
 model: inherit
 color: cyan

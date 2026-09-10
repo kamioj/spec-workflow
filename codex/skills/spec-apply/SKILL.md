@@ -33,16 +33,17 @@ Read proposal.md's `## What`:
 - **tasks.md, single executor** → advance in tasks order
 - **tasks.md, multi-executor** → do only this owner's tasks (checkout `feat/<name>-<owner>` first)
 
-## Dispatch the dev agent
+## Pick the executor (cache-aware)
 
-Dispatch by the type of code the proposal `## What` involves:
+Choose by the type of code the proposal `## What` involves:
 
-| What involves | Dispatch |
+| What involves | Executor |
 |---|---|
-| UI / routing / components / styling / client-side interaction | spawn the spec-dev agent (defined in ~/.codex/agents/spec-dev.toml) (scope: frontend) |
-| server-side logic / API / data models / DB migration / middleware | spawn the spec-dev agent (defined in ~/.codex/agents/spec-dev.toml) (scope: backend) |
-| **Cross-stack (including interface-contract changes)** | **Pin the contract first → spawn two spec-dev agents concurrently (one frontend, one backend)** (see below) |
+| **Single-scope (frontend-only OR backend-only)** | **The main conversation implements directly.** Its context already holds research, the proposal, index.md, and the interrogation history as a cached prefix — a dispatched agent cold-reads all of it for zero parallelism gain (single scope = one line of work either way). Everything binding on the dev agent binds here: read the scope's tech-stack reference before starting, the Coding Charter, the Concerns discipline, Anti-Cheating. |
+| **Cross-stack (including interface-contract changes)** | **Pin the contract first → spawn two spec-dev agents (defined in ~/.codex/agents/spec-dev.toml) concurrently (one frontend, one backend)** (see below) — parallelism outweighs the cold-context cost |
 | config / scripts / CI / docs | main conversation handles it |
+
+**Single-scope fallback to a dispatched `spec-dev` (scope stated)** in exactly two cases: the remaining context budget is low (a mid-implementation compaction voids the entire cached prefix — costlier than one cold dispatch), or the user asks for a dispatched agent. Neither case → don't dispatch.
 
 `spawn_agent` parameter contract: pass EITHER `message` (plain-text task only) OR `items` (use this when attaching a skill reference — put the task text inside `items` as a `{type:"text"}` entry alongside the `{type:"skill"}` entry). Passing both is rejected by the tool.
 
@@ -50,7 +51,7 @@ Dispatch by the type of code the proposal `## What` involves:
 
 **Dispatching spec-dev MUST state the scope in the dispatch prompt** (`scope: frontend` / `scope: backend` / `scope: fullstack`) — this is what the agent uses to decide which stack references to read and which design sections to read. Omitting it = the agent can only infer the scope from the file types being changed, which is a suboptimal path.
 
-**The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope), **and state whether `spec/changes/<name>/index.md` exists** (legacy change without one → tell the agent to proceed per proposal and declare the absence in its summary). An agent whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`$spec-revise what`), never the agent's.
+**The dispatch prompt MUST also carry proposal What's `Not in this change` list verbatim** (the do-not-touch scope), **and state whether `spec/changes/<name>/index.md` exists** (legacy change without one → tell the agent to proceed per proposal and declare the absence in its summary). An implementer — dispatched agent or the main conversation — whose task seems to require touching excluded scope stops and reports — widening scope is a user decision (`$spec-revise what`), never the implementer's.
 
 ### Cross-stack: contract first + parallel implementation
 
@@ -96,8 +97,8 @@ The agent automatically loads the corresponding tech-stack references by scope (
 
 | flag | Turns on | Effect |
 |---|---|---|
-| `design` | anti-AI-slop | spec-dev (frontend scope) reads `frontend-aesthetics.md` from the sdd spec-core skill's references directory |
-| `strict` | anti-laziness + anti-hallucination | the agent reads `agent-principles.md` § 1 + § 2 from the sdd spec-core skill's references directory |
+| `design` | anti-AI-slop | the frontend implementer reads `frontend-aesthetics.md` from the sdd spec-core skill's references directory |
+| `strict` | anti-laziness + anti-hallucination | the implementer reads `agent-principles.md` § 1 + § 2 from the sdd spec-core skill's references directory |
 
 **$ARGUMENTS parsing**: split on spaces, and for each token check whether it's in the `{design, strict}` set. Matched ones turn into "turn on anti-X" instructions in the dispatch prompt; unmatched tokens are flagged to the user as possible typos.
 
@@ -112,11 +113,11 @@ The agent automatically loads the corresponding tech-stack references by scope (
 
 **No flag by default** — to avoid over-caution on routine tool-type UIs / internal pages / backend services.
 
-The main conversation only steps in when dispatch fails / cross-executor coordination is needed / an agent reports it's stuck.
+In cross-stack mode the main conversation coordinates only (dispatch failures / cross-executor integration / an agent reporting stuck); in single-scope mode it IS the implementer and the flags' reference loads apply to it directly.
 
 ## Concern adjudication (consumes the summaries' Concerns fields)
 
-Dev agents implement permissively and reroute every tightening impulse into their summary's `Concerns` field (spec-dev § Concerns discipline). After the last agent returns, adjudicate by invocation mode:
+Every implementer implements permissively and reroutes tightening impulses into a `Concerns` list (spec-dev § Concerns discipline; the main conversation implementing directly keeps its own list the same way). After implementation returns — the last agent, or the main conversation's own pass — adjudicate by invocation mode:
 
 - **Standalone `$spec-apply`**: batch ALL concerns into ONE interrogation round (multi-select, asked per SKILL Interrogation rules; each option self-contained — proposed tightening + trigger + cost of adopting). Adopted → append each as a **new R-N** to `spec/changes/<name>/index.md` and implement it in-session, **before** the closing verification, so the closing verifier round audits base change + adopted tightenings uniformly (concerns never seed V-N rows before a round exists). Rejected → one ledger note each (`concern rejected: <one line>`) so the same worry isn't re-litigated later.
 - **Inside `$spec-workflow`** (two-touchpoint doctrine — no mid-flight pause): carry the Concerns list verbatim into the acceptance report (touchpoint 2); adopted ones enter the ledger via the acceptance-stage user-sourced-findings path and drive the scoped fix round.

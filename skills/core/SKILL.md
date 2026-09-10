@@ -218,6 +218,14 @@ Close the report in **statement mode**: the default direction plus one "overrida
 
 The knowledge base (`spec/knowledge.md` index + `spec/knowledge/` subdocs — format → references/knowledge-spec.md) is the project's cache of verified facts. **Consult it before paying scan cost** — the seams: research maps the status quo, spec-dev maps call chains, fix locates, the verifier judges findings, the critique panel refutes proposals. Two-step read everywhere: scan the index (tens of lines), open only relevant subdocs. **A recorded fact with evidence+date is trusted until contradicted** — "double-checking" an already-verified fact by re-scanning is the most expensive token habit this flow has; found a contradiction → correct the record, never leave both standing.
 
+### Session & prefix-cache economics
+
+The host's prompt cache is prefix-based: same-session turns append and hit it; a fresh context or a rewritten history pays cold price for everything again. Three habits follow:
+
+- **Adjacent stages of one change belong in one session** — research → ask → propose sharing a prefix means every later stage reads the earlier ones at cache price; splitting each command into its own session cold-pays the whole history every time.
+- **Compaction between stages, never mid-implementation** — compacting rewrites the history and voids the entire cached prefix; when context pressure demands it, place it after a verify round closes or before a new change starts, not inside apply.
+- **Multi-round work in ONE subagent beats a run of one-shot subagents** — a subagent's own reads cache for its own subsequent tool round-trips, and siblings share only the verbatim-identical head of their briefs (common material first, role-specific instruction last, when dispatching several).
+
 ### Requirement fidelity (anti-gold-plating)
 
 **What the requirement source did not ask for is forbidden by default.** The requirement source is the user's words / the prototype / the defect being fixed — "engineering best practice" is NOT a requirement source. The classic inflations — finer-grained permissions than the system uses, extra config switches, extension points, defensive features, "while we're here" capabilities — are the top real-world failure mode of autonomous flows: every checker downstream anchors to the proposal, so an inflated proposal (or an implementation-time invention that never entered one) gets certified all the way to production.

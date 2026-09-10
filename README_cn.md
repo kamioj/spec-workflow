@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.1-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -106,7 +106,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | **设计 & 方案** | `/spec:design` | 技术设计梳理（按需） |
 |  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
-| **执行 & 验证** | `/spec:apply [flags]` | 派 agent 实施 |
+| **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:ship` | 收口 fix 批次：对累积 diff 做一次统一审计，通过后整批归档 |
 |  | `/spec:archive` | 归档当前 change |
@@ -127,14 +127,14 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 **`/spec:loop` vs 裸自喂循环**（ralph 式）：驱动机制相同，但多了验收清单作为成功出口、**终验时的全量独立审计**（轮内只做廉价自检，中途打勾是"声明"，审计不过会被打回未勾——谎勾永远产生不了虚假通过）、跨轮账本（`loop.md`：轮次+经验库）、多层保险丝。**不要与其它 Stop 驱动的循环器（如官方 ralph-loop 插件）在同一会话同时运行**——两个驱动器抢同一个 Stop 事件的合并语义未定义。
 
-### 1 个开发 Agent（按 scope 派遣）
+### 1 个开发 Agent（跨栈并行专用）
 
 | scope | 负责 |
 |---|---|
 | `frontend` | UI / 路由 / 组件 / 样式 / 客户端交互 |
 | `backend` | 服务端逻辑 / API / 数据模型 / DB 迁移 / 中间件 |
 
-`spec-dev` 一个 agent，前端 / 后端是派遣时传的 scope。跨前后端项目，接口契约先固化在 `design.md ## Interfaces`，**并发派两个 `spec-dev`**（一 frontend、一 backend）并行实施（不串行）。
+`spec-dev` 一个 agent，前端 / 后端是派遣时传的 scope。**单栈变更不派单**——主对话的上下文里已经躺着调研、提案、index 的热缓存，由它在同样的 charter 与纪律下直接实施（派子代等于让冷上下文重读一遍，且换不来任何并行度）。跨前后端项目，接口契约先固化在 `design.md ## Interfaces`，**并发派两个 `spec-dev`**（一 frontend、一 backend）并行实施（不串行）。
 
 ### 1 个验证 Agent（全新上下文）
 
@@ -170,7 +170,7 @@ graph LR
     D -->|简单| F[propose<br/>写方案]:::cmd
     E --> F
     F -->|HARD GATE| G{用户批准?}:::gate
-    G -->|是| H[apply<br/>派 agent 实施]:::cmd
+    G -->|是| H[apply<br/>实施]:::cmd
     G -->|否| I[revise<br/>修订]:::cmd
     I --> G
     H --> J[verify<br/>验证]:::cmd
@@ -317,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.8.1** — **前缀缓存经济学**：实施不再为买不到东西的冷上下文付税——单栈变更由主对话直接实施（其缓存前缀已持有调研、提案与 index；派子代等于全量重读且换不来并行度），跨栈并行、上下文预算不足或用户点名时仍派单；批评面板的 brief 改为字节级相同的公共头开场、镜头立场收尾，并行 critics 共享提示前缀缓存（≥3 个 critic 时提案内联一份，替代三次冷读）；核心 skill 落档会话经济学——相邻阶段同会话、compact 只在阶段间隙绝不在实施中途、一个深挖子代优于一串一次性子代
 - **0.8.0** — **知识与生命周期改造**：知识库改为索引+子文档架构（`spec/knowledge.md` 一行一子文档，事实落在 `spec/knowledge/` 领域文件与成篇经验文档；格式权威 `references/knowledge-spec.md`，legacy 谓词对旧平面文件惰性迁移），并以**已验证事实缓存**身份接入五个检索接缝（research 现状勘测、dev agent 启动读、fix 定位、verifier 裁定核对、propose 面板）——新共享原则：已录事实信任至遇矛盾，绝不重复推导；三个沉淀写入者（archive / ship / verify 误报裁定）统一走子文档+索引路由，阈值触发的整理压缩让新经验覆盖过时事实。归档不再是摆设：status 与下一步推荐主动把 verify 通过的变更标为候归档，开新变更遇旧活跃变更时以一轮结构化问询分诊（归档/暂存/并行）而非报错。多变更并行获得 O(1) 切换：`spec/changes/.current` 一行 current 指针——三个计数闸门与 Stop 提醒指针优先定位目标（指针悬空静默回退，fail-open），`/spec:resume <名字>` 切换、research 建变更时写入、archive/stash 清除；`/spec:stash` 重新定位为可选停放，不再是并存的前提
 - **0.7.1** — **注释只述功能，不述过程**（charter 第 8 条）：改动叙事归 spec 工件与 commit message，绝不进合入代码——实施期过程标记仅在携带统一 `DEVLOG:` 标签时合法，coding 收尾以机械清扫归零（逐条改写为功能注释或删除；残留标签即 charter finding）。另：tasks.md 的 >5 子任务触发器补足理由并取消"单执行者"豁免——勾选账本是长跑中唯一的持久进度记录
 - **0.7.0** — **问询与评审改版**：评审选择面从一排开关收敛到近零必答——propose 的镜头选择题取消（necessity + regression-compat 恒派；可证伪性成为 necessity 第五问；performance 仅在调研记录实测信号时加派；想补审在闸门回一句即可），Native 审并入 **Reuse & Conformance**（新建文件默认对照项目惯用法审，无需旗标），apply 的 `solid`+`verify` 合并为 `strict`，对外分类法统一为**四维度**（charter 审计为 Coherence 子审计）。问询重组为四段管线（派生 → 构造 → 送达 → 记账）：选项**从调研候选集引用而来，不再临场发明**；同主题的取舍类待决点聚合成一道多选；只剩一个真实选项的问题自动决定并在闸门报备；每轮以 `Open: N` 尾行收口，杜绝静默漏问。Codex 侧问询控件优先（实验开关下的 `request_user_input`，按形状压缩），批量文本兜底；所有命令的未知旗标一律提示疑似拼写错误，绝不静默吞没。另：loop 目录纳入闸门活跃豁免、拦截消息自诊断错树场景（worktree/主仓库/子项目）、research 收尾按 Open 状态推荐正确的下一步

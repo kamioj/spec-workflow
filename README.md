@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.1-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -108,7 +108,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 | **Design & propose** | `/spec:design` | technical design, when you need it |
 |  | `/spec:propose [--codex]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
-| **Execute & verify** | `/spec:apply [flags]` | dispatch agents to implement |
+| **Execute & verify** | `/spec:apply [flags]` | implement — single-scope runs in the main conversation (its context is already cache-warm), cross-stack dispatches two agents in parallel |
 |  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch |
 |  | `/spec:archive` | archive the current change |
@@ -129,14 +129,14 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 
 **`/spec:loop` vs a bare self-feeding loop** (ralph-style): same drive mechanism, but with an acceptance checklist as the success exit, an **exhaustive independent audit at final acceptance** (rounds stay cheap on self-checks; mid-loop checkmarks are claims the audit unchecks if false — so a dishonest check can never produce a false pass), a cross-round ledger (`loop.md`: rounds + lessons), and layered fuses. **Do not run `/spec:loop` alongside another Stop-driven looper** (e.g. the official ralph-loop plugin) in the same session — two drivers competing for one Stop event have undefined merge semantics.
 
-### 1 development agent (dispatched by scope)
+### 1 development agent (cross-stack parallelism)
 
 | scope | Responsible for |
 |---|---|
 | `frontend` | UI / routing / components / styling / client-side interaction |
 | `backend` | server-side logic / API / data models / DB migrations / middleware |
 
-`spec-dev` is a single agent; frontend/backend is a dispatch-time scope. In a cross-stack project, the interface contract is pinned down first in `design.md ## Interfaces`, then **two `spec-dev` instances** (one frontend, one backend) **build in parallel** — never one after the other.
+`spec-dev` is a single agent; frontend/backend is a dispatch-time scope. **Single-scope changes skip the dispatch entirely** — the main conversation, whose context already holds the research, proposal, and index as a cached prefix, implements directly under the same charter and discipline (a dispatched agent would cold-read all of it for zero parallelism gain). In a cross-stack project, the interface contract is pinned down first in `design.md ## Interfaces`, then **two `spec-dev` instances** (one frontend, one backend) **build in parallel** — never one after the other.
 
 ### 1 verification agent (fresh context)
 
@@ -208,7 +208,7 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 │   ├── check-verify-reminder.sh
 │   └── loop-driver.sh              # Stop-event driver for /spec:loop
 ├── agents/
-│   ├── spec-dev.md                 # dispatched by scope (frontend/backend); cross-stack = two in parallel
+│   ├── spec-dev.md                 # cross-stack implementer (two in parallel by scope); single-scope stays in the main conversation
 │   └── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify
 ├── rules/                          # ast-grep rule packs (charter-audit machine pass)
 │   ├── sgconfig.yml
@@ -299,7 +299,7 @@ A copy loaded with `--plugin-dir` **wins over** the marketplace cache, so your e
 How this plugin cooperates with the global CLAUDE.md protocol:
 
 - **Language** — proposal and research prose follows your working language; section headers stay in English (## Why / ## What / ## How / ## Risk) so tools can spot them and `revise` can target them by name.
-- **Subagent delegation** — the research stage hands off to the global `@researcher`; the apply stage hands off to the in-plugin `spec-dev` (dispatched by scope).
+- **Subagent delegation** — the research stage hands off to the global `@researcher`; the apply stage hands cross-stack work to the in-plugin `spec-dev` (two scopes in parallel; single-scope stays in the main conversation).
 - **Concurrency** — independent tasks are dispatched all at once.
 
 ---
@@ -319,6 +319,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.8.1** — **prefix-cache economics**: implementation stops paying cold-context tax where it buys nothing — single-scope changes are implemented by the main conversation directly (its cached prefix already holds the research, proposal, and index; a dispatched agent re-reads all of it for zero parallelism gain), with dispatch retained for cross-stack parallelism, low context budget, or user request; critique-panel briefs open with a byte-identical shared header and close with the lens stance, so parallel critics share the prompt-prefix cache (3+ critics inline the proposal once instead of three cold reads); the core skill documents session economics — adjacent stages in one session, compaction between stages never mid-implementation, one deep subagent over a run of one-shot ones
 - **0.8.0** — **the knowledge & lifecycle overhaul**: the knowledge base becomes an index + subdocs architecture (`spec/knowledge.md` holds one line per subdoc, facts live in `spec/knowledge/` domain files and long-form docs; format authority `references/knowledge-spec.md`, with a legacy predicate that migrates old flat files lazily) and is consumed as a **verified-fact cache** at five seams (research status-quo mapping, dev-agent startup, fix locate, verifier rulings, propose panel) under a new shared principle — recorded facts are trusted until contradicted, never re-derived; all three sediment writers (archive / ship / verify false-positive rulings) route into subdocs + index, with threshold-triggered consolidation that lets new experience supersede stale facts. Archiving stops being decorative: status and the next-step recommender actively flag verify-passed changes as archive candidates, and starting a new change with old actives triages them in one structured question (archive / stash / keep parallel) instead of erroring. Parallel changes get an O(1) switcher: `spec/changes/.current` is a one-line current-change pointer — the three counting gates and the Stop reminder resolve their target pointer-first (dangling pointer falls back silently, fail-open), `/spec:resume <name>` switches it, research writes it at change creation, archive/stash clear it; `/spec:stash` is repositioned as optional parking, no longer a prerequisite for coexistence
 - **0.7.1** — **comments state function, not process** (charter clause 8): change-narrative comments belong in spec artifacts and commit messages, never in merged code — during implementation a process marker is legal only with the uniform `DEVLOG:` tag, and the coding phase ends with a mechanical sweep to zero (each tag rewritten as a function comment or deleted; residual tags are charter findings). Plus: the tasks.md >5-subtask trigger now carries its reason and admits no single-executor waiver — the checkbox ledger is the only persistent progress record a long run has
 - **0.7.0** — **the interrogation & review overhaul**: the review surface collapses from a wall of switches to near-zero mandatory choices — propose's lens-selection question is gone (necessity + regression-compat always dispatch; falsifiability is necessity's fifth question; performance joins only when research records a measured signal; extra passes are one gate reply away), the Native pass merges into **Reuse & Conformance** (new files audited against project idiom by default, no flag), apply's `solid`+`verify` collapse into `strict`, and the public taxonomy is uniformly **four dimensions** with the charter audit as Coherence's sub-audit. Interrogation becomes a four-stage pipeline (Derive → Craft → Deliver → Book-keep): question options are **citations from research's candidate sets, not inventions**; sibling include/skip decisions aggregate into one multi-select; questions left with fewer than two real options self-decide and surface at the gate; every round ends with an `Open: N` tail line so nothing is silently unasked. Codex-side asking is tool-first (`request_user_input` behind its experimental flag, shape-compressed) with a batched plain-text fallback; unknown flags on any command are flagged as possible typos, never silently swallowed. Plus: loop dirs join the gates' active-change exemption, gate block messages self-diagnose wrong-spec-tree cases (worktree / main repo / subproject), and research must close by recommending the step its own Open list actually requires

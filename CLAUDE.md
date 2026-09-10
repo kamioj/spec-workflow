@@ -107,7 +107,7 @@ printf '%s' '{"prompt":"/spec:apply","hook_event_name":"UserPromptSubmit"}' | CL
 - The `<!-- APPROVED: -->` marker is appended **by apply before it runs** (deliberate invocation = the act of approval) — not by propose, and no "reply go" is needed. Don't reintroduce a "reply go" step.
 - After emitting the HARD GATE, **never write project source**; wait for the next command.
 
-**spec-dev** (dev agent, `core/agents/spec-dev.md`): dispatched by scope at apply time; cross-stack = contract pinned in `design.md ## Interfaces` first, then **two instances dispatched concurrently in one message** (never serial).
+**spec-dev** (dev agent, `core/agents/spec-dev.md`): the cross-stack implementer — contract pinned in `design.md ## Interfaces` first, then **two instances dispatched concurrently in one message** (never serial). **Single-scope changes are implemented by the main conversation directly** (its cached prefix already holds research/proposal/index; a dispatch cold-reads it all for zero parallelism gain), falling back to one dispatched spec-dev only on low context budget or user request.
 
 **spec-verifier** (verification agent): dispatched by verify with a **deliberately fresh context** — the implementing conversation never audits itself. Protocol: Iron Law (no pass without fresh evidence; self-reported success is a claim to re-run), evidence-or-drop (≤3 findings per dimension), refutation phase (a defense must cite a gate decision), ast-grep machine pass over the shipped rule pack (graceful `not run` declaration when absent).
 
