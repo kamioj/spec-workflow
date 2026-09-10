@@ -49,6 +49,10 @@ Invoke each phase command in the order below. **If any phase encounters user rej
 8. **Acceptance — touchpoint 2 of 2** — report the result (open ledger items first, escalated decisions restated), then wait
    - The user's acceptance feedback is an evaluation: respond per item adopt / refute / partial, then record accepted items as **user-sourced findings** in the ledger (stable V-N) and run a fix round → re-verify. **No round limit** — the loop ends when the user says "archive" → `/spec:archive`
 
+## Cost posture (why this entry point is the cheapest per token)
+
+The whole run shares ONE session prefix — every later phase reads research, the triage record, and the proposal at cache price, and auto-triage removes the mid-flight waits where a cache TTL would otherwise expire; the only remaining pauses are the two touchpoints, by design. Protect that posture: **never compact mid-run** (compaction voids the entire accumulated prefix — if context pressure forces it, the least-bad moments are right after a touchpoint wait begins, never inside a phase), and each phase inherits its stage command's cache rules (apply's executor choice, propose's brief structure) automatically.
+
 ## Commands allowed to jump the queue mid-workflow
 
 - `/spec:chat` — enter discussion mode; no documents are touched
