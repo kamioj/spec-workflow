@@ -84,10 +84,13 @@ The proposal's quality guard is structural adversarialism, not a smarter single 
 **Discipline** (reuses the spec-verifier protocol — the anti-sycophancy measures are structural, not tonal):
 - **evidence-or-drop**: a finding must cite the concrete proposal line + the concrete scenario where it bites; "this might be risky" is dropped unwritten
 - **≤3 findings per lens** — forced ranking, no noise dumps
-- **ONE refutation round**: the proposing conversation defends each finding citing evidence or a Decided entry; a finding neither refuted nor adopted stays open. No second debate round — multi-round agent-to-agent debate is measured net-negative (critics start conceding and flipping correct answers)
+- **ONE refutation round**: the proposing conversation defends each finding citing evidence or a Decided entry. No second debate round — multi-round agent-to-agent debate is measured net-negative (critics start conceding and flipping correct answers)
+- **Adjudication forks by invocation mode** (who rules on the findings that survive refutation):
+  - **Standalone /spec:propose — the USER rules, never the author**: batch the surviving findings into ONE structured adjudication round (delivered per /spec:ask's question rules; multi-select where findings are independent), each option self-contained — severity, the concrete consequence if ignored, the panel's recommendation, and the author's defense when one was raised. Per finding the user picks **adopt** (rewrite into the proposal before the gate), **reject** (recorded as a user ruling; a rejected false positive distills into the knowledge base at archive), or **leave open** (rides the gate's `Unresolved critique` line). The author silently absorbing findings into a rewrite the user never saw is the failure mode this round exists to prevent.
+  - **Inside /spec:workflow** (two-touchpoint doctrine — no mid-flight questions): the author adjudicates internally — adopted findings rewrite the proposal, everything else rides the gate's `Unresolved critique` line, and the gate's Changes block discloses what was absorbed; the user judges at the gate.
 - **Non-blocking**: the panel never vetoes. Open majors ride the gate's `Unresolved critique` line; the user is the judge
 
-**Ledger round 0**: write the panel's surviving findings to `spec/changes/<name>/verify.md` as **round 0 (stage: propose)** with stable V-N IDs, same table format as /spec:verify's rounds (create the file if absent). `/spec:verify`'s next round re-checks every still-open one. Adopted findings that changed the proposal are marked `fixed(r0)`.
+**Ledger round 0**: write the panel's surviving findings to `spec/changes/<name>/verify.md` as **round 0 (stage: propose)** with stable V-N IDs, same table format as /spec:verify's rounds (create the file if absent). `/spec:verify`'s next round re-checks every still-open one. Adopted findings that changed the proposal are marked `fixed(r0)`; user-rejected ones are marked `rejected (user ruling)` — they don't reopen in later rounds unless new evidence appears.
 
 ## --codex: heterogeneous adversarial review (optional)
 

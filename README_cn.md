@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.8.2-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.3-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -317,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.8.3** — **面板裁决按调用模式分叉**：standalone `/spec:propose` 不再允许作者静默吸收批评发现——反驳轮的存活项打包成一轮结构化问询交用户逐条裁决（采纳 / 驳回记为用户裁定 / 留在闸门），`/spec:workflow` 保持内部裁决+闸门披露（两触点教义）；用户驳回的发现在账本记 `rejected (user ruling)`，无新证据不再重开
 - **0.8.2** — **workflow 成本姿态明文化**：全托管入口全程共享一条会话前缀（后续每阶段以缓存价读前置产物；自动分诊使等待点只剩两个设计内触点）——现在明文写入守护规则：运行中绝不 compact，各阶段自动继承所属命令的缓存规则
 - **0.8.1** — **前缀缓存经济学**：实施不再为买不到东西的冷上下文付税——单栈变更由主对话直接实施（其缓存前缀已持有调研、提案与 index；派子代等于全量重读且换不来并行度），跨栈并行、上下文预算不足或用户点名时仍派单；批评面板的 brief 改为字节级相同的公共头开场、镜头立场收尾，并行 critics 共享提示前缀缓存（≥3 个 critic 时提案内联一份，替代三次冷读）；核心 skill 落档会话经济学——相邻阶段同会话、compact 只在阶段间隙绝不在实施中途、一个深挖子代优于一串一次性子代
 - **0.8.0** — **知识与生命周期改造**：知识库改为索引+子文档架构（`spec/knowledge.md` 一行一子文档，事实落在 `spec/knowledge/` 领域文件与成篇经验文档；格式权威 `references/knowledge-spec.md`，legacy 谓词对旧平面文件惰性迁移），并以**已验证事实缓存**身份接入五个检索接缝（research 现状勘测、dev agent 启动读、fix 定位、verifier 裁定核对、propose 面板）——新共享原则：已录事实信任至遇矛盾，绝不重复推导；三个沉淀写入者（archive / ship / verify 误报裁定）统一走子文档+索引路由，阈值触发的整理压缩让新经验覆盖过时事实。归档不再是摆设：status 与下一步推荐主动把 verify 通过的变更标为候归档，开新变更遇旧活跃变更时以一轮结构化问询分诊（归档/暂存/并行）而非报错。多变更并行获得 O(1) 切换：`spec/changes/.current` 一行 current 指针——三个计数闸门与 Stop 提醒指针优先定位目标（指针悬空静默回退，fail-open），`/spec:resume <名字>` 切换、research 建变更时写入、archive/stash 清除；`/spec:stash` 重新定位为可选停放，不再是并存的前提
