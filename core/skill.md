@@ -38,7 +38,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `/spec:chat` | discussion mode, touches no file |
 | Design & propose | `/spec:design` | technical design pass (on demand) |
 <!-- host:claude -->
-|  | `/spec:propose [--codex]` | write proposal.md; `--codex` lets codex poke holes in the solution |
+|  | `/spec:propose [--codex] [--skip <lens>]` | write proposal.md; `--codex` lets codex poke holes in the solution; `--skip` opts a critique lens out of this run |
 <!-- /host -->
 <!-- host:codex -->
 |  | `/spec:propose` | write proposal.md |

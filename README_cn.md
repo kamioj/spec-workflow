@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.8.3-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.4-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -104,7 +104,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
 |  | `/spec:chat` | 讨论模式，不动文档 |
 | **设计 & 方案** | `/spec:design` | 技术设计梳理（按需） |
-|  | `/spec:propose [--codex]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案 |
+|  | `/spec:propose [--codex] [--skip <镜头>]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案，`--skip` 本次跳过指定批判镜头（跳过项在闸门上亮明） |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
@@ -317,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.8.4** — **面板尊重已决之地，镜头支持选择性退出**：重翻 Decided 条目、知识库裁定或已过闸决定的批评发现直接不写出（唯一例外：原决策未见过的新证据，且须点名挑战对象）；`/spec:propose --skip <镜头>` 本次跳过指定批判镜头，跳过项一律在闸门亮明——用户控制保持退出制，绝不回到必答菜单
 - **0.8.3** — **面板裁决按调用模式分叉**：standalone `/spec:propose` 不再允许作者静默吸收批评发现——反驳轮的存活项打包成一轮结构化问询交用户逐条裁决（采纳 / 驳回记为用户裁定 / 留在闸门），`/spec:workflow` 保持内部裁决+闸门披露（两触点教义）；用户驳回的发现在账本记 `rejected (user ruling)`，无新证据不再重开
 - **0.8.2** — **workflow 成本姿态明文化**：全托管入口全程共享一条会话前缀（后续每阶段以缓存价读前置产物；自动分诊使等待点只剩两个设计内触点）——现在明文写入守护规则：运行中绝不 compact，各阶段自动继承所属命令的缓存规则
 - **0.8.1** — **前缀缓存经济学**：实施不再为买不到东西的冷上下文付税——单栈变更由主对话直接实施（其缓存前缀已持有调研、提案与 index；派子代等于全量重读且换不来并行度），跨栈并行、上下文预算不足或用户点名时仍派单；批评面板的 brief 改为字节级相同的公共头开场、镜头立场收尾，并行 critics 共享提示前缀缓存（≥3 个 critic 时提案内联一份，替代三次冷读）；核心 skill 落档会话经济学——相邻阶段同会话、compact 只在阶段间隙绝不在实施中途、一个深挖子代优于一串一次性子代
