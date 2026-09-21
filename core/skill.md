@@ -38,10 +38,10 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `/spec:chat` | discussion mode, touches no file |
 | Design & propose | `/spec:design` | technical design pass (on demand) |
 <!-- host:claude -->
-|  | `/spec:propose [--codex] [--skip <lens>]` | write proposal.md; `--codex` lets codex poke holes in the solution; `--skip` opts a critique lens out of this run |
+|  | `/spec:propose [--codex] [--skip <lens>]` | write proposal.md; `--codex` lets codex poke holes in the solution; standalone runs pick the critique roster in one multi-select (`--skip` pre-answers it); workflow dispatches automatically |
 <!-- /host -->
 <!-- host:codex -->
-|  | `/spec:propose` | write proposal.md |
+|  | `/spec:propose [--skip <lens>]` | write proposal.md; standalone runs pick the critique roster in one multi-select (`--skip` pre-answers it); workflow dispatches automatically |
 <!-- /host -->
 |  | `/spec:revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `/spec:apply` | implement the code |

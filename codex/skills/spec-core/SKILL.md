@@ -33,7 +33,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |  | `$spec-ask` | interrogate and resolve `[TBD]` items |
 |  | `$spec-chat` | discussion mode, touches no file |
 | Design & propose | `$spec-design` | technical design pass (on demand) |
-|  | `$spec-propose` | write proposal.md |
+|  | `$spec-propose [--skip <lens>]` | write proposal.md; standalone runs pick the critique roster in one multi-select (`--skip` pre-answers it); workflow dispatches automatically |
 |  | `$spec-revise [section]` | edit a single proposal section (why/what/how/risk) |
 | Execute & verify | `$spec-apply` | implement the code |
 |  | `$spec-verify` | dispatches the independent spec-verifier agent (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files) |

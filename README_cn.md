@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.8.4-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.5-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -104,7 +104,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:ask` | 拷问消化 `[TBD]` |
 |  | `/spec:chat` | 讨论模式，不动文档 |
 | **设计 & 方案** | `/spec:design` | 技术设计梳理（按需） |
-|  | `/spec:propose [--codex] [--skip <镜头>]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案，`--skip` 本次跳过指定批判镜头（跳过项在闸门上亮明） |
+|  | `/spec:propose [--codex] [--skip <镜头>]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案，手动挡以一道多选题圈定批判镜头名单——`--skip <镜头>` 可预先作答免弹题；最终名单在闸门上亮明 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
@@ -317,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.8.5** — **手动挡的批判名单由用户圈定**：手动调用 `/spec:propose` 在派遣前先弹一道多选题——每个镜头一个选项，带立场与“跳过后失守什么”，necessity + regression 预推荐，performance 仅在有实测信号时推荐；选中即名单（全不选也合法），`--skip <镜头>` 可预答免弹，最终名单一律在闸门亮明；`/spec:workflow` 内保持全自动派遣（两触点教义）
 - **0.8.4** — **面板尊重已决之地，镜头支持选择性退出**：重翻 Decided 条目、知识库裁定或已过闸决定的批评发现直接不写出（唯一例外：原决策未见过的新证据，且须点名挑战对象）；`/spec:propose --skip <镜头>` 本次跳过指定批判镜头，跳过项一律在闸门亮明——用户控制保持退出制，绝不回到必答菜单
 - **0.8.3** — **面板裁决按调用模式分叉**：standalone `/spec:propose` 不再允许作者静默吸收批评发现——反驳轮的存活项打包成一轮结构化问询交用户逐条裁决（采纳 / 驳回记为用户裁定 / 留在闸门），`/spec:workflow` 保持内部裁决+闸门披露（两触点教义）；用户驳回的发现在账本记 `rejected (user ruling)`，无新证据不再重开
 - **0.8.2** — **workflow 成本姿态明文化**：全托管入口全程共享一条会话前缀（后续每阶段以缓存价读前置产物；自动分诊使等待点只剩两个设计内触点）——现在明文写入守护规则：运行中绝不 compact，各阶段自动继承所属命令的缓存规则

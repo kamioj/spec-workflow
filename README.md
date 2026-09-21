@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.8.4-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.8.5-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -106,7 +106,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:ask` | work through the `[TBD]` questions with you |
 |  | `/spec:chat` | discussion mode — never touches a file |
 | **Design & propose** | `/spec:design` | technical design, when you need it |
-|  | `/spec:propose [--codex] [--skip <lens>]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it, `--skip` opts a critique lens out of this run (skips are disclosed on the gate) |
+|  | `/spec:propose [--codex] [--skip <lens>]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it, standalone runs pick the critique roster in one multi-select — `--skip <lens>` pre-answers it; the chosen roster is disclosed on the gate |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | implement — single-scope runs in the main conversation (its context is already cache-warm), cross-stack dispatches two agents in parallel |
 |  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
@@ -319,6 +319,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.8.5** — **the critique roster is the user's call in standalone runs**: `/spec:propose` invoked manually asks ONE multi-select before dispatching — each lens an option carrying its stance and what skipping it leaves unguarded, necessity + regression pre-recommended, performance recommended only on a recorded measured signal; the selection is the roster (none is legal), `--skip <lens>` pre-answers the question, and the gate always discloses the final roster; inside `/spec:workflow` dispatch stays fully automatic (two-touchpoint doctrine)
 - **0.8.4** — **the panel respects settled ground, and lenses are opt-out**: a critique finding that re-litigates a Decided entry, a knowledge-base ruling, or a previously gate-approved decision is dropped unwritten (the one exception: new evidence the original decision never saw, named explicitly); `/spec:propose --skip <lens>` excludes a critique lens from the run, with every skip disclosed on the gate — user control stays opt-out, never a mandatory menu
 - **0.8.3** — **panel adjudication forks by invocation mode**: standalone `/spec:propose` no longer lets the author silently absorb critique findings — survivors of the refutation round go to the USER in one structured adjudication round (adopt / reject as a recorded ruling / leave open on the gate), while `/spec:workflow` keeps internal adjudication with gate disclosure (two-touchpoint doctrine); user-rejected findings are ledgered `rejected (user ruling)` and stay closed absent new evidence
 - **0.8.2** — **workflow cost posture made explicit**: the fully-delegated entry runs its whole flow on one session prefix (every phase reads the earlier artifacts at cache price; auto-triage leaves only the two designed touchpoints as waits) — the doc now states the rule that protects it: never compact mid-run, and each phase inherits its stage command's cache rules automatically
