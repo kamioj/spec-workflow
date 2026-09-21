@@ -70,12 +70,22 @@ The proposal's quality guard is structural adversarialism, not a smarter single 
 
 **Brief structure (cache-aware — independence untouched, only the ordering is constrained)**: every critic brief opens with an **identical shared header** — the artifact read list and any inlined material, verbatim byte-for-byte across all critics — and states the lens's locked stance as the **final section**. Parallel sibling agents share the prompt-prefix cache exactly as far as their briefs stay identical, so common-material-first lets later critics hit the prefix the first one paid for, while stance-last is where they legitimately diverge. With **3+ critics** (performance dispatched), inline proposal.md verbatim into the shared header instead of having each critic read it — three cold reads of the same file cost more than one inlined copy; with 2 critics, per-critic reads stay cheaper (inlining is main-conversation output, priced above input).
 
+**The three lenses partition proposal risk — each asks exactly ONE question** (this identity line is the lens's user-facing name on every surface: the roster question, the gate disclosure, the docs; the dense stance text further below is dispatch-brief material, never shown to the user as a description):
+
+| Lens | The one question it asks |
+|---|---|
+| **necessity** | "Should this be built at all?" — catches over-building: unneeded measures, newly minted code entities that duplicate existing ones, acceptance clauses that can't fail |
+| **regression-compat** | "Does this break what already works?" — catches damage to existing behavior, current callers, and live data |
+| **performance** | "Does this make it slow?" — hot paths and query growth; only worth running when a measured signal exists |
+
 **Lens roster — the USER picks it in standalone runs; automatic only inside /spec:workflow:**
-- **Standalone /spec:propose**: before dispatching, ask ONE multi-select question (crafted per /spec:ask's rules — every option self-contained): each lens is one option carrying its locked stance in one line plus **what skipping it leaves unguarded**; pre-recommend **necessity + regression-compat**, and recommend **performance** ONLY when research.md / index.md records a **measured signal** (profile output / slow-query log / user report) — no signal → the option says so and warns that an evidence-starved perf lens's only legal output is "nothing to say". The user's selection IS the roster; selecting none is legal (no panel this run — the gate still stands). `--skip <lens>` flags (repeatable) pre-answer the question: no question is asked, the recommended roster minus the named lenses runs; an unknown lens name is flagged as a possible typo, never silently swallowed.
+- **Standalone /spec:propose**: before dispatching, ask ONE multi-select question (crafted per /spec:ask's rules — every option self-contained): each lens's option is **its one-question identity from the table above** plus one line on **what skipping it leaves unguarded** — never the dispatch-brief stance text; pre-recommend **necessity + regression-compat**, and recommend **performance** ONLY when research.md / index.md records a **measured signal** (profile output / slow-query log / user report) — no signal → the option says so and warns that an evidence-starved perf lens's only legal output is "nothing to say". The user's selection IS the roster; selecting none is legal (no panel this run — the gate still stands). `--skip <lens>` flags (repeatable) pre-answer the question: no question is asked, the recommended roster minus the named lenses runs; an unknown lens name is flagged as a possible typo, never silently swallowed.
 - **Inside /spec:workflow** (two-touchpoint doctrine — no mid-flight questions): the roster is automatic — **necessity + regression-compat** always; **performance** joins only on a recorded measured signal.
 - The necessity brief carries the falsifiability question (fifth question below) — falsifiability is a per-item mechanical check, not a separate stance.
 - **Either way the gate's Changes block discloses the roster** (`panel: necessity + regression` / `panel: none, user-selected`) so reduced coverage is always on the record.
 - **Extra review depth is one gate reply away**: the gate's Next block offers a supplementary panel round ("want a performance / deeper pass → say so in your reply").
+
+**Dispatch briefs (critic-facing material — the full locked stance each critic runs under):**
 
 | Lens | Locked stance | Default roster |
 |---|---|---|
