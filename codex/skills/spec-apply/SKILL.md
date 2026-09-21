@@ -128,6 +128,17 @@ Every implementer implements permissively and reroutes tightening impulses into 
 
 **Independent verification is a terminal event, not a rhythm.** While implementing, the only checks are your OWN working checks (seconds-cheap, self-run); the ONE subagent-backed independent verification happens after the last item lands. Never dispatch a verifier / fresh-context subagent mid-implementation — a verify-edit-verify-edit cadence spends the budget on re-reading context instead of building (measured in real runs: it dominates the bill).
 
+**Working checks run in a three-tier order — a check that needs a service nobody started is never waited on:**
+
+1. **Test classes / compilation first**: unit and integration tests, focused runs, the compiler — they run on their own and produce real evidence.
+2. **Seam-mocked isolation next**: a dependency that isn't up gets mocked at its agreed boundary so the unit's logic is verified now; the claim is always scoped honestly — "logic verified, live path not run" (a mock passed off as end-to-end is the bypass Anti-Cheating exists to catch).
+3. **Live-service checks are handed over, never waited on**: a check that genuinely needs the running app goes onto the **live-acceptance list** — one line each in the verify ledger's Evidence ("pending live check: X") — and implementation moves on. Blocking on a service start turns verification into a wait; the list turns it into a handover.
+
+**Frontend closing checks (any UI-touching change) — the page is for human eyes, "no console errors" is not "looks right":**
+
+- **Three checks, each screenshot-evidenced**: ① structure and flow against the prototype/design source; ② layout under real data pressure — long text, many rows, empty state (the prototype drew the ideal case; stacked data is where pages buckle, and a buckled layout is fixed here, not shipped); ③ copy through human eyes — prototype annotation text, developer comments, and any wording a user can't understand must not reach the user's screen (incomprehensible copy is a defect, not a style choice).
+- **The screenshot evidence map**: captures land in `spec/changes/<name>/screens/` with an index `screens.md` — one row per screen: screen name, prototype reference, screenshot file, captured state (normal / stacked / empty). **Update-in-place**: the same logical screen keeps the same filename forever; after a fix, re-capture and overwrite — the map always shows the current real look, never a history pile. The user reviews the map from a real user's perspective without starting the stack; their comments enter the ledger through the user-evaluation channel. No built-in screenshot tooling on the host → drive a browser via playwright to capture; the map ships with screenshots, not text stand-ins.
+
 - Advance by deps, touching only tasks whose deps are done
 - Multiple deps satisfied and independent → **prefer spawning two dedicated agents concurrently** (if frontend and backend are independent)
 - After finishing each node (or a group of parallel ones) → run that node's own checks close by (compile / tests for the node), **don't save them for the end**. These are working checks — self-run, seconds-cheap, they do NOT write ledger rounds and they NEVER involve a subagent

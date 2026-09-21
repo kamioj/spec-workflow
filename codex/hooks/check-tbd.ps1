@@ -38,7 +38,7 @@ try {
                    $_.Name -ne 'archive' -and
                    -not (Test-Path (Join-Path $_.FullName '.paused')) -and
                    -not ((Test-Path (Join-Path $_.FullName 'quick.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
-                   -not ((Test-Path (Join-Path $_.FullName 'fix.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
+                   -not (((Test-Path (Join-Path $_.FullName 'fix.md')) -or (@(Get-ChildItem -Path $_.FullName -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'fix.md') }).Count -gt 0)) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md'))) -and
                    -not ((Test-Path (Join-Path $_.FullName 'loop.md')) -and -not (Test-Path (Join-Path $_.FullName 'proposal.md')))
                }
 

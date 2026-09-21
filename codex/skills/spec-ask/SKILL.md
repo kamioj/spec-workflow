@@ -10,6 +10,7 @@ description: Interrogates preference-driven decision points. Derives questions f
 
 1. Read `spec/changes/<name>/research.md` and list every entry in `## Open [TBD]`
 2. **Classify — shared step 0 for BOTH modes** (interactive and workflow auto-triage run the same classification; only the delivery differs):
+   - **Source-check FIRST — the requirement source outranks every other channel**: before a question is even drafted, re-read the requirement source (index.md R-N quotes, the prototype / PRD / user statement they cite). The source answers it → decide from the source, mark "decided from source: <where>", move to Decided, surface on the gate's `Decided without asking` line — asking the user something the source already settled sends them back to their product owner with a question the prototype answers, and that embarrassment lands on the user, not on the flow
    - **Factual** (determinable by reading code / docs / the knowledge base (spec/knowledge.md index, then relevant subdocs)) → decide from evidence, mark "decided from status quo: X", move to Decided
    - **Preference-driven** → tag it **reversible** or **irreversible** (irreversible = any of: data migration / schema change / public API surface / new dependency / destructive operation / user-visible product semantics; **when unsure, it is irreversible**)
    - Unsure whether factual or preference → **treat as preference-driven** (never skip)
@@ -35,6 +36,8 @@ description: Interrogates preference-driven decision points. Derives questions f
 
 ### 2 · Craft each question
 
+- **Every question must name the source gap it fills**: a legal question can state "the source covers A; B is not specified" — naming where the source falls silent. A question that cannot state its gap means the source was not checked (or answers it) — run the source-check, then either drop the question or write the gap line in. This is what makes every question safe to forward to the requirement's owner.
+- **Scenario-shaped (the standard question form)**: the stem opens with the user scenario — who is doing what, and what happens today; each option carries its benefit AND its cost, one line each; the question closes with what the chosen option makes happen. Users decide on real consequences, never on terminology. In the question tool the scenario lives in the stem, options keep short labels with the benefit/cost in the description line.
 - **Self-contained (top priority)**: ① the decision in one sentence + ② why it must be settled now (what it affects / what breaks if left open) + ③ per option, what choosing it leads to — concrete scenario / consequence. **Test: the user can answer without asking a follow-up.**
 - **Options differ in consequence, not wording**: for every pair of options you must be able to state different outcomes — can't → same option, merge. Option count follows the real decision space (2–4), never padded: a dominated option nobody would pick, or a restatement of the question stem, is noise. Two honest options beat four manufactured ones.
 - **The skip/minimal candidate is mandatory** (Claim Self-Review question ④ applied at the ask stage): "don't do it yet (cost = X)" or "minimal viable (cost = Y)" — unless the decision genuinely has no skip path. It is never trimmed to fit any host limit.

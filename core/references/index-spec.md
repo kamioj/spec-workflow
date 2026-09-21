@@ -53,7 +53,7 @@ Requirement source: <where the quotes come from + date>
 - One row per requirement noun that will need a **data or API carrier** (a field / method / endpoint / parameter) — not every word in the requirement; concepts that stay in prose need no row
 - The mapping direction is concept → carrier: the row answers "who ALREADY carries this concept" (e.g. 单据类型 → `is_device`), which is what stops the noun being minted into a new entity; A-N stays asset-centric ("what exists, how used") — the two are complementary, not duplicates
 - A `NOT FOUND` row is legal **only with the search recorded** (where you looked, searching by responsibility, not by name) — the empty-handed search is the license to mint, and the row rides the HARD GATE's `Unsourced additions` line for explicit approval
-- Named consumers (per the Static-only rule): proposal `## What` items citing carriers, and the critique panel's necessity lens (its anti-minting check reads these rows line by line)
+- Named consumers (per the Static-only rule): proposal `## What` items citing carriers, and the critique panel's reuse lens (its equivalent-search starts from these rows, then verifies against the codebase)
 
 ## Static-only discipline
 

@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.8.6-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -96,7 +96,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |---|---|---|
 | **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
-|  | `/spec:fix <task>` | 修 bug/小改动的**流式轻量档**：先定位确认 → 直接修（没把握先调研备选）→ 追加 F-N 条目进固定 `fixes/` 批次；尺寸只提醒不拒收 |
+|  | `/spec:fix <task>` | 修 bug/小改动的**流式轻量档**：先定位确认 → 直接修（没把握先调研备选）→ 追加 F-N 条目进当日批次 `fixes/<日期>/`；尺寸只提醒不拒收 |
 |  | `/spec:status` | 报告当前 change 在哪一步（含暂停变更与 fix 批次待审数） |
 |  | `/spec:stash` | **停放**变更（`.paused`：日期+理由）——可选的记账动作；工件全部保温 |
 |  | `/spec:resume [名字]` | **切换器**：把 current 指针（`spec/changes/.current`）写为目标变更（暂停的顺带解冻）——多变更自由并存，闸门只认指针所指；不带名字 → 列出可切换项 |
@@ -108,7 +108,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
-| **收尾** | `/spec:ship` | 收口 fix 批次：对累积 diff 做一次统一审计，通过后整批归档 |
+| **收尾** | `/spec:ship` | 收口一个 fix 批次（点名日期或最老一批）：对该批 diff 做一次独立审计——本会话没写过其中条目时直接主对话审——通过后该批归档 |
 |  | `/spec:archive` | 归档当前 change |
 
 ### 5 个 Hook——3 个硬门 + 1 个提醒 + 1 个循环驱动器
@@ -119,7 +119,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |---|---|---|
 | `check-tbd.sh` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
 | `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或目标不明（多活跃变更且无 current 指针选定） |
-| `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：归档要求 shipped+Audit，ship 要求批次非空）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
+| `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：整树归档要求每批 shipped+Audit，ship 要求存在带条目的批次）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
 | `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 目标变更（指针所指或唯一活跃）已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 | `loop-driver.sh` | Stop，且恰好存在 1 份 `running` 状态的循环账本时 | 再注入 `/spec:loop` 的下一轮（Stop 事件 JSON 契约，探针实证）——或按**四种互异的终止说明**放行：验收达成 / 轮次上限 / 无进展 / 拒写复盘 / 账本损坏。所有熔断信号全部机械（checkbox 计数、工作树指纹），从不采信模型自报"有进展" |
 
@@ -317,6 +317,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.9.0** — **评审与验收改版**：批判面板与验收标准一一对应——reuse（“项目里有没有现成的？”，带代码库读取权，推荐式输出）· fidelity（“和需求源对得上吗？”——对照原文引用双向查多做与少做，配 R-N 覆盖矩阵与可证伪预检两道机械关）· performance（“过度考量在拖慢什么？”，仅用户勾选）；名单空答=零面板，绝不静默回退。兼容退出面板：仅 `/spec:workflow` 托管时自动加跑，产出只能是落地步骤——需求是前提，不是被告。上游硬化：research 动存量必枚举受影响面、新造物必做全项目等价物搜索；问询先过需求源、每题必须指明源的空缺；提问场景化，每选项好处代价并陈。交付层：验证按测试类→接缝 mock→真机移交三级走，待真机项绝不卡归档；前端变更交截图证据地图（`screens/`，同名覆盖只更新不堆积），三查把关——对原型、压数据、文案人眼过。fix 改按天分批（`fixes/<日期>/`，钩子双布局兼容），一次收一批，本会话没写过条目时 ship 主对话直审免子代。表达宪章约束一切用户界面：推荐先行、大白话、每题有出路、发现默认判断题档；core 的禁令一律带理由与正面做法
 - **0.8.6** — **每个批判镜头钉死一句“它问的问题”作身份**：三镜头把提案风险切成三个大白话问题——该不该做（necessity）· 会不会弄坏旧的（regression-compat）· 会不会变慢（performance）——这句身份是镜头在一切用户界面（名单多选题、闸门披露、文档）上的名字；密度大的锁定立场文本明确标为批判者派遣材料，绝不作为选项描述示人
 - **0.8.5** — **手动挡的批判名单由用户圈定**：手动调用 `/spec:propose` 在派遣前先弹一道多选题——每个镜头一个选项，带立场与“跳过后失守什么”，necessity + regression 预推荐，performance 仅在有实测信号时推荐；选中即名单（全不选也合法），`--skip <镜头>` 可预答免弹，最终名单一律在闸门亮明；`/spec:workflow` 内保持全自动派遣（两触点教义）
 - **0.8.4** — **面板尊重已决之地，镜头支持选择性退出**：重翻 Decided 条目、知识库裁定或已过闸决定的批评发现直接不写出（唯一例外：原决策未见过的新证据，且须点名挑战对象）；`/spec:propose --skip <镜头>` 本次跳过指定批判镜头，跳过项一律在闸门亮明——用户控制保持退出制，绝不回到必答菜单

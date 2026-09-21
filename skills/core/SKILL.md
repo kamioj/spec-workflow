@@ -24,8 +24,8 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 |---|---|---|
 | Entry | `/spec:workflow <task>` | run the whole flow end-to-end; back-compatible with the old /sdd |
 |  | `/spec:loop <goal>` | goal-driven autonomous round loop (goal known, path unknown): two touchpoints — goal confirmation + final acceptance — with Stop-hook-driven rounds and a cross-round ledger in between |
-|  | `/spec:fix <task>` | streaming light tier for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to the standing `spec/changes/fixes/` batch; size is advisory, never a refusal |
-|  | `/spec:ship` | close the fix batch: ONE verifier audit over the accumulated diff, then archive the whole batch dir; findings stay in place on fail |
+|  | `/spec:fix <task>` | streaming light tier for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to today's daily batch `spec/changes/fixes/<date>/`; size is advisory, never a refusal |
+|  | `/spec:ship` | close one fix batch (named date, or the oldest): ONE independent audit over its accumulated diff — run by this conversation when it wrote none of the entries, a subagent only otherwise — then archive that batch dir; findings stay in place on fail |
 |  | `/spec:status` | report the current stage |
 |  | `/spec:stash` | park a change deliberately (`.paused` marker: date + reason) — optional bookkeeping, not a switching prerequisite; every artifact stays warm |
 |  | `/spec:resume [name]` | **the switcher**: writes the current pointer (`spec/changes/.current`) to the named change, unpausing it if parked; no name → list what there is to switch to |
@@ -57,7 +57,8 @@ spec/
 │       ├── verify.md     at-propose+ verification ledger (stable V-N finding IDs + round history + Evidence; round 0 by propose's critique panel, rounds 1+ by /spec:verify)
 │       ├── loop.md       at-loop     round ledger of a /spec:loop run (goal + acceptance checklist + rounds + lessons; model-written, driver-read — see references/loop-spec.md)
 │       ├── .loop-state   at-loop     the loop driver's own state (driver-written ONLY — never edit)
-│       ├── fix.md        at-fix      streaming light-tier batch ledger, lives ONLY in the standing dir changes/fixes/ (F-N entries + ship-time Audit — see references/fix-spec.md); fix.md WITHOUT proposal.md = light-tier dir, excluded from the active count; WITH proposal.md = upgraded, normal full change. Legacy quick.md dirs keep the same exemption + archive audit
+│       ├── fix.md        at-fix      streaming light-tier batch ledger, lives in daily batch dirs changes/fixes/<YYYY-MM-DD>/ (legacy flat fixes/fix.md stays recognized; F-N entries + ship-time Audit — see references/fix-spec.md); fix.md WITHOUT proposal.md = light-tier, the fixes/ tree excluded from the active count; WITH proposal.md = upgraded, normal full change. Legacy quick.md dirs keep the same exemption + archive audit
+│       ├── screens/      at-apply    screenshot evidence map for UI-touching changes: captures + screens.md index (screen / prototype ref / file / state); update-in-place — same screen keeps the same filename, re-capture overwrites; the user reviews delivery visuals here without starting the stack
 │       ├── .paused       at-stash    suspension marker (one line: date + reason) — gates and the reminder skip the dir; /spec:resume deletes it
 │       └── retrospect.md at-archive  written by /spec:archive right before the move (divergence review + evidence + leftovers)
 │
@@ -140,6 +141,9 @@ line each; declared C-N minting rows surface here for approval too. They ride th
 additions to approve, never slip through as "obviously good"; "none" if every behavioral
 What item cites the index and every carrier reconciles; "legacy change (no index)" when the
 change predates the index format — mandatory line>
+Uncovered requirements: <index R-N entries no What item carries — one line each with the
+quote; "none" when the coverage matrix is clean; "legacy change (no index)" for changes
+predating the index format — mandatory line>
 Unresolved critique: <critique-panel findings that survived the refutation round unresolved,
 one line each with the panel's evidence (they sit as open round-0 findings in the ledger);
 "none" if none>
@@ -213,6 +217,18 @@ Close the report in **statement mode**: the default direction plus one "overrida
 2. **No passing off a bypass as a fix**: mocking a fake response / changing an assert / patching a check function to return true MUST be stated plainly as "bypass, root cause unresolved"
 3. **Hardcoding must be flagged**: offsets / fixed hashes / one-off parameters get a code comment + a "applies to this case only" note in tasks.md
 4. **Self-reported success is not verification**: a result reported by another agent (or by an earlier round) must be independently re-run before it counts as evidence — /spec:verify's spec-verifier re-runs the key commands itself (Iron Law)
+5. **Circular proof is not evidence**: an assertion that recomputes its expected value with the same algorithm as the code under test is always green and proves nothing — expected values come from the specification or an independent computation, so the test can actually fail
+6. **Mocks live at seams only**: a mock isolates an external dependency at an agreed boundary; mocking internal collaborators, testing private methods, or verifying through a side channel hollows the test out — and a mocked run is always reported as "logic verified, live path not run", never as end-to-end passing
+
+### Expression charter (binds every user-facing output — gate text, question options, adjudication items, hook block messages)
+
+The reader is the person shipping the requirement, not a developer parsing a spec. Five rules:
+
+1. **The requirement is the premise, never the defendant.** Anything traced to the requirement source (an R-N) is not questioned in user-facing output — the flow's whole job is landing it. A concern that collides with a requirement travels as landing steps or an escalated decision, phrased as "landing this needs X", never as a case against the item.
+2. **Recommendation first, never warning first.** Every decision point opens with the recommended path and one line of why; risk appears as a cost line under the option it belongs to. Leading with danger makes the reader anxious instead of informed — the information is identical, the framing decides which.
+3. **Every question carries a forward exit.** A question that only lists hazards stalls the flow it was supposed to advance; whatever the user answers, the flow moves.
+4. **Plain language on every user surface.** The user sees one-question identities and scenario terms; locked stances, evidence bars, and other dispatch-brief vocabulary stay in the briefs — jargon on a user surface forces the user to learn the tool instead of deciding their own change.
+5. **Critique the proposal, produce suggestions.** The finding form is "suggest changing to X, adoption costs Y" at the judgement-call tier; "violation" is reserved for breaches of the project's own written standards. Alarm framing erodes the user's trust in real alarms.
 
 ### Knowledge is the fact cache
 

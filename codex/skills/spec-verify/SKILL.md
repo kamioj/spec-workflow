@@ -83,6 +83,13 @@ The fix direction is **replacement or a gate decision** (`$spec-revise how` to a
 Evidence (mandatory — one line per check actually executed):
   <command / action> → <exit code or the key output line>
   not run: <check> — <reason>        ← declaring a skip is legal; hiding it is not
+  pending live check: <item>         ← the live-acceptance list — checks that need the running
+                                       app or human eyes; one line each, handed to the user.
+                                       These are a handover, not findings: they NEVER hold
+                                       `conclusion: pass` hostage and never block archiving —
+                                       the machine-verifiable set must be green, the live set
+                                       belongs to the user's own acceptance run, and anything
+                                       that fails there comes back through $spec-fix
 
 Overall: <pass / fail>
 ```

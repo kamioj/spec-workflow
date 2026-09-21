@@ -123,6 +123,13 @@ Enabled only with `--codex --fix`. **Uses the same `codex-exec.ps1`**, but the p
 Evidence (mandatory in all modes — one line per check actually executed):
   <command / action> → <exit code or the key output line>
   not run: <check> — <reason>        ← declaring a skip is legal; hiding it is not
+  pending live check: <item>         ← the live-acceptance list — checks that need the running
+                                       app or human eyes; one line each, handed to the user.
+                                       These are a handover, not findings: they NEVER hold
+                                       `conclusion: pass` hostage and never block archiving —
+                                       the machine-verifiable set must be green, the live set
+                                       belongs to the user's own acceptance run, and anything
+                                       that fails there comes back through /spec:fix
 
 [--codex] Codex peer review findings: <N items>
 [--fix]   Codex changed <M> locations → kept X / reverted Y / supplemented Z; tokens ≈ <from output>

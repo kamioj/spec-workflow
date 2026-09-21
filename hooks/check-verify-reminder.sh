@@ -38,7 +38,7 @@ for d in "$CHANGES_DIR"/*/; do
     # silences the single-active window.
     [ -f "$d/.paused" ] && continue
     [ -f "$d/quick.md" ] && [ ! -f "$d/proposal.md" ] && continue
-    [ -f "$d/fix.md" ] && [ ! -f "$d/proposal.md" ] && continue
+    [ ! -f "$d/proposal.md" ] && { [ -f "$d/fix.md" ] || ls "$d"*/fix.md >/dev/null 2>&1; } && continue
     [ -f "$d/loop.md" ] && [ ! -f "$d/proposal.md" ] && continue
     set -- "$@" "$d"
 done

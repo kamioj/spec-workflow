@@ -47,18 +47,25 @@ try {
     # they are audited on the $spec-archive path below instead.
     if ($userPrompt -match '(?m)^\s*\$spec-ship\b') {
         $fixesDir = Join-Path $changesDir 'fixes'
-        $fixMd = Join-Path $fixesDir 'fix.md'
-        if (-not (Test-Path $fixMd)) {
-            Block 'SDD: no fix batch to ship -- start one with $spec-fix
-(note: hooks resolve spec/ at the session cwd -- a fixes dir inside a subdirectory is invisible to this gate)'
-        }
         if (Test-Path (Join-Path $fixesDir 'proposal.md')) {
             Block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via $spec-verify + $spec-archive'
         }
-        $fixContent = Get-Content $fixMd -Raw -Encoding UTF8
-        $fentries = [regex]::Matches($fixContent, '(?m)^## F-\d+').Count
-        if ($fentries -eq 0) {
-            Block 'SDD: the fix batch is empty (no F-N entries) -- nothing to ship'
+        $batchFiles = @()
+        $flatFix = Join-Path $fixesDir 'fix.md'
+        if (Test-Path $flatFix) { $batchFiles += $flatFix }
+        $batchFiles += @(Get-ChildItem -Path $fixesDir -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName 'fix.md' } | Where-Object { Test-Path $_ })
+        if ($batchFiles.Count -eq 0) {
+            Block 'SDD: no fix batch to ship -- start one with $spec-fix
+(note: hooks resolve spec/ at the session cwd -- a fixes dir inside a subdirectory is invisible to this gate)'
+        }
+        $entriesSeen = $false
+        foreach ($fm in $batchFiles) {
+            $fixContent = Get-Content $fm -Raw -Encoding UTF8
+            if ([regex]::Matches($fixContent, '(?m)^## F-\d+').Count -gt 0) { $entriesSeen = $true; break }
+        }
+        if (-not $entriesSeen) {
+            Block 'SDD: every fix batch is empty (no F-N entries) -- nothing to ship'
         }
         exit 0
     }
@@ -124,13 +131,21 @@ try {
     # $spec-ship's audit (same trust model as the loop/quick branches).
     $fixPath = Join-Path $change.FullName 'fix.md'
     $proposalProbe2 = Join-Path $change.FullName 'proposal.md'
-    if ((Test-Path $fixPath) -and -not (Test-Path $proposalProbe2)) {
-        $fix = Get-Content $fixPath -Raw -Encoding UTF8
-        $fstatus = if ($fix -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
-        $fau = [regex]::Match($fix, '(?ms)^## Audit\s*?$(.*?)(?=^## |\z)').Groups[1].Value
-        if ($fstatus -eq 'shipped' -and $fau.Trim().Length -gt 0) { exit 0 }
+    $batchFixFiles = @()
+    if (Test-Path $fixPath) { $batchFixFiles += $fixPath }
+    $batchFixFiles += @(Get-ChildItem -Path $change.FullName -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName 'fix.md' } | Where-Object { Test-Path $_ })
+    if (($batchFixFiles.Count -gt 0) -and -not (Test-Path $proposalProbe2)) {
+        $allShipped = $true
+        foreach ($fm in $batchFixFiles) {
+            $fix = Get-Content $fm -Raw -Encoding UTF8
+            $fstatus = if ($fix -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
+            $fau = [regex]::Match($fix, '(?ms)^## Audit\s*?$(.*?)(?=^## |\z)').Groups[1].Value
+            if (-not ($fstatus -eq 'shipped' -and $fau.Trim().Length -gt 0)) { $allShipped = $false }
+        }
+        if ($allShipped) { exit 0 }
         $lines = @("SDD: archive blocked for '$($change.Name)' -- the fix batch is not shipped:")
-        $lines += '  - fix.md must have status: shipped AND a non-empty ## Audit section (close the batch via $spec-ship)'
+        $lines += '  - every batch fix.md must have status: shipped AND a non-empty ## Audit section (close open batches via $spec-ship)'
         $lines += 'Or archive deliberately:'
         $lines += '  "$spec-archive force"     -- archive as-is; the reason gets recorded in retrospect.md'
         $lines += '  "$spec-archive abandoned" -- drop the direction; archived as *-abandoned with ABANDONED.md'

@@ -38,17 +38,24 @@ CHANGES_DIR="$CWD/spec/changes"
 # AFTER this hook fires (requiring them here = the pre-0.2.3 happy-path deadlock shape);
 # they are audited on the $spec-archive path below instead.
 if printf '%s' "$STDIN" | grep -Eq '"prompt":"(\\n|[[:space:]])*\$spec-ship|\\n[[:space:]]*\$spec-ship'; then
-    FIXMD="$CHANGES_DIR/fixes/fix.md"
-    if [ ! -f "$FIXMD" ]; then
+    FIXES_DIR="$CHANGES_DIR/fixes"
+    if [ -f "$FIXES_DIR/proposal.md" ]; then
+        block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via $spec-verify + $spec-archive'
+    fi
+    batch_seen=0
+    entries_seen=0
+    for fm in "$FIXES_DIR/fix.md" "$FIXES_DIR"/*/fix.md; do
+        [ -f "$fm" ] || continue
+        batch_seen=1
+        n=$(grep -Ec '^## F-[0-9]+' "$fm") || n=0
+        [ "$n" -gt 0 ] && entries_seen=1
+    done
+    if [ "$batch_seen" -eq 0 ]; then
         block 'SDD: no fix batch to ship -- start one with $spec-fix
 (note: hooks resolve spec/ at the session cwd -- a fixes dir inside a subdirectory is invisible to this gate)'
     fi
-    if [ -f "$CHANGES_DIR/fixes/proposal.md" ]; then
-        block 'SDD: the fixes dir has grown a proposal.md -- it is a full change now (precedence: proposal.md wins); close it via $spec-verify + $spec-archive'
-    fi
-    fentries=$(grep -Ec '^## F-[0-9]+' "$FIXMD") || fentries=0
-    if [ "$fentries" -eq 0 ]; then
-        block 'SDD: the fix batch is empty (no F-N entries) -- nothing to ship'
+    if [ "$entries_seen" -eq 0 ]; then
+        block 'SDD: every fix batch is empty (no F-N entries) -- nothing to ship'
     fi
     exit 0
 fi
@@ -115,14 +122,23 @@ fi
 # an upgraded fixes dir falls through to the normal APPROVED audit below): streaming
 # light-tier ledger -- status: shipped + non-empty Audit = the batch went through
 # $spec-ship's audit (same trust model as the loop/quick branches).
-if [ -f "$change/fix.md" ] && [ ! -f "$change/proposal.md" ]; then
-    fstatus=$(sed -n 's/^status:[[:space:]]*//p' "$change/fix.md" | head -1 | sed 's/#.*//' | tr -d '[:space:]')
-    fau=$(awk '/^## Audit[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$change/fix.md" | grep -c '[^[:space:]]') || fau=0
-    if [ "$fstatus" = "shipped" ] && [ "$fau" -ge 1 ]; then
+if [ ! -f "$change/proposal.md" ] && { [ -f "$change/fix.md" ] || ls "$change"/*/fix.md >/dev/null 2>&1; }; then
+    all_shipped=1
+    any_batch=0
+    for fm in "$change/fix.md" "$change"/*/fix.md; do
+        [ -f "$fm" ] || continue
+        any_batch=1
+        fstatus=$(sed -n 's/^status:[[:space:]]*//p' "$fm" | head -1 | sed 's/#.*//' | tr -d '[:space:]')
+        fau=$(awk '/^## Audit[[:space:]]*$/ && !seen {f=1; seen=1; next} /^## /{f=0} f' "$fm" | grep -c '[^[:space:]]') || fau=0
+        if [ "$fstatus" != "shipped" ] || [ "$fau" -lt 1 ]; then
+            all_shipped=0
+        fi
+    done
+    if [ "$any_batch" -eq 1 ] && [ "$all_shipped" -eq 1 ]; then
         exit 0
     fi
     block "SDD: archive blocked for '$name' -- the fix batch is not shipped:
-  - fix.md must have status: shipped AND a non-empty ## Audit section (close the batch via \$spec-ship)
+  - every batch fix.md must have status: shipped AND a non-empty ## Audit section (close open batches via \$spec-ship)
 Or archive deliberately:
   \"\$spec-archive force\"     -- archive as-is; the reason gets recorded in retrospect.md
   \"\$spec-archive abandoned\" -- drop the direction; archived as *-abandoned with ABANDONED.md"

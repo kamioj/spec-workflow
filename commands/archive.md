@@ -15,6 +15,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(mv:*, mkdir:*, git:*)
 2. **Verification status**: read `spec/changes/<name>/verify.md` (the verification ledger) — latest round's `conclusion` + open findings
    - Recommended: `conclusion: pass` with zero open critical/major findings before archiving
    - Not passing / no ledger → warn but do not block (the user may intentionally want to archive a failed proposal)
+   - **`pending live check` lines never count against archiving** — they are the live-acceptance handover (the machine-verifiable set is green; the live set is the user's own acceptance run, and failures there return through /spec:fix). List them in the archive summary so the user carries the list forward, and proceed
 
 ## Process
 

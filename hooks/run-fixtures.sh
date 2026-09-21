@@ -568,6 +568,42 @@ printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/fix.md"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/fixes/proposal.md"
 run_case archive-upgraded-fix-audits-approved check-archive block "$P" "$(json '/spec:archive')"
 
+
+# ---- daily fix batches (fixes/<YYYY-MM-DD>/): gates exempt the parent, ship/archive scan every batch ----
+
+# dated batch only (no flat fix.md): gates still exempt the fixes parent
+P=$(mkproj fix-dated-active); mkdir -p "$P/spec/changes/fixes/2026-09-21" "$P/spec/changes/live"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/2026-09-21/fix.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+printf '# R\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/live/research.md"
+run_case gate-dated-fix-plus-active-allows check-gate allow "$P" "$(json '/spec:apply')"
+run_case tbd-dated-fix-plus-active-allows check-tbd allow "$P" "$(json '/spec:propose')"
+
+P=$(mkproj fix-dated-rem); mkdir -p "$P/spec/changes/fixes/2026-09-21" "$P/spec/changes/live"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/2026-09-21/fix.md"
+printf '%s\n<!-- APPROVED: 2026-08-24 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/live/proposal.md"
+run_case reminder-dated-fix-coexist-nudges check-verify-reminder block "$P" "$(json_stop false)"
+
+# ship: entries in a dated batch satisfy the precondition; all-empty dated batches block
+P=$(mkproj fix-ship-dated); mkdir -p "$P/spec/changes/fixes/2026-09-21"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/2026-09-21/fix.md"
+run_case ship-dated-batch-allows check-archive allow "$P" "$(json '/spec:ship')"
+
+P=$(mkproj fix-ship-dated-empty); mkdir -p "$P/spec/changes/fixes/2026-09-21"
+printf '# Fixes\n\nstatus: open\n' > "$P/spec/changes/fixes/2026-09-21/fix.md"
+run_case ship-dated-empty-blocks check-archive block "$P" "$(json '/spec:ship')"
+
+# direct archive of the fixes tree: every dated batch shipped -> allow; any open -> block
+P=$(mkproj fix-arch-dated-ok); mkdir -p "$P/spec/changes/fixes/2026-09-20" "$P/spec/changes/fixes/2026-09-21"
+printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/2026-09-20/fix.md"
+printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/2026-09-21/fix.md"
+run_case archive-dated-batches-shipped-allows check-archive allow "$P" "$(json '/spec:archive')"
+
+P=$(mkproj fix-arch-dated-open); mkdir -p "$P/spec/changes/fixes/2026-09-20" "$P/spec/changes/fixes/2026-09-21"
+printf '%s' "$FIX_SHIPPED" > "$P/spec/changes/fixes/2026-09-20/fix.md"
+printf '%s' "$FIX_OPEN" > "$P/spec/changes/fixes/2026-09-21/fix.md"
+run_case archive-dated-batch-open-blocks check-archive block "$P" "$(json '/spec:archive')"
+
 # ---- 0.6.4: loop dirs join the skip filter (field finding: a legit loop change was
 #      counted as an active full change and blocked /spec:propose as "missing research.md") ----
 

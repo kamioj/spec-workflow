@@ -1,6 +1,6 @@
 ---
 name: spec-fix
-description: Streaming light tier for bug fixes and small changes (user-explicit only, never model-initiated). Appends F-N entries to the standing spec/changes/fixes/ batch — locate & confirm before touching code, fix directly when confident or research candidates when not, self-check evidence per entry; the ONE independent audit happens at $spec-ship.
+description: Streaming light tier for bug fixes and small changes (user-explicit only, never model-initiated). Appends F-N entries to today's daily batch under spec/changes/fixes/<date>/ — locate & confirm before touching code, fix directly when confident or research candidates when not, self-check evidence per entry; the ONE independent audit happens at $spec-ship.
 ---
 <!-- GENERATED from core/commands/fix.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -9,26 +9,33 @@ description: Streaming light tier for bug fixes and small changes (user-explicit
 Task: $ARGUMENTS
 
 The streaming light tier: bug fixes and small changes delivered across conversations, one
-F-N entry at a time, into a single standing batch. Tier invariants: a verbatim quote anchor
+F-N entry at a time, into small daily batches. Tier invariants: a verbatim quote anchor
 per entry, honest self-check evidence per entry, and ONE independent verification per
 **batch** — at `$spec-ship`, never per entry.
 
-## The standing batch dir
+## Daily batch dirs
 
-- The batch always lives at `spec/changes/fixes/` with the ledger `fixes/fix.md`
-  (format → [`../spec-core/references/fix-spec.md`](../spec-core/references/fix-spec.md)).
-  No naming, no per-batch setup: batch = the dir's lifetime between ships. **spec/ roots at
+- Fixes accumulate in **daily batches**: today's entries go to `spec/changes/fixes/<YYYY-MM-DD>/fix.md`
+  (format → [`../spec-core/references/fix-spec.md`](../spec-core/references/fix-spec.md));
+  the first fix of a day creates that day's dir with `status: open` and starts at F-1.
+  Each batch ships and archives independently (`$spec-ship`), so debt stays in small
+  digestible slices instead of one ever-growing pile. There is deliberately **no nudge line
+  about old batches** — batch lifetime is entirely the user's call. **spec/ roots at
   the directory the session was launched from — never inside a subproject, never in another
   worktree's or the main repository's tree** (the ship/archive gates resolve it at that root
   only; see the root rule in SKILL).
-- No `fixes/` dir → create it with `status: open` and start at F-1.
-- **Collision guard**: `spec/changes/fixes/` exists WITHOUT fix.md → that is someone's
-  normal change dir which happens to be named "fixes" — REFUSE to write into it, report the
-  collision, and ask how to proceed (rename their change dir, or archive it first). Never
-  mix a fix ledger into a foreign change.
-- `fixes/` never counts toward the gates' active-change count (gates exempt dirs with fix.md
-  present and proposal.md absent) — a full change and the fix stream run in parallel,
-  neither blocking the other. fix is ungated by design; its protection is the batch audit.
+- A **legacy flat batch** (`fixes/fix.md` directly, no date dir) stays recognized: read and
+  shippable as its own batch; new entries always go to today's dated batch, never appended
+  to the legacy file.
+- **Collision guard**: `spec/changes/fixes/` exists holding a proposal.md, or holding neither
+  fix.md nor dated batch dirs — that is someone's normal change dir which happens to be named
+  "fixes" — REFUSE to write into it, report the collision, and ask how to proceed (rename
+  their change dir, or archive it first). Writing a fix ledger into a foreign change would
+  corrupt both records.
+- The `fixes/` tree never counts toward the gates' active-change count (gates exempt the
+  parent when it carries fix.md directly or in dated subdirs, with no proposal.md) — a full
+  change and the fix stream run in parallel, neither blocking the other. fix is ungated by
+  design; its protection is the per-batch audit.
 
 ## Size advisory (never a refusal)
 
@@ -63,9 +70,10 @@ call, not the model's.
 4. **Append the F-N entry** to fix.md (append-only — never renumber or rewrite earlier
    entries): verbatim ask, root cause, files touched (+ commit hash when one exists),
    self-check evidence, concerns.
-5. **Close with the pending count**: end the report with `批次现有 N 条待审` (N = entries
-   not yet audited by ship). This line is mandatory — it keeps the un-audited backlog
-   visible every single round.
+5. **Close with the batch count**: end the report with `今日批次现有 N 条待审` (N = this
+   day-batch's un-audited entries). This line is mandatory information — and it is the ONLY
+   batch bookkeeping in the report: older batches are never nagged about (batch lifetime is
+   the user's call; $spec-ship names them when the user runs it).
 
 ## Known limitation
 
@@ -82,4 +90,4 @@ global assumption).
 - ❌ Refusing by size (advisory only — routing is the user's decision)
 - ❌ Dispatching a verifier per entry (the ONE independent audit is $spec-ship's)
 - ❌ Renumbering, rewriting, or deleting existing F-N entries (append-only ledger)
-- ❌ Skipping the pending-count closing line
+- ❌ Skipping the batch-count closing line
