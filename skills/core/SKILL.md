@@ -22,7 +22,7 @@ Size signals (>150 lines / 3+ files / new dependency / architecture choice) are 
 
 | Category | Command | Responsibility |
 |---|---|---|
-| Entry | `/spec:workflow <task>` | run the whole flow end-to-end; back-compatible with the old /sdd |
+| Entry | `/spec:workflow <task>` | run the whole flow end-to-end |
 |  | `/spec:loop <goal>` | goal-driven autonomous round loop (goal known, path unknown): two touchpoints — goal confirmation + final acceptance — with Stop-hook-driven rounds and a cross-round ledger in between |
 |  | `/spec:fix <task>` | streaming light tier for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to today's daily batch `spec/changes/fixes/<date>/`; size is advisory, never a refusal |
 |  | `/spec:ship` | close one fix batch (named date, or the oldest): ONE independent audit over its accumulated diff — run by this conversation when it wrote none of the entries, a subagent only otherwise — then archive that batch dir; findings stay in place on fail |
@@ -68,7 +68,7 @@ spec/
 
 **spec/ roots at the directory the session was launched from** (`$CLAUDE_PROJECT_DIR` on Claude Code; the session cwd on Codex) — the gate hooks resolve it there and ONLY there, with no subdirectory search. Working on a subproject of a monorepo does NOT move spec/ into the subproject: keep spec/ at the launch root (change names can carry a subproject prefix), or launch the session inside the subproject so the root follows. **A git worktree is its own root**: the session's worktree carries its own spec/ tree — never follow `.git`/gitdir back to the main repository or a sibling worktree (their spec/ trees belong to their sessions). A spec/ tree created anywhere else is invisible to every gate — apply/ship/archive block with "no spec/changes/ directory", and a gate that DOES find the local tree can block naming an unrelated change from it (maximally misleading). **After creating a change directory, self-check the path**: confirm its absolute path sits under `<launch root>/spec/changes/` before writing artifacts into it.
 
-**The artifact set is fixed at these four + the requirement & asset index + the discarded-draft pile + the verification ledger + the /spec:loop round ledger (with its driver state file) + the /spec:fix batch ledger + the .paused marker + the archive-stage retrospect + the project-level knowledge.md.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any fifth file type requires **explicit user approval**, otherwise fold the content into one of the four.
+**The artifact set is fixed at the entries of the map above.** The model inventing unplanned extra files (app-current / decisions / migration-inventory, etc.) is a direct source of document bloat — any artifact type not in the map requires **explicit user approval**; otherwise fold the content into the existing artifact whose job it is (see the Phase Responsibility Matrix below).
 
 ## Phase Responsibility Matrix (each artifact has its own job; crossing the line is the source of bloat)
 
@@ -267,9 +267,9 @@ Suggestion: <change scope / switch tools / contact the task owner / abandon>
 
 | Hook script | Trigger command | Effect |
 |---|---|---|
-| `hooks/check-tbd.sh` | before `/spec:propose` | refuses to run if research.md still contains `[TBD]`, points to `/spec:ask` |
-| `hooks/check-gate.sh` | before `/spec:apply` | refuses to run if prerequisites are missing: no/incomplete proposal.md (four sections) or ≠1 active change. Deliberately does NOT require the APPROVED marker — apply appends it after the hook fires; `check-archive.sh` enforces it |
-| `hooks/check-archive.sh` | before `/spec:archive` | refuses to run if the change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
+| `hooks/check-tbd.sh` | before `/spec:propose` | refuses to run if research.md still has `[TBD-N]` items inside `## Open [TBD]` (tokens elsewhere are provenance citations, not counted), points to `/spec:ask` |
+| `hooks/check-gate.sh` | before `/spec:apply` | refuses to run if prerequisites are missing: no/incomplete proposal.md (four sections) or an ambiguous target (>1 active change and no current pointer selecting one). Deliberately does NOT require the APPROVED marker — apply appends it after the hook fires; `check-archive.sh` enforces it |
+| `hooks/check-archive.sh` | before `/spec:archive` / `/spec:ship` | refuses to run if the targeted change bypassed the flow (proposal without APPROVED / unchecked tasks / no proposal; light tiers audited by their own record); target = the change named in the prompt, else the current pointer, else the single active one — none selected among several → let through; `/spec:ship` gets a precondition-only check (a batch with ≥1 entry); deliberate override: say `force` (archive as-is, reason recorded in retrospect.md) or `abandoned` (drop the direction) |
 | `hooks/check-verify-reminder.sh` | Stop event (Claude ends its turn) | **reminder, not gate**: active change has an APPROVED proposal but no verify.md ledger → exit 2 nudges Claude to run the closing verification (or state explicitly why it's pausing, then stop); `stop_hook_active` guards loops — at most one nudge per stop |
 | `hooks/loop-driver.sh` | Stop event, when exactly one `running` loop.md exists | **driver, not gate**: re-injects the next /spec:loop round (stdout `{"decision":"block","reason":...}` — the Stop-event JSON contract, probe-verified, NOT the gates' exit-2 contract) until acceptance is met or a fuse blows (round cap / no-progress / refusal-to-retrospect / corrupt ledger — four distinct notices); deliberately ignores `stop_hook_active`, bounded by ledger state instead |
 
@@ -297,5 +297,5 @@ Read on demand only when writing a concrete technical decision, to avoid polluti
 ## Interaction with the global protocol
 
 - **Language**: proposal / research prose follows your working language; **section headers are ALWAYS the English canonical forms** (`## Why / ## What / ## How / ## Risk` — never translated, e.g. ❌ `## 为什么（Why）`). A global "write in Chinese" protocol applies to prose only — hooks and `/spec:revise` target headers by their English names, and translated headers break that targeting
-- **Subagent delegation**: WebSearch goes to `@researcher`, cross-file search to `@code-explorer`
+- **Subagent delegation**: WebSearch goes to `@researcher`, cross-file search to `@code-explorer`. Neither ships with sdd — when the session's agent roster lacks one, dispatch the general-purpose agent with the role described inline in the brief ("web-research specialist: survey practices, cite URLs, no fabrication" / "read-only code explorer: locate definitions and call sites, report paths + lines"), because an unresolvable agent name fails the dispatch and silently drops the research step
 - **Concurrency**: independent operations are dispatched at once
