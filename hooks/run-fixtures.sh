@@ -667,6 +667,22 @@ run_case reminder-pointer-binds-nudge check-verify-reminder block "$P" "$(json_s
 printf 'draft\n' > "$P/spec/changes/.current"
 run_case reminder-pointer-other-allows check-verify-reminder allow "$P" "$(json_stop false)"
 
+# archive with multiple active changes: explicit name > pointer > let through (never block
+# on multiplicity itself); a selected target is audited like a sole active change
+P=$(mkproj ptr-arch); mkdir -p "$P/spec/changes/appr" "$P/spec/changes/draft"
+printf '%s\n<!-- APPROVED: 2026-09-10 12:00 -->\n' "$FULL_PROPOSAL" > "$P/spec/changes/appr/proposal.md"
+printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/draft/proposal.md"
+run_case archive-multi-no-pointer-allows check-archive allow "$P" "$(json '/spec:archive')"
+printf 'ghost\n' > "$P/spec/changes/.current"
+run_case archive-pointer-dangling-multi-allows check-archive allow "$P" "$(json '/spec:archive')"
+printf 'draft\n' > "$P/spec/changes/.current"
+run_case archive-pointer-unapproved-blocks check-archive block "$P" "$(json '/spec:archive')"
+run_case archive-pointer-force-overrides check-archive allow "$P" "$(json '/spec:archive force')"
+run_case archive-named-target-beats-pointer check-archive allow "$P" "$(json '/spec:archive appr')"
+printf 'appr\n' > "$P/spec/changes/.current"
+run_case archive-pointer-approved-allows check-archive allow "$P" "$(json '/spec:archive')"
+run_case archive-named-unapproved-blocks check-archive block "$P" "$(json '/spec:archive draft')"
+
 # ---- Claude-specific extras ----
 
 # V-2: non-ASCII project path — gate must still bite (env route is encoding-immune)

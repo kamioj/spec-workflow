@@ -11,8 +11,11 @@
 #   - no proposal.md at all                          -> research-only change
 # Any finding -> block with the list, UNLESS the prompt also contains "force" or
 # "abandon(ed)" (deliberate override; $spec-archive records the reason in retrospect.md).
-# Unlike check-tbd/check-gate, this hook does NOT block on multiple active changes --
-# archiving is exactly how you get back down to one.
+# With multiple active changes the audit target is the change named in the invocation
+# ($spec-archive <name>), else the one the current pointer (spec/changes/.current) names --
+# audited exactly like a sole active change. Neither selects one -> let it through: unlike
+# check-tbd/check-gate, never block on multiplicity itself, archiving is exactly how you get
+# back down to one.
 # fail-open: internal errors exit 0 with no stdout.
 
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -20,7 +23,9 @@
 
 $ErrorActionPreference = 'Continue'
 
+$script:targetNote = ''
 function Block([string]$reason) {
+    if ($script:targetNote) { $reason = "$reason`n$($script:targetNote)" }
     @{ decision = 'block'; reason = $reason } | ConvertTo-Json -Compress | Write-Output
     exit 0
 }
@@ -82,7 +87,35 @@ try {
         Block 'SDD: no active change -- nothing to archive'
     }
 
-    # Multiple active changes: let it through; $spec-archive asks which one to archive
+    # Multiple active changes: an explicit name in the invocation wins, then the current
+    # pointer (the same pointer-first resolution check-tbd/check-gate use) -- otherwise a
+    # valid pointer at an unapproved change would sail through unaudited just because other
+    # changes coexist. The explicit name ranks first so "$spec-archive other" is audited as
+    # other, not as the pointer's target. Dangling/invalid pointer or unknown name =
+    # silently ignored (fail-open).
+    $changes = @($changes)
+    if ($changes.Count -gt 1) {
+        $total = $changes.Count
+        $arg = if ($userPrompt -match '\$spec-archive[ \t]+([A-Za-z0-9._-]+)') { $Matches[1] } else { '' }
+        $cur = ''
+        $currentFile = Join-Path $changesDir '.current'
+        if (Test-Path $currentFile) {
+            $cur = "$(Get-Content $currentFile -TotalCount 1 -ErrorAction SilentlyContinue)".Trim()
+        }
+        foreach ($want in @($arg, $cur)) {
+            if (-not $want) { continue }
+            $hit = @($changes | Where-Object { $_.Name -eq $want })
+            if ($hit.Count -eq 1) {
+                $changes = $hit
+                if ($want -ne $arg) {
+                    $script:targetNote = "(target picked by spec/changes/.current among $total active changes -- archiving a different one? name it: `$spec-archive <name>)"
+                }
+                break
+            }
+        }
+    }
+
+    # Still ambiguous: let it through; $spec-archive asks which one to archive
     if ($changes.Count -gt 1) { exit 0 }
 
     $change = $changes[0]

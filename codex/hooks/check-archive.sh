@@ -5,8 +5,11 @@
 # Codex contract (SCHEMA.md): stdin field `prompt`; blocking = stdout
 # {"decision":"block","reason":...} + exit 0; invocation form `$spec-archive`.
 # Audits the single active change (no APPROVED marker / unchecked tasks / no proposal);
-# override with "force" or "abandon(ed)" in the prompt. Does NOT block on multiple active
-# changes -- archiving is exactly how you get back down to one.
+# override with "force" or "abandon(ed)" in the prompt. With multiple active changes the
+# audit target is the change named in the invocation ($spec-archive <name>), else the one the
+# current pointer (spec/changes/.current) names -- audited exactly like a sole active change.
+# Neither selects one -> let it through: never block on multiplicity itself, archiving is
+# exactly how you get back down to one.
 # fail-open: any parsing doubt -> exit 0 with no stdout.
 
 set -u
@@ -14,8 +17,12 @@ set -u
 STDIN=$(cat) || exit 0
 [ -n "$STDIN" ] || exit 0
 
+TARGET_NOTE=''
 block() {
-    reason=$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
+    msg=$1
+    [ -n "$TARGET_NOTE" ] && msg="$msg
+$TARGET_NOTE"
+    reason=$(printf '%s' "$msg" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
     printf '{"decision":"block","reason":"%s"}\n' "$reason"
     exit 0
 }
@@ -77,7 +84,29 @@ if [ $# -eq 0 ]; then
     block 'SDD: no active change -- nothing to archive'
 fi
 
-# Multiple active changes: let it through; $spec-archive asks which one to archive
+# Multiple active changes: an explicit name in the invocation wins, then the current pointer
+# (the same pointer-first resolution check-tbd/check-gate use) -- otherwise a valid pointer at
+# an unapproved change would sail through unaudited just because other changes coexist.
+# The explicit name ranks first so "$spec-archive other" is audited as other, not as the
+# pointer's target. Dangling/invalid pointer or unknown name = silently ignored (fail-open).
+if [ $# -gt 1 ]; then
+    arg=$(printf '%s' "$PROMPT_VAL" | sed -n 's/.*\$spec-archive[[:space:]][[:space:]]*\([A-Za-z0-9._-][A-Za-z0-9._-]*\).*/\1/p' | head -n1)
+    cur=''
+    [ -f "$CHANGES_DIR/.current" ] && cur=$(head -n1 "$CHANGES_DIR/.current" | tr -d '[:space:]')
+    total=$#
+    for want in "$arg" "$cur"; do
+        [ -n "$want" ] || continue
+        for d in "$@"; do
+            if [ "$(basename "$d")" = "$want" ]; then
+                set -- "$d"
+                [ "$want" = "$arg" ] || TARGET_NOTE="(target picked by spec/changes/.current among $total active changes -- archiving a different one? name it: \$spec-archive <name>)"
+                break 2
+            fi
+        done
+    done
+fi
+
+# Still ambiguous: let it through; $spec-archive asks which one to archive
 [ $# -gt 1 ] && exit 0
 
 change=$1

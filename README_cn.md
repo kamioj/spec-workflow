@@ -119,7 +119,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |---|---|---|
 | `check-tbd.sh` | `/spec:propose` 之前 | research.md 还有 `[TBD-N]` 就拒绝执行 |
 | `check-gate.sh` | `/spec:apply` 之前 | 前置条件不齐就拒绝：proposal.md 缺失/缺节（四节），或目标不明（多活跃变更且无 current 指针选定） |
-| `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：整树归档要求每批 shipped+Audit，ship 要求存在带条目的批次）就拒绝；有意为之时说 `force` 或 `abandoned` 放行 |
+| `check-archive.sh` | `/spec:archive` 与 `/spec:ship` 之前 | change 绕过了流程（proposal 未过 gate / tasks 有未完成项 / 没有 proposal；fix 批次：整树归档要求每批 shipped+Audit，ship 要求存在带条目的批次）就拒绝；多活跃变更时审计你点名的那个（`/spec:archive <名字>`）或 current 指针所指的那个，都没选定则放行；有意为之时说 `force` 或 `abandoned` 放行 |
 | `check-verify-reminder.sh` | Stop（Claude 结束回合时） | 目标变更（指针所指或唯一活跃）已 APPROVED 但没有 verify.md 账本 → 把 Claude 顶回去补收尾验证（或明说"在等用户决策"再停）；每次 stop 最多提醒一次，防死循环 |
 | `loop-driver.sh` | Stop，且恰好存在 1 份 `running` 状态的循环账本时 | 再注入 `/spec:loop` 的下一轮（Stop 事件 JSON 契约，探针实证）——或按**四种互异的终止说明**放行：验收达成 / 轮次上限 / 无进展 / 拒写复盘 / 账本损坏。所有熔断信号全部机械（checkbox 计数、工作树指纹），从不采信模型自报"有进展" |
 

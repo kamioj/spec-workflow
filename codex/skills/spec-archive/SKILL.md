@@ -19,7 +19,7 @@ description: Archives the current change to spec/archive/YYYY-MM-DD-<name>/. Onl
 
 ## Process
 
-1. Read the current change name from `spec/changes/<name>/`
+1. Resolve the target the same way the hook audited it: the change named in the invocation (`$spec-archive <name>`), else the one `spec/changes/.current` names, else the single active change. More than one active change and none selected → list them and ask which one to archive — never pick by guess, because the hook only audited a selected target and a guessed one would archive unaudited.
 2. **Write `spec/changes/<name>/retrospect.md`** — the archive-stage audit (≤40 lines, plain language; an audit record, never a second proposal):
 
    ```markdown
