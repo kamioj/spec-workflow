@@ -10,13 +10,13 @@
 #       prints `<path> stale — $spec-view <stage>` per view whose embedded stamps no
 #       longer match the sources; prints nothing when every view is fresh
 #   sh render.sh --stamp <file>
-#       prints the stamp of <file> (`<crc> <bytes>`, POSIX cksum) — what data-cksum and
-#       translation headers carry
+#       prints the stamp of <file> (`<crc> <bytes>`, POSIX cksum of its bytes minus every CR)
+#       — what data-cksum and translation headers carry
 #
 # lang=<code> (code: 2-3 lowercase letters, optionally -<alnum>): for each embedded source
 # <file>, <dir>/view/<code>/<file> is embedded instead when its first line is
 #   <!-- sdd-translation: <file> · <code> · cksum <crc> <bytes> -->
-# (one trailing CR tolerated) and that stamp equals the source's current stamp; the body
+# (CRs dropped, as from every input) and that stamp equals the source's current stamp; the body
 # after line 1 is embedded with data-lang="<code>" data-translated="1" and the source's
 # own data-cksum, and the pre-check reads the translated text. Otherwise the source is
 # embedded with data-translation="missing" (no file / no valid header) or "stale" (header
@@ -45,21 +45,33 @@
 # inlined line is LF-terminated.
 #
 # Data block: <script type="text/markdown" data-src="<file>" data-cksum="<cksum output>">
-# holding the source bytes with `&` -> `&amp;` then `<` -> `&lt;`; the page reverses
+# holding the source bytes (CRs dropped) with `&` -> `&amp;` then `<` -> `&lt;`; the page reverses
 # both, so no source text can close or comment out the block.
 #
+# Line endings: every CR byte is dropped from every input (sources, translations,
+# templates, shared and vendor assets) and from what is stamped, so a CRLF checkout
+# (git core.autocrlf on Windows) yields the same pages, stamps and stdout as an LF one.
+#
 # awk portability: POSIX awk only (gawk, mawk, BWK). BINMODE=3 stops gawk on MSYS/Git
-# Bash from dropping the CR of CRLF on read and write; other awks ignore the variable.
+# Bash from translating line endings on read and write; other awks ignore the variable.
 # A source is read whole with RS set to "\001" (a byte markdown never holds), so its
 # final newline — present or absent — is kept exactly.
+
+# Self-heal for a CRLF copy of this very file: then every line below ends in a CR, which
+# breaks the awk programs. The next three lines parse either way (each ends in a comment
+# that swallows the CR, or in the probe value itself): a CR in the probe runs a CR-free
+# temp copy of this script, told where the views directory (template/, shared/,
+# vendor/) really is; the copy is removed when it exits. An LF file costs no process.
+sdd_probe=lf
+case $0 in */*) sdd_here=${0%/*} ;; *) sdd_here=. ;; esac #
+if [ "$sdd_probe" != lf ]; then sdd_t=$(mktemp 2> /dev/null) || sdd_t=${TMPDIR:-/tmp}/sdd-render.$$; trap 'rm -f "$sdd_t"' EXIT; trap 'exit 1' HUP INT TERM; tr -d '\r' < "$0" > "$sdd_t" || exit 1; SDD_RENDER_HERE=$sdd_here sh "$sdd_t" "$@"; exit $?; fi #
 
 LC_ALL=C
 export LC_ALL
 
-case $0 in
-  */*) here=${0%/*} ;;
-  *) here=. ;;
-esac
+here=${SDD_RENDER_HERE:-$sdd_here}
+unset SDD_RENDER_HERE
+CR=$(printf '\r')
 STAGES="research ask design proposal verify"
 usage="usage: render.sh <dir> <research|ask|design|proposal|verify|all> [standard|advanced] [lang=<code>] | render.sh --check <dir> | render.sh --stamp <file>"
 
@@ -69,11 +81,19 @@ die() {
 }
 
 # Stamps of every markdown file in $1, one `<crc> <bytes> <path>` line each (empty when
-# the directory holds none).
+# the directory holds none), taken over the bytes minus every CR: one cksum for the lot
+# when no file holds a CR, else one per file.
 stamps() {
   set -- "$1"/*.md
   [ -f "$1" ] || return 0
-  cksum "$@"
+  if [ -z "$(cat "$@" | tr -dc "$CR")" ]; then
+    cksum "$@"
+    return
+  fi
+  for sf do
+    sc=$(tr -d "$CR" < "$sf" | cksum) || return 1
+    printf '%s %s\n' "$sc" "$sf"
+  done
 }
 
 # Shared awk: stamp table from ENVIRON["SDD_STAMPS"] and the error exit.
@@ -104,6 +124,7 @@ function slurp(f, optional,   old, s, rec, n, r) {
   SLURP_MISSING = 0
   while ((r = (getline rec < f)) > 0) { s = (n++ ? s "\001" : "") rec }
   close(f); RS = old
+  gsub(/\r/, "", s)
   if (r < 0 && n == 0 && optional) { SLURP_MISSING = 1; return "" }
   if (r < 0) fail("cannot read " f)
   return s
@@ -151,6 +172,7 @@ function placeholder_name(line,   s) {
 function validate(stage,   tpl, line, r, a, l, ar) {
   tpl = here "/template/" stage ".html"
   while ((r = (getline line < tpl)) > 0) {
+    gsub(/\r/, "", line)
     if (line ~ /^<!--SDD:SRC:.*-->$/) {
       a = placeholder_name(line)
       if (!(a in STAMP)) { close(tpl); return dir "/" a }
@@ -173,6 +195,7 @@ function validate(stage,   tpl, line, r, a, l, ar) {
 
 function inline(f, out,   l) {
   while ((getline l < f) > 0) {
+    gsub(/\r/, "", l)
     if (index(l, "GENERATED from core/") == 0) print l > out
   }
   close(f)
@@ -185,6 +208,7 @@ function assemble(stage, out,   tpl, line, skip, name, body, attrs, st) {
   NTRL = 0
   for (name in SRC) delete SRC[name]
   while ((getline line < tpl) > 0) {
+    gsub(/\r/, "", line)
     if (index(line, "GENERATED from core/")) continue
     if (line == "<!--SDD:ADVANCED-->") { if (tier == "standard") skip = 1; continue }
     if (line == "<!--/SDD:ADVANCED-->") { skip = 0; continue }
@@ -448,7 +472,7 @@ fi
 if [ "$1" = --stamp ]; then
   [ $# -eq 2 ] || die "$usage"
   [ -f "$2" ] || die "no such file: $2"
-  cksum < "$2" || die "cksum failed on $2"
+  tr -d "$CR" < "$2" | cksum || die "cksum failed on $2"
   exit 0
 fi
 

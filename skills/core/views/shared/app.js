@@ -27,7 +27,8 @@
         /* set by `render lang=<code>`: translated (data-lang) or why not (data-translation) */
         lang: nodes[i].getAttribute('data-translated') === '1' ? nodes[i].getAttribute('data-lang') : null,
         translation: nodes[i].getAttribute('data-translation'),
-        text: unescapeBlock(nodes[i].textContent)
+        /* CRs dropped as the render scripts drop them, so any page reads its sources alike */
+        text: unescapeBlock(nodes[i].textContent).replace(/\r/g, '')
       });
     }
     return list;

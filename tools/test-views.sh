@@ -40,10 +40,15 @@ expect() {
 }
 
 fresh() {
-  # fresh <name>: a clean copy of all fixtures under $T/<name>
+  # fresh <name>: a clean copy of all fixtures under $T/<name>; edge/design.md gets CRLF
+  # line endings here (a checkout normalises the stored file to LF)
   mkdir -p "$T/$1"
   cp -r "$FIX"/* "$T/$1"/
+  node -e 'const fs = require("fs"), p = process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, "latin1").replace(/\r?\n/g, "\r\n"), "latin1");' "$T/$1/edge/design.md"
 }
+
+# stampof <file>: the render scripts' stamp — POSIX cksum of the bytes minus every CR
+stampof() { tr -d '\r' < "$1" | cksum; }
 
 nl='
 '
@@ -66,9 +71,10 @@ while ((m = open.exec(s))) {
   if (body.includes("<")) errs.push(m[1] + ": raw < inside data block");
   const back = Buffer.from(body.replace(/&lt;/g, "<").replace(/&amp;/g, "&"), "latin1");
   const tr = / data-lang="([^"]*)" data-translated="1"/.exec(m[3]);
-  let want = fs.readFileSync(path.join(dir, m[1]));
+  const noCr = function (b) { return Buffer.from(b.toString("latin1").replace(/\r/g, ""), "latin1"); };
+  let want = noCr(fs.readFileSync(path.join(dir, m[1])));
   if (tr) {
-    const t = fs.readFileSync(path.join(dir, "view", tr[1], m[1]));
+    const t = noCr(fs.readFileSync(path.join(dir, "view", tr[1], m[1])));
     const nl = t.indexOf(10);
     want = nl < 0 ? Buffer.alloc(0) : t.subarray(nl + 1);
   }
@@ -733,7 +739,7 @@ for f in $FIXTURES; do
       if [ "$rc" = 0 ]; then ok; else bad "$page data blocks: $(cat "$T/err")"; fi
       while IFS="|" read -r bsrc bsum battrs; do
         [ -n "$bsrc" ] || continue
-        expect "$page stamp of $bsrc equals cksum" "$(cksum < "$f/$bsrc")" "$bsum"
+        expect "$page stamp of $bsrc equals cksum" "$(stampof "$f/$bsrc")" "$bsum"
       done <<EOF
 $blocks
 EOF
@@ -823,22 +829,22 @@ sh "$R" i18n all lang=zh > /dev/null
 
 block() { grep -o "<script type=\"text/markdown\" data-src=\"$2\"[^>]*>" "$1"; }
 expect "fresh translation: data-lang + data-translated + SOURCE stamp" \
-  "<script type=\"text/markdown\" data-src=\"research.md\" data-cksum=\"$(cksum < i18n/research.md)\" data-lang=\"zh\" data-translated=\"1\">" \
+  "<script type=\"text/markdown\" data-src=\"research.md\" data-cksum=\"$(stampof i18n/research.md)\" data-lang=\"zh\" data-translated=\"1\">" \
   "$(block i18n/view/research.html research.md)"
 expect "stale translation: source embedded, data-translation=stale" \
-  "<script type=\"text/markdown\" data-src=\"design.md\" data-cksum=\"$(cksum < i18n/design.md)\" data-translation=\"stale\">" \
+  "<script type=\"text/markdown\" data-src=\"design.md\" data-cksum=\"$(stampof i18n/design.md)\" data-translation=\"stale\">" \
   "$(block i18n/view/design.html design.md)"
 expect "malformed header counts as missing" \
-  "<script type=\"text/markdown\" data-src=\"proposal.md\" data-cksum=\"$(cksum < i18n/proposal.md)\" data-translation=\"missing\">" \
+  "<script type=\"text/markdown\" data-src=\"proposal.md\" data-cksum=\"$(stampof i18n/proposal.md)\" data-translation=\"missing\">" \
   "$(block i18n/view/proposal.html proposal.md)"
 expect "absent translation: data-translation=missing" \
-  "<script type=\"text/markdown\" data-src=\"verify.md\" data-cksum=\"$(cksum < i18n/verify.md)\" data-translation=\"missing\">" \
+  "<script type=\"text/markdown\" data-src=\"verify.md\" data-cksum=\"$(stampof i18n/verify.md)\" data-translation=\"missing\">" \
   "$(block i18n/view/verify.html verify.md)"
 expect "same-language source, current stamp: source embedded, data-translated=same" \
-  "<script type=\"text/markdown\" data-src=\"gate.md\" data-cksum=\"$(cksum < i18n/gate.md)\" data-lang=\"zh\" data-translated=\"same\">" \
+  "<script type=\"text/markdown\" data-src=\"gate.md\" data-cksum=\"$(stampof i18n/gate.md)\" data-lang=\"zh\" data-translated=\"same\">" \
   "$(block i18n/view/proposal.html gate.md)"
 expect "same-language marker with an old stamp: stale" \
-  "<script type=\"text/markdown\" data-src=\"index.md\" data-cksum=\"$(cksum < i18n/index.md)\" data-translation=\"stale\">" \
+  "<script type=\"text/markdown\" data-src=\"index.md\" data-cksum=\"$(stampof i18n/index.md)\" data-translation=\"stale\">" \
   "$(block i18n/view/proposal.html index.md)"
 grep -q '导出改为流式' i18n/view/proposal.html && ok || bad "same-language gate.md: source text embedded"
 # a `· same` header followed by body text is malformed
@@ -848,7 +854,7 @@ expect "same-language marker with body lines: missing" \
   "view: i18nd/view/proposal.html${nl}translation: proposal.md — missing${nl}translation: gate.md — missing${nl}translation: index.md — stale${nl}translation: verify.md — missing${nl}fallback: none" \
   "$(sh "$R" i18nd proposal lang=zh)"
 expect "same-language marker with body lines: data-translation=missing" \
-  "<script type=\"text/markdown\" data-src=\"gate.md\" data-cksum=\"$(cksum < i18nd/gate.md)\" data-translation=\"missing\">" \
+  "<script type=\"text/markdown\" data-src=\"gate.md\" data-cksum=\"$(stampof i18nd/gate.md)\" data-translation=\"missing\">" \
   "$(block i18nd/view/proposal.html gate.md)"
 { sed -n 1p i18n/view/zh/gate.md; printf '\r\n\n'; } > i18nd/view/zh/gate.md
 expect "same-language marker followed only by blank lines: still same" \
@@ -897,8 +903,8 @@ expect "edited source makes the fresh translation stale on re-render" \
   "view: i18nc/view/research.html${nl}translation: research.md — stale${nl}translation: index.md — stale${nl}fallback: none" "$(sh "$R" i18nc research lang=zh)"
 
 # --stamp and token errors
-expect "--stamp equals cksum <" "$(cksum < i18n/research.md)" "$(sh "$R" --stamp i18n/research.md)"
-expect "--stamp on an empty file" "$(cksum < edge/index.md)" "$(sh "$R" --stamp edge/index.md)"
+expect "--stamp equals cksum <" "$(stampof i18n/research.md)" "$(sh "$R" --stamp i18n/research.md)"
+expect "--stamp on an empty file" "$(stampof edge/index.md)" "$(sh "$R" --stamp edge/index.md)"
 err=$(sh "$R" --stamp i18n/nope.md 2>&1 > /dev/null); rc=$?
 expect "--stamp on a missing file: exit 1" 1 "$rc"
 for tok in lang=ZH lang=zh- lang=z lang=zhzh lang=zh_CN lang=; do
@@ -940,7 +946,7 @@ else
   for src in edge/design.md edge/research.md edge/index.md good/research.md; do
     d=${src%/*}
     stamp=$(sed -n 's/.*data-src="'"${src##*/}"'" data-cksum="\([^"]*\)".*/\1/p' "$d/view/research.html" "$d/view/design.html" 2> /dev/null | head -1)
-    expect "ps1 stamp of $src equals cksum" "$(cksum < "$src")" "$stamp"
+    expect "ps1 stamp of $src equals cksum" "$(stampof "$src")" "$stamp"
   done
   # --check parity and cross-host freshness
   expect "ps1 --check right after render: silent" "" "$(ps --check good)"
@@ -983,8 +989,8 @@ else
     if cmp -s "$T/sh.out" "$T/ps.out"; then ok; else bad "ps1 same-marker ($variant) stdout differs"; diff "$T/sh.out" "$T/ps.out" | head -5; fi
     if cmp -s "i18n-$variant/view/proposal.html" "$T/sh/i18n-$variant/view/proposal.html"; then ok; else bad "ps1 same-marker ($variant) page differs"; fi
   done
-  expect "ps1 --stamp equals cksum <" "$(cksum < i18n/research.md)" "$(ps --stamp i18n/research.md)"
-  expect "ps1 --stamp on an empty file" "$(cksum < edge/index.md)" "$(ps --stamp edge/index.md)"
+  expect "ps1 --stamp equals cksum <" "$(stampof i18n/research.md)" "$(ps --stamp i18n/research.md)"
+  expect "ps1 --stamp on an empty file" "$(stampof edge/index.md)" "$(ps --stamp edge/index.md)"
   err=$(ps --stamp i18n/nope.md 2>&1 > /dev/null); rc=$?
   expect "ps1 --stamp on a missing file: exit 1" 1 "$rc"
   for tok in lang=ZH lang=zh- lang=zh_CN; do
@@ -1010,6 +1016,87 @@ if command -v dash > /dev/null 2>&1; then
   expect "dash --check silent" "" "$(dash "$R" --check good)"
 else
   echo "WARN: dash not found — dash run skipped"
+fi
+
+# ---------- 8. CRLF checkout (git core.autocrlf on Windows) ----------
+# A copy of the views dir (render.sh itself included: it must heal itself) and of every
+# fixture with every line CRLF-terminated renders exactly like the LF originals: same
+# exit, same stdout, byte-identical pages, same stamps; render.ps1 and precheck.js agree.
+NODE_CRLF='
+const fs = require("fs"), path = require("path");
+function walk(d) {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) walk(p);
+    else if (e.isFile()) {
+      const s = fs.readFileSync(p).toString("latin1");
+      fs.writeFileSync(p, Buffer.from(s.replace(/\r?\n/g, "\r\n"), "latin1"));
+    }
+  }
+}
+process.argv.slice(1).forEach(walk);
+'
+CRV="$T/crlf_views"
+mkdir -p "$CRV"
+cp -r "$VIEWS"/. "$CRV"/
+fresh crlf_lf
+fresh crlf_fx
+node -e "$NODE_CRLF" "$CRV" "$T/crlf_fx"
+crs=$(tr -dc '\r' < "$CRV/render.sh" | wc -c | tr -d ' ')
+case $crs in 0) bad "CRLF copy: render.sh holds no CR (conversion failed)" ;; *) ok ;; esac
+CR_PRECHECK="$CRV/shared/precheck.js"
+command -v cygpath > /dev/null 2>&1 && CR_PRECHECK=$(cygpath -m "$CR_PRECHECK")
+crlf_compare() {
+  # crlf_compare <label> <fixture>: LF pages in crlf_lf vs the CRLF run's pages in crlf_fx
+  for page in "$T/crlf_lf/$2"/view/*.html; do
+    [ -f "$page" ] || continue
+    if cmp -s "$page" "$T/crlf_fx/$2/view/${page##*/}"; then ok; else bad "$1 page $2/view/${page##*/} differs from the LF render"; fi
+  done
+  n_lf=$(ls "$T/crlf_lf/$2"/view/*.html 2> /dev/null | wc -l | tr -d ' ')
+  n_cr=$(ls "$T/crlf_fx/$2"/view/*.html 2> /dev/null | wc -l | tr -d ' ')
+  expect "$1 $2: same page count as the LF render" "$n_lf" "$n_cr"
+}
+for f in $FIXTURES; do
+  (cd "$T/crlf_lf" && sh "$R" "$f" all) > "$T/lf.out" 2>&1
+  (cd "$T/crlf_fx" && sh "$CRV/render.sh" "$f" all) > "$T/cr.out" 2>&1; rc=$?
+  expect "CRLF render.sh $f all: exit 0" 0 "$rc"
+  if cmp -s "$T/lf.out" "$T/cr.out"; then ok; else bad "CRLF render.sh $f all: stdout differs from the LF run"; diff "$T/lf.out" "$T/cr.out" | head -5; fi
+  crlf_compare "CRLF render.sh" "$f"
+  for s in $STAGES; do
+    [ -f "$T/crlf_lf/$f/view/$s.html" ] || continue
+    expect "CRLF precheck.js agrees: $f $s" "$(cd "$T/crlf_lf" && node -e "$NODE_PRECHECK" "$PRECHECK_JS" "$s" "$f")" \
+      "$(cd "$T/crlf_fx" && node -e "$NODE_PRECHECK" "$CR_PRECHECK" "$s" "$f")"
+  done
+done
+(cd "$T/crlf_lf" && sh "$R" i18n all lang=zh) > "$T/lf.out" 2>&1
+(cd "$T/crlf_fx" && sh "$CRV/render.sh" i18n all lang=zh) > "$T/cr.out" 2>&1
+if cmp -s "$T/lf.out" "$T/cr.out"; then ok; else bad "CRLF render.sh i18n lang=zh: stdout differs from the LF run"; diff "$T/lf.out" "$T/cr.out" | head -5; fi
+crlf_compare "CRLF render.sh lang=zh" i18n
+expect "CRLF --check after the CRLF render: silent" "" "$(cd "$T/crlf_fx" && sh "$CRV/render.sh" --check i18n)"
+expect "CRLF --stamp equals the LF stamp" "$(cd "$T/crlf_lf" && sh "$R" --stamp good/research.md)" "$(cd "$T/crlf_fx" && sh "$CRV/render.sh" --stamp good/research.md)"
+mkdir -p "$T/crtmp"
+(cd "$T/crlf_fx" && TMPDIR="$T/crtmp" sh "$CRV/render.sh" --stamp good/research.md > /dev/null)
+expect "CRLF self-heal removes its temp copy" 0 "$(ls -A "$T/crtmp" | wc -l | tr -d ' ')"
+if [ -n "$PW" ]; then
+  CR_PS1="$CRV/render.ps1"
+  command -v cygpath > /dev/null 2>&1 && CR_PS1=$(cygpath -w "$CR_PS1")
+  crps() { "$PW" -NoProfile -NonInteractive -File "$CR_PS1" "$@"; }
+  for f in $FIXTURES; do
+    rm -f "$T/crlf_fx/$f"/view/*.html
+    (cd "$T/crlf_lf" && sh "$R" "$f" all) > "$T/lf.out" 2>&1
+    (cd "$T/crlf_fx" && crps "$f" all) > "$T/cr.out" 2>&1; rc=$?
+    expect "CRLF render.ps1 $f all: exit 0" 0 "$rc"
+    if cmp -s "$T/lf.out" "$T/cr.out"; then ok; else bad "CRLF render.ps1 $f all: stdout differs from the LF render.sh run"; diff "$T/lf.out" "$T/cr.out" | head -5; fi
+    crlf_compare "CRLF render.ps1" "$f"
+  done
+  (cd "$T/crlf_lf" && sh "$R" i18n all lang=zh) > "$T/lf.out" 2>&1
+  (cd "$T/crlf_fx" && crps i18n all lang=zh) > "$T/cr.out" 2>&1
+  if cmp -s "$T/lf.out" "$T/cr.out"; then ok; else bad "CRLF render.ps1 i18n lang=zh: stdout differs from the LF run"; diff "$T/lf.out" "$T/cr.out" | head -5; fi
+  crlf_compare "CRLF render.ps1 lang=zh" i18n
+  expect "CRLF ps1 --stamp equals the LF stamp" "$(cd "$T/crlf_lf" && sh "$R" --stamp good/research.md)" "$(cd "$T/crlf_fx" && crps --stamp good/research.md)"
+  expect "CRLF ps1 --check after the CRLF render: silent" "" "$(cd "$T/crlf_fx" && crps --check i18n)"
+else
+  echo "WARN: pwsh not found — CRLF ps1 run skipped"
 fi
 
 cd "$ROOT" || exit 1

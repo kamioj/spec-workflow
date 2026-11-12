@@ -5,7 +5,7 @@
  * as `fallback:` lines, the page tags those sections "format not recognized".
  *
  * Rules (identical in all three implementations):
- * - lines: split on LF, one trailing CR stripped per line
+ * - lines: every CR dropped (a CRLF source reads like its LF copy), then split on LF
  * - fence: outside a fence, a line starting (after blockquote markers `>` and spaces /
  *   tabs) with 3+ backticks or 3+ tildes opens one at that quote depth — except a
  *   backtick run followed by text holding another backtick (an inline code span such as
@@ -18,7 +18,7 @@
  */
 
 function sddLines(text) {
-  return text.split('\n').map(function (l) { return l.replace(/\r$/, ''); });
+  return text.replace(/\r/g, '').split('\n');
 }
 
 /* Fence state step: state is null outside a fence, { c, n, q } inside one (opened by n

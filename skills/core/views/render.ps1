@@ -11,7 +11,8 @@
 #
 # Bytes are handled as Latin-1 strings (one char per byte), so escaping and assembly are
 # byte-exact for any UTF-8 content. Stamps implement POSIX `cksum` (CRC-32, polynomial
-# 0x04C11DB7, MSB-first, length appended LSB-first, complemented) so a page stamped here
+# 0x04C11DB7, MSB-first, length appended LSB-first, complemented) over the bytes minus
+# every CR, as render.sh stamps them, so a page stamped here
 # checks clean under render.sh and vice versa. The fallback pre-check mirrors
 # shared/precheck.js and render.sh rule for rule.
 
@@ -38,7 +39,13 @@ function Get-FullPath([string]$p) {
 
 function Test-File([string]$p) { [IO.File]::Exists((Get-FullPath $p)) }
 
-function Read-Bytes([string]$p) { return , [IO.File]::ReadAllBytes((Get-FullPath $p)) }
+# Every read drops the CR bytes (render.sh: line endings), so sources, translations,
+# templates and assets read the same from a CRLF checkout, and stamps follow suit.
+function Read-Bytes([string]$p) {
+  $b = [IO.File]::ReadAllBytes((Get-FullPath $p))
+  if ([Array]::IndexOf($b, [byte]13) -lt 0) { return , $b }
+  return , $Latin1.GetBytes($Latin1.GetString($b).Replace("`r", ''))
+}
 
 # ---------- cksum ----------
 
