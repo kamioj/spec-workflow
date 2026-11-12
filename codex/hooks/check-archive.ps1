@@ -2,7 +2,7 @@
 # Codex port of the /spec:archive gate: the change must not have bypassed the flow.
 # Trigger: UserPromptSubmit hook (Codex CLI).
 # Codex-specific contract (see SCHEMA.md, probe-verified on codex-cli 0.142.1):
-#   - stdin field is `prompt` (same field name as Claude Code — corrected 2026-07-15)
+#   - stdin field is `prompt` (same field name as Claude Code -- corrected 2026-07-15)
 #   - blocking = stdout {"decision":"block","reason":...} + exit 0 (exit 2 does NOT block on Codex)
 #   - invocation form is `$spec-archive` (Codex skills), not `/spec:archive`
 # Audits the single active change:
@@ -120,7 +120,7 @@ try {
 
     $change = $changes[0]
 
-    # $spec-loop change: no proposal.md by design — the ledger is the flow record. Trust
+    # $spec-loop change: no proposal.md by design -- the ledger is the flow record. Trust
     # model (0.5.1): status: done is written by the final-acceptance turn, the same class
     # of flow-moment anchor as the APPROVED marker.
     $loopPath = Join-Path $change.FullName 'loop.md'

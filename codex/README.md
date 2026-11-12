@@ -125,7 +125,11 @@ Each gate is a pwsh + POSIX sh **twin pair** (`check-*.ps1` / `check-*.sh`) — 
 the unit of change. After ANY gate edit, run the shared fixtures against both twins:
 
 ```sh
-sh codex/hooks/run-fixtures.sh   # must end with fail=0, pwsh + sh both exercised
+sh codex/hooks/run-fixtures.sh   # must end with fail=0, ps1 + sh both exercised
 ```
+
+On Windows the ps1 twin runs through `hook-launcher.ps1` under `powershell.exe` (it delegates to
+PowerShell 7 when found, else runs the twin under 5.1), so keep every `.ps1` 5.1-compatible and
+pure ASCII. Run the fixtures once with `pwsh` on PATH and once without to cover both paths.
 
 Field-name and blocking-semantics evidence lives in [hooks/SCHEMA.md](hooks/SCHEMA.md).

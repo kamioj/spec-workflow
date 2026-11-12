@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.10.1-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -293,6 +293,7 @@ claude --plugin-dir .
 
 - **Claude Code 侧硬门全平台可用**（0.4.2+）：每个门是单一 POSIX sh 实现，经 hooks.json shell form 执行——macOS/Linux 走 `sh`，**Windows 走 Git Bash**。Windows 上唯一前置是 Git for Windows,而 Claude Code 自身的 Bash 工具本来就需要它。
   - 排障：Windows 上出现提到 `sh` 的非阻断 `UserPromptSubmit hook error` = 缺 Git Bash——装 [Git for Windows](https://git-scm.com/download/win) 即可,装好前门只是失效(fail-open),不会拦你正常流程;报错提到 `powershell.exe`/`pwsh` = 会话还在跑 0.4.2 之前的旧插件——`/reload-plugins` 或重启。
+- **Windows 上 Codex 的门经 `powershell.exe` 启动**（每台 Windows 都自带）：一个小 launcher 能找到 PowerShell 7 就交给它（PATH、默认安装目录或 Microsoft Store 别名），找不到就在 Windows PowerShell 5.1 下直接跑门。PowerShell 7 没装或不在 PATH 上，门也不会再失效。hooks.json 有改动时，Codex 会要求你在 TUI 的 hooks 浏览器里重新信任一次。
 - **未做的扩展**：sdd-researcher / sdd-reviewer 专属 agent / MCP server
 
 ---
@@ -322,6 +323,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.10.1** — **Codex 的门不再因缺 `pwsh` 失效**：Windows 上的 hook 改由 `powershell.exe` + `hook-launcher.ps1` 启动（经 PATH / 安装目录 / Store 别名找到 PowerShell 7 就交给它，否则在 5.1 下直接跑）。以前 `commandWindows` 直接写 `pwsh`，PATH 里没有 Store 目录的机器上启动失败，Codex 按 fail-open 放行，所有门静默失效。夹具改为经同一个 launcher 跑 ps1，要求 ps1 全 ASCII，并校验脚本安装用的模板与 hooks.json 一致（模板之前缺 loop 驱动器）。升级后需在 Codex TUI 里重新信任一次 hook
 - **0.10.0** — **教训落到下一个 agent 会读的地方**：`/spec:archive` 新增教训提炼步骤。全新上下文的 `spec-reflector` 从 change 的记录里（各轮验证发现、用户纠正、卡死自检、偏差审查、返工提交，会话记录尽力读取）找反复出现的问题类别，按能承载它的最高层级分流：机械检查（以 `/spec:fix` 条目建议给出）、改进项目已有的 skill 或规则文件、新建项目 skill、写进知识库；落地哪几条由你勾选，空选即不应用。loop 回注模板改由 fixture 强制同步：`hooks/run-fixtures.sh` 逐字比对三个驱动脚本的文案，并用关键条款锚点对照 `core/commands/loop.md`。生成器遇到与其他文字同行的 host 标记直接报错（以前会悄悄泄漏到两个宿主）
 - **0.9.0** — **评审与验收改版**：批判面板与验收标准一一对应——reuse（“项目里有没有现成的？”，带代码库读取权，推荐式输出）· fidelity（“和需求源对得上吗？”——对照原文引用双向查多做与少做，配 R-N 覆盖矩阵与可证伪预检两道机械关）· performance（“过度考量在拖慢什么？”，仅用户勾选）；名单空答=零面板，绝不静默回退。兼容退出面板：仅 `/spec:workflow` 托管时自动加跑，产出只能是落地步骤——需求是前提，不是被告。上游硬化：research 动存量必枚举受影响面、新造物必做全项目等价物搜索；问询先过需求源、每题必须指明源的空缺；提问场景化，每选项好处代价并陈。交付层：验证按测试类→接缝 mock→真机移交三级走，待真机项绝不卡归档；前端变更交截图证据地图（`screens/`，同名覆盖只更新不堆积），三查把关——对原型、压数据、文案人眼过。fix 改按天分批（`fixes/<日期>/`，钩子双布局兼容），一次收一批，本会话没写过条目时 ship 主对话直审免子代。表达宪章约束一切用户界面：推荐先行、大白话、每题有出路、发现默认判断题档；core 的禁令一律带理由与正面做法
 - **0.8.6** — **每个批判镜头钉死一句“它问的问题”作身份**：三镜头把提案风险切成三个大白话问题——该不该做（necessity）· 会不会弄坏旧的（regression-compat）· 会不会变慢（performance）——这句身份是镜头在一切用户界面（名单多选题、闸门披露、文档）上的名字；密度大的锁定立场文本明确标为批判者派遣材料，绝不作为选项描述示人

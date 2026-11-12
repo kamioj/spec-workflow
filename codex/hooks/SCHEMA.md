@@ -84,6 +84,28 @@ string, parsed with arguments (`pwsh -NoProfile -File x.ps1` spawns correctly).
 `commandWindows` overrides `command` on Windows: put the sh invocation in `command` and
 the pwsh invocation in `commandWindows` and one hooks.json serves both platforms.
 
+## Windows entry: powershell.exe + hook-launcher.ps1
+
+`commandWindows` is spawned directly (no shell), so the executable it names must resolve
+from the Codex process's PATH. Observed on **codex-cli 0.156.0** (Windows, 2026-11-12):
+PowerShell 7 installed only from the Microsoft Store (`%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`),
+that folder absent from both the user and the system PATH. With `commandWindows: "pwsh ..."`,
+`codex exec '$spec-apply'` in an empty directory printed:
+
+```text
+hook: UserPromptSubmit Failed
+hook: UserPromptSubmit Failed
+hook: UserPromptSubmit Failed
+```
+
+and the prompt went on to the model (fail-open: every gate silently dead). The same run with
+the WindowsApps folder prepended to PATH printed `hook: UserPromptSubmit Blocked` for
+check-gate. Hence `commandWindows` names `powershell.exe` (System32, on PATH on every
+Windows box) hosting `hook-launcher.ps1 <twin>.ps1`: it delegates to pwsh found via PATH, the
+MSI dir, or the Store alias, and otherwise runs the twin in-process under 5.1 — which is why
+every Codex `.ps1` stays 5.1-compatible and pure ASCII (5.1 reads a BOM-less file in the ANSI
+codepage). `hook-launcher.ps1 --probe` prints which path a real run takes.
+
 ## Trust model
 
 Hooks do not run until trusted. Observed behaviors:

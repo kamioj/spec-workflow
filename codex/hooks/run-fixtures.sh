@@ -5,8 +5,11 @@
 #
 #   sh codex/hooks/run-fixtures.sh
 #
-# Requires: sh + coreutils; pwsh optional (skipped with a warning if absent -- but a gate
-# edit is only DONE when both twins pass).
+# Requires: sh + coreutils. The ps1 twin runs through its production entry: on Windows that
+# is powershell.exe + hook-launcher.ps1 (delegates to pwsh when found, else runs the twin
+# in-process under 5.1) -- run once with pwsh on PATH and once without to cover both paths.
+# Elsewhere it is pwsh directly; with neither available the ps1 twin is skipped with a
+# warning -- but a gate edit is only DONE when both twins pass.
 
 set -u
 HOOKS_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -17,9 +20,25 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 # same cwd works for both twins
 command -v cygpath >/dev/null 2>&1 && TMP_ROOT=$(cygpath -m "$TMP_ROOT")
 
-HAVE_PWSH=0
-command -v pwsh >/dev/null 2>&1 && HAVE_PWSH=1
-[ $HAVE_PWSH -eq 0 ] && echo "WARN: pwsh not found -- testing sh twins only (NOT a full pass)"
+PS1_ENTRY=""
+if command -v powershell.exe >/dev/null 2>&1; then PS1_ENTRY=launcher
+elif command -v pwsh >/dev/null 2>&1; then PS1_ENTRY=pwsh; fi
+HOOKS_DIR_NATIVE=$HOOKS_DIR
+command -v cygpath >/dev/null 2>&1 && HOOKS_DIR_NATIVE=$(cygpath -m "$HOOKS_DIR")
+case "$PS1_ENTRY" in
+    launcher) echo "INFO: ps1 twins via powershell.exe launcher -- $(powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$HOOKS_DIR_NATIVE/hook-launcher.ps1" --probe | tr -d '\r')"
+              echo "      (cover the other path too: with pwsh reachable -> delegate; LOCALAPPDATA=<empty dir> and no pwsh on PATH -> 5.1)" ;;
+    pwsh)     echo "INFO: ps1 twins via pwsh" ;;
+    *)        echo "WARN: neither powershell.exe nor pwsh found -- testing sh twins only (NOT a full pass)" ;;
+esac
+# run_ps1 <hook-basename> -- stdin passes through; same entry Codex uses on this platform
+run_ps1() {
+    if [ "$PS1_ENTRY" = launcher ]; then
+        powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$HOOKS_DIR_NATIVE/hook-launcher.ps1" "$HOOKS_DIR_NATIVE/$1.ps1"
+    else
+        pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/$1.ps1"
+    fi
+}
 
 PASS=0
 FAIL=0
@@ -29,11 +48,11 @@ run_case() {
     name=$1; hook=$2; expected=$3; stdin=$4
 
     for impl in sh ps1; do
-        [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
+        [ "$impl" = "ps1" ] && [ -z "$PS1_ENTRY" ] && continue
         if [ "$impl" = "sh" ]; then
             out=$(printf '%s' "$stdin" | sh "$HOOKS_DIR/$hook.sh" 2>/dev/null)
         else
-            out=$(printf '%s' "$stdin" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/$hook.ps1" 2>/dev/null)
+            out=$(printf '%s' "$stdin" | run_ps1 "$hook" 2>/dev/null)
         fi
         case "$out" in
             *'"decision":"block"'*|*'"decision": "block"'*) got=block ;;
@@ -195,13 +214,13 @@ run_driver_case() {
     name=$1; expected=$2; proj=$3; state=$4; stdin=$5; require=${6:-}; forbid=${7:-}
     sdir="$proj/spec/changes/g"
     for impl in sh ps1; do
-        [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
+        [ "$impl" = "ps1" ] && [ -z "$PS1_ENTRY" ] && continue
         if [ "$state" = "-" ]; then rm -f "$sdir/.loop-state" 2>/dev/null
         else printf '%s' "$state" > "$sdir/.loop-state"; fi
         if [ "$impl" = "sh" ]; then
             out=$(printf '%s' "$stdin" | sh "$HOOKS_DIR/loop-driver.sh" 2>/dev/null)
         else
-            out=$(printf '%s' "$stdin" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" 2>/dev/null)
+            out=$(printf '%s' "$stdin" | run_ps1 loop-driver 2>/dev/null)
         fi
         code=$?
         if [ "$code" -ne 0 ]; then got="exit-$code"
@@ -337,20 +356,20 @@ tree_fp_history=na,na,na
 # DEC-7: fingerprint includes HEAD — verified for BOTH twins (each computes its own format)
 assert_head_fp_changes() {
     for impl in sh ps1; do
-        [ "$impl" = "ps1" ] && [ $HAVE_PWSH -eq 0 ] && continue
+        [ "$impl" = "ps1" ] && [ -z "$PS1_ENTRY" ] && continue
         gp="$TMP_ROOT/git-real-$impl"; rm -rf "$gp"; mkdir -p "$gp/spec/changes/g"
         printf '%s' "$LOOP_RUNNING" > "$gp/spec/changes/g/loop.md"
         ( cd "$gp" && git init -q && git add -A && git -c user.email=f@x -c user.name=f commit -qm i ) || return 1
         if [ "$impl" = "sh" ]; then
             printf '%s' "$(json_stop "$gp" false)" | sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
         else
-            printf '%s' "$(json_stop "$gp" false)" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" >/dev/null 2>&1
+            printf '%s' "$(json_stop "$gp" false)" | run_ps1 loop-driver >/dev/null 2>&1
         fi
         ( cd "$gp" && git -c user.email=f@x -c user.name=f commit -qm r2 --allow-empty ) || return 1
         if [ "$impl" = "sh" ]; then
             printf '%s' "$(json_stop "$gp" false)" | sh "$HOOKS_DIR/loop-driver.sh" >/dev/null 2>&1
         else
-            printf '%s' "$(json_stop "$gp" false)" | pwsh -NoProfile -NonInteractive -File "$HOOKS_DIR/loop-driver.ps1" >/dev/null 2>&1
+            printf '%s' "$(json_stop "$gp" false)" | run_ps1 loop-driver >/dev/null 2>&1
         fi
         f2=$(sed -n 's/^tree_fp_history=//p' "$gp/spec/changes/g/.loop-state")
         case "$f2" in *,*) : ;; *) return 1 ;; esac
@@ -651,6 +670,32 @@ assert_resume_rebind() {
     grep -q '^session_id=NEWSESS$' "$rs/.loop-state" && grep -q '^rounds_injected=3$' "$rs/.loop-state" && grep -q '^retro_reinjects=1$' "$rs/.loop-state"
 }
 run_assert loop-resume-rebind-cmd assert_resume_rebind
+
+# ---- ps1 twins must be pure ASCII (plain check, not a named case: Codex-only mechanics) ----
+# The launcher's fallback runs them under Windows PowerShell 5.1, which reads a BOM-less file
+# in the ANSI codepage: a multi-byte character (an em dash in a comment) can be misdecoded and
+# break parsing. Write ASCII only ("--" for a dash).
+for f in "$HOOKS_DIR"/*.ps1; do
+    if LC_ALL=C tr -d '\r' < "$f" | LC_ALL=C grep -q '[^ -~	]'; then   # CR stripped: CRLF checkouts are fine
+        FAIL=$((FAIL+1)); echo "FAIL  ps1-ascii:$(basename "$f")  non-ASCII byte found (PS 5.1 fallback would misread it)"
+    else
+        PASS=$((PASS+1)); echo "PASS  ps1-ascii:$(basename "$f")"
+    fi
+done
+
+# ---- hooks.json.template (script installs) must mirror hooks.json (plugin installs) ----
+# Two hand-maintained copies of the same hook list; a hook added to one only (the template
+# once lacked loop-driver) silently disables it for that install method.
+if [ -f "$HOOKS_DIR/hooks.json.template" ]; then
+    sed -e 's#${PLUGIN_ROOT}/hooks#<ROOT>#g' "$HOOKS_DIR/hooks.json" | tr -d '\r' > "$TMP_ROOT/hj.plugin"
+    sed -e 's#__SDD_HOOKS_DIR__#<ROOT>#g' "$HOOKS_DIR/hooks.json.template" | tr -d '\r' > "$TMP_ROOT/hj.script"
+    if diff "$TMP_ROOT/hj.plugin" "$TMP_ROOT/hj.script" > "$TMP_ROOT/hj.diff"; then
+        PASS=$((PASS+1)); echo "PASS  hooks-template-sync"
+    else
+        FAIL=$((FAIL+1)); echo "FAIL  hooks-template-sync  hooks.json.template differs from hooks.json (< plugin, > template)"
+        sed 's/^/      /' "$TMP_ROOT/hj.diff" | head -6
+    fi
+fi
 
 echo "----"
 echo "pass=$PASS fail=$FAIL"
