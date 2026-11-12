@@ -24,24 +24,13 @@ counterpart of the full flow's /spec:verify + /spec:archive, collapsed into one 
 
 1. **Collect the batch**: read the target batch's fix.md; every F-N entry is in scope — the
    batch is the unit.
-2. **ONE independent audit — pick the cheapest executor that is still independent** (the
-   fresh-context requirement means "the author never audits itself", not "always spawn"):
-   - **this conversation wrote NONE of the batch's entries** (the usual case — batches are
-     written across earlier sessions) → this conversation IS a fresh reader: audit directly,
-     no subagent (a dispatch here would cold-read everything for zero independence gain);
-   - **this conversation wrote any entry** → dispatch ONE `spec-verifier` subagent (or
-     suggest shipping from a fresh session, which is cheaper).
-   The audit contract, whoever executes it:
-   - this is a fix batch: audit the **accumulated diff as a whole** across the files the
-     entries list (per-entry diff attribution is NOT expected — successive uncommitted
-     edits to one file are indistinguishable);
-   - the F-N entries are the claims to check: root cause plausible against the code, the
-     described fix actually present, self-check evidence real (**re-run the key commands** —
-     self-reported success is a claim, Iron Law applies);
-   - run the charter machine pass (ast-grep rule pack; declare `not run` gracefully when
-     absent);
-   - unsourced behavioral additions beyond the entries' asks = findings; oversized entries
-     are an observation to report, never a blocker (size is advisory at this tier).
+2. **ONE independent audit** — executor choice and the no-proposal audit contract per SKILL
+   § Independent audit (batches are usually written across earlier sessions, so this
+   conversation is usually the fresh reader). For a fix batch the claim list is the F-N
+   entries — root cause plausible against the code, the described fix actually present,
+   self-check evidence real — and the scope is the accumulated diff across the files the
+   entries list; oversized entries are an observation to report, never a blocker (size is
+   advisory at this tier).
 3. **Findings** → triage and fix them in-session (same failure-triage table as /spec:apply),
    then write the audit results — commands + exit codes, findings + resolutions —
    into the batch's fix.md `## Audit`. Unresolvable now → leave the batch in place

@@ -26,7 +26,7 @@ Invoke each phase command in the order below. **If any phase encounters user rej
    - Deep decision argumentation exceeding 300 words
 4. **`/spec:propose`** — write the four-section proposal.md, then **run the critique panel** (propose.md § Critique panel: reuse + fidelity auto-dispatched, plus the compat pass when the proposal touches existing surfaces — its only legal output is landing steps into ## How, never a strike against a What item (a requirement is the premise); performance stays out (user switch, no user mid-flight); extra passes via gate reply; one refutation round; findings → ledger round 0) (for major proposals, additionally add `--codex` for a heterogeneous critique)
    - Before writing, the hook scans research.md for any remaining `[TBD]` placeholders
-5. **HARD GATE — touchpoint 1 of 2** — output the fixed closing block; escalated decisions pinned on top; wait
+5. **HARD GATE — touchpoint 1 of 2** — persist the block to gate.md first (propose.md § Flow step 5), then output the fixed closing block; escalated decisions pinned on top; wait
    - **Write zero code before the user's next command**; satisfied (or silent on the flagged decisions) → `/spec:apply` (apply auto-appends APPROVED; no "reply go" step)
    - The user's reply is an **evaluation**: respond per item adopt / refute (with reason) / partial — one response round, user has final say — then `/spec:revise` → re-emit the gate. **This evaluation loop has no round limit**; it converges on the user's satisfaction, not on a counter
 6. **`/spec:apply`** — implement the code, advancing through proposal / tasks

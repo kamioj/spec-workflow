@@ -90,11 +90,15 @@ function selectHost(raw, host, sourcePath) {
   return kept.join("\n");
 }
 
+// The marker must be a comment in the target's own syntax: an HTML comment on line 1 of a
+// shell or PowerShell script is a parse error, and inside JS/CSS it breaks the inlined page.
 function generatedHeader(sourcePath, targetPath) {
   const marker = `${GENERATED_PREFIX}${sourcePath} — edit the core file and run node tools/generate.mjs; hand edits will be overwritten`;
-  return targetPath.endsWith(".toml") || targetPath.endsWith(".yml") || targetPath.endsWith(".yaml")
-    ? `# ${marker}\n`
-    : `<!-- ${marker} -->\n`;
+  const ext = path.extname(targetPath);
+  if ([".toml", ".yml", ".yaml", ".sh", ".ps1"].includes(ext)) return `# ${marker}\n`;
+  if (ext === ".js") return `// ${marker}\n`;
+  if (ext === ".css") return `/* ${marker} */\n`;
+  return `<!-- ${marker} -->\n`;
 }
 
 // A leading comment BEFORE YAML frontmatter breaks frontmatter parsing in both hosts,
@@ -113,6 +117,9 @@ function stripGeneratedHeader(content) {
   if (lines[0]?.includes(GENERATED_PREFIX)) {
     return lines.slice(1).join("\n");
   }
+  if (lines[0]?.startsWith("#!") && lines[1]?.includes(GENERATED_PREFIX)) {
+    return [lines[0], ...lines.slice(2)].join("\n");
+  }
   const fmEnd = frontmatterEndIndex(lines);
   if (fmEnd !== -1 && lines[fmEnd + 1]?.includes(GENERATED_PREFIX)) {
     return [...lines.slice(0, fmEnd + 1), ...lines.slice(fmEnd + 2)].join("\n");
@@ -127,6 +134,10 @@ function withGeneratedHeader(sourcePath, targetPath, body) {
   const fmEnd = frontmatterEndIndex(lines);
   if (fmEnd !== -1) {
     return ensureTrailingLf([...lines.slice(0, fmEnd + 1), header.trimEnd(), ...lines.slice(fmEnd + 1)].join("\n"));
+  }
+  // a shebang must stay on line 1 or the script loses its interpreter line
+  if (lines[0].startsWith("#!")) {
+    return ensureTrailingLf([lines[0], header.trimEnd(), ...lines.slice(1)].join("\n"));
   }
   return ensureTrailingLf(`${header}${normalized}`);
 }
@@ -231,6 +242,13 @@ function transformRulePaths(text) {
       "unhandled ${CLAUDE_PLUGIN_ROOT}/rules/ reference — extend AST_GREP_FRAGMENT mapping in generate.mjs"
     );
   }
+  // the views dir has no fixed path on Codex either (versioned plugin cache vs script install):
+  // core prose keeps the Claude path inside a host:claude block and gives Codex its own locate step
+  if (out.includes("${CLAUDE_PLUGIN_ROOT}/skills/core/views/")) {
+    throw new Error(
+      "unhandled ${CLAUDE_PLUGIN_ROOT}/skills/core/views/ reference in the Codex tree — wrap it in a host:claude block with a host:codex locate step"
+    );
+  }
   return out;
 }
 
@@ -261,6 +279,18 @@ function transformAgentPaths(text) {
 function transformCodexMarkdown(text, context) {
   const withSigils = transformSigils(text);
   return context === "agent" ? transformAgentPaths(withSigils) : transformSkillPaths(withSigils);
+}
+
+// views ship as runtime assets (templates, scripts, inlined libraries), not prompts: only host
+// selection and the command sigil apply, and third-party vendor files are copied untouched
+function emitView(sourcePath, host, targetPath) {
+  const raw = readText(sourcePath);
+  if (sourcePath.startsWith("core/views/vendor/")) {
+    return withGeneratedHeader(sourcePath, targetPath, raw);
+  }
+  const selected = selectHost(raw, host, sourcePath);
+  const body = host === "codex" ? transformRulePaths(transformSigils(selected)) : selected;
+  return withGeneratedHeader(sourcePath, targetPath, body);
 }
 
 function emitClaudeMarkdown(sourcePath) {
@@ -336,6 +366,9 @@ function claudeTargetFor(sourcePath) {
   if (sourcePath.startsWith("core/agents/")) {
     return `agents/${path.basename(sourcePath)}`;
   }
+  if (sourcePath.startsWith("core/views/")) {
+    return sourcePath.replace(/^core\/views\//, "skills/core/views/");
+  }
   fail(`no Claude target for ${sourcePath}`);
 }
 
@@ -356,6 +389,9 @@ function codexTargetFor(sourcePath) {
   if (sourcePath.startsWith("core/agents/")) {
     return `codex/agents/${path.basename(sourcePath, ".md")}.toml`;
   }
+  if (sourcePath.startsWith("core/views/")) {
+    return sourcePath.replace(/^core\/views\//, "codex/skills/spec-core/views/");
+  }
   fail(`no Codex target for ${sourcePath}`);
 }
 
@@ -366,6 +402,7 @@ function buildPlan() {
     ...listFiles("core/references"),
     ...listFiles("core/rules"),
     ...listFiles("core/agents").filter((file) => file.endsWith(".md")),
+    ...listFiles("core/views"),
   ];
   // fail-loud: a missing source is a broken core tree, never a file to silently skip
   const missing = sources.filter((file) => !fs.existsSync(path.join(ROOT, file)));
@@ -376,6 +413,13 @@ function buildPlan() {
 
   const outputs = [];
   for (const sourcePath of sources) {
+    if (sourcePath.startsWith("core/views/")) {
+      for (const host of ["claude", "codex"]) {
+        const targetPath = host === "claude" ? claudeTargetFor(sourcePath) : codexTargetFor(sourcePath);
+        outputs.push({ host, sourcePath, targetPath, content: emitView(sourcePath, host, targetPath) });
+      }
+      continue;
+    }
     const claudeTarget = claudeTargetFor(sourcePath);
     outputs.push({
       host: "claude",

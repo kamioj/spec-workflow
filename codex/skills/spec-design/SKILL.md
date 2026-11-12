@@ -8,6 +8,8 @@ description: Technical design elaboration. Trigger on demand — use when the ar
 
 Focus: $ARGUMENTS
 
+**View shorthand**: a leading `view` or `--view` token is stripped from the arguments (the rest stays free text) and, after this command's own work is done, `$spec-view design` renders the HTML view. Echo the split on the first output line — `view: on · focus: <rest>` — so a direction that merely starts with the English word "view" is caught at a glance (quote it and re-run).
+
 ## When to use
 
 Trigger if any one of the following applies:

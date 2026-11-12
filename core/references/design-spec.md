@@ -68,6 +68,8 @@ Test: **a non-technical reader can decide from the narrative; an implementer can
 8. **Complexity gate**: a single diagram over ~15–20 nodes → **split it** (zoom to a finer level, or split by domain into several diagrams); **never cram it in by shrinking fonts / squeezing spacing**.
 9. **External systems get only a boundary**: services / third parties / SaaS not under this system's control are drawn only as an **interaction boundary**, not expanded internally; mark them clearly as `[external]` (or a distinct style). A shared library counts as a Component, not a separate system.
 
+**Mermaid conventions the view renders**: each `subgraph` is drawn as a full-width layer band in declaration order; `:::new` marks boxes this change adds (highlighted, with an automatic legend); an arrow pointing back two or more layers is routed around the side (one layer up goes straight), so the closed loop of rule 6 stays visible; a request / response pair is drawn as two parallel arrows, each keeping its own label.
+
 **Recommended layout**: along the chosen vertical axis (e.g. "external transparency"), **split top-to-bottom into N layers** — **the number of layers follows the system's real domains / stages, not a fixed count**. Draw as many layers as exist; don't force-fit 2, and don't cram N domains into 2. If there's a visibility boundary like "internal ↔ external", mark it as **one of the horizontal cut-lines** (both sides can still have multiple layers each). Take this system's point of view.
 
 Skeleton sketch (N layers, arbitrary; different domains, same effect):

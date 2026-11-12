@@ -24,7 +24,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 - **Fast lane** — start coding right away and let hooks catch the mistakes (hookify, or a stripped-down superpowers brainstorm).
 - **Heavy lane** — spec everything up front, but down a rigid track (OpenSpec's 4 commands, superpowers brainstorm's 9 steps).
 
-**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 16 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification; a Stop-event driver turns `/spec:loop`'s autonomous rounds into a hard mechanism.
+**spec-workflow takes a third path.** It keeps the discipline of thinking before acting, but breaks the process into 18 independent slash commands — each stage re-entrant, interruptible, and re-runnable on its own. Three hard gate hooks make sure the workflow stops where it has to; a Stop-event reminder makes sure implementation ends with a verification; a Stop-event driver turns `/spec:loop`'s autonomous rounds into a hard mechanism.
 
 ### Comparison
 
@@ -32,7 +32,7 @@ Two paradigms already dominate AI-assisted spec-driven development:
 |---|---|---|---|
 | Stage gating | explicit HARD GATE + hook enforcement | loose, advisory warnings | rigid 9-step track |
 | Open questions `[TBD]` | allowed, but a hook forces them closed | Open Questions can linger | banned — resolve on the spot |
-| Command granularity | 16 independent commands | 4 commands, all-in-one | one skill-based flow |
+| Command granularity | 18 independent commands | 4 commands, all-in-one | one skill-based flow |
 | Mid-flow re-entry | call any stage on its own | `/opsx:continue` to advance | start over |
 | Anti-cheating | two layers (command + agent) + opt-in flags | none | implicit |
 
@@ -92,14 +92,16 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 
 ## Features
 
-### 16 independent slash commands
+### 18 independent slash commands
 
 | Category | Command | What it does |
 |---|---|---|
 | **Entry** | `/spec:workflow <task>` | run the whole flow end-to-end, fully delegated — decisions triaged internally, stops only at the HARD GATE + acceptance |
 |  | `/spec:loop <goal>` | goal-driven **autonomous round loop**: approve the goal + acceptance checklist + round budget once, then it researches / implements / verifies / retrospects round after round — hook-driven, ledger-remembered — until acceptance or a fuse |
 |  | `/spec:fix <task>` | **streaming light tier** for bug fixes and small changes: locate & confirm → fix (or research candidates when uncertain) → append an F-N entry to today's daily batch `fixes/<date>/`; size is advisory, never a refusal |
-|  | `/spec:status` | report where the current change stands (including paused changes and the fix batch's pending count) |
+|  | `/spec:status` | report where the current change stands (including paused changes, the fix batch's pending count, and stale HTML views) |
+|  | `/spec:view [stage] [tier] [lang] [dir]` | render research / ask / design / proposal / verify into self-contained HTML pages — standard (faithful render) or advanced (stage layout; the ask and gate pages are clickable and build a reply line to paste back). Fixed templates do the layout, so a weak model gets the same page; page content is shown in your language (a derived translation, refreshed only when the source changes — the md stays as written); `view` / `--view` on those five commands is shorthand |
+|  | `/spec:knowledge [focus]` | tidy the knowledge base on demand — dead anchors marked suspect, duplicates merged automatically, then two question rounds: pick what to delete, retire or promote, then per promoted lesson choose a new project skill, merge into an existing one, drop, or keep; `/spec:archive` runs the same pass |
 |  | `/spec:stash` | **park** a change deliberately (`.paused`: date + reason) — optional bookkeeping; every artifact stays warm |
 |  | `/spec:resume [name]` | **the switcher**: writes the current pointer (`spec/changes/.current`) to the named change (unpausing it if parked) — parallel changes coexist, gates target the pointed one; no name → list what there is to switch to |
 | **Gather** | `/spec:research <direction>` | survey industry practice and flag open questions as `[TBD]` |
@@ -109,7 +111,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 |  | `/spec:propose [--codex] [--skip <lens>]` | write the proposal + HARD GATE; `--codex` lets codex poke holes in it, standalone runs pick the critique roster in one multi-select — `--skip <lens>` pre-answers it; the chosen roster is disclosed on the gate |
 |  | `/spec:revise [why\|what\|how\|risk]` | edit a single proposal section |
 | **Execute & verify** | `/spec:apply [flags]` | implement — single-scope runs in the main conversation (its context is already cache-warm), cross-stack dispatches two agents in parallel |
-|  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
+|  | `/spec:verify [--codex] [--fix] [--diff [range]] [--view]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly. **No spec needed**: with no active change (or `--diff`) it scopes the work from git / svn / this conversation's edits, derives the test points, runs front- and back-end tests, and records screenshots |
 | **Wrap up** | `/spec:ship` | close one fix batch (named date, or the oldest): one independent audit over its diff — run inline when this conversation wrote none of it — then archive that batch |
 |  | `/spec:archive` | archive the current change: retrospect, lesson mining into project skills / rules (you pick which land), knowledge sediment |
 
@@ -203,7 +205,7 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 ├── core/                           # SINGLE SOURCE for all shipped markdown (both plugins)
 ├── tools/generate.mjs              # emits commands/ skills/ rules/ agents/ AND codex/skills|agents from core/; --check = drift guard
 ├── codex/                          # OpenAI Codex CLI port (same workflow + gates; see codex/README.md)
-├── commands/                       # 16 slash commands — GENERATED from core/, do not hand-edit
+├── commands/                       # 18 slash commands — GENERATED from core/, do not hand-edit
 ├── hooks/                          # hard constraints (POSIX sh, all platforms) + fixture suite
 │   ├── hooks.json
 │   ├── check-tbd.sh
@@ -247,17 +249,20 @@ What the plugin writes into your project when you run it:
 ```
 <your-project>/spec/
 ├── knowledge.md                    # knowledge INDEX — one line per subdoc (`- [kind/domain] file — hook`)
-├── knowledge/                      # knowledge subdocs: domain fact files + long-form experience docs (two-step reads: index first, open only what's relevant)
+├── knowledge/                      # knowledge subdocs: domain fact files + long-form experience docs (two-step reads: index first, open only what's relevant); knowledge/archive/ = docs retired on your pick
 ├── changes/.current                # current-change pointer — gates target it; /spec:resume <name> switches it
 ├── changes/<change-name>/          # active change workspace
 │   ├── research.md   required      # current research (practices + constraints + open decisions), single file
 │   ├── research/     optional      # discarded-direction drafts for this change (research.md snapshots, no markers/links, revivable)
 │   ├── design.md     optional      # technical design (architecture / interfaces / data model)
 │   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
+│   ├── gate.md       at-propose    # verbatim copy of the last HARD GATE block (the proposal view reads it)
 │   ├── tasks.md      optional      # multi-executor task list
 │   ├── verify.md     at-verify     # verification ledger: stable finding IDs + round diffing + unfixed-escalation
+│   ├── view/         at-view       # derived HTML views (<stage>.html), overwritten on every render; view/<lang>/ = translations so pages read in your language
 │   └── retrospect.md at-archive    # written by /spec:archive: divergence review + evidence + leftovers + lesson routing
-└── archive/<YYYY-MM-DD-name>/      # archived changes
+├── archive/<YYYY-MM-DD-name>/      # archived changes
+└── archive/<YYYY-MM-DD>-verify-<slug>/  # /spec:verify diff-mode records (no spec): ledger + screenshots
 ```
 
 ---

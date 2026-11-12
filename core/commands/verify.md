@@ -1,9 +1,9 @@
 ---
 <!-- host:claude -->
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance); --codex adds a heterogeneous Codex peer review (read-only); --codex --fix lets Codex apply fixes directly. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance); --codex adds a heterogeneous Codex peer review (read-only); --codex --fix lets Codex apply fixes directly. Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). With no spec (or --diff [range]) it runs diff mode: scope from git / svn / this conversation's edits, test points derived from the changed files, front- and back-end tests run, screenshots recorded, ledger at spec/archive/<date>-verify-<slug>/. Can be re-run independently.
 <!-- /host -->
 <!-- host:codex -->
-description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance). Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). Can be re-run independently.
+description: Verifies the current change by dispatching the independent spec-verifier agent (fresh context — the implementing conversation never audits itself) across four dimensions (Completeness / Correctness / Coherence incl. the charter sub-audit / Reuse & Conformance). Every run updates the verification ledger spec/changes/<name>/verify.md (stable finding IDs + round diffing + unfixed-escalation). With no spec (or --diff [range]) it runs diff mode: scope from git / svn / this conversation's edits, test points derived from the changed files, front- and back-end tests run, screenshots recorded, ledger at spec/archive/<date>-verify-<slug>/. Can be re-run independently.
 <!-- /host -->
 allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 ---
@@ -18,16 +18,20 @@ allowed-tools: Read, Write, Bash, Edit, Grep, Glob, Task
 | `/spec:verify` | independent spec-verifier review: four dimensions | ❌ |
 | `/spec:verify --codex` | + Codex heterogeneous peer review, produces findings | ❌ report only |
 | `/spec:verify --codex --fix` | Codex review + applies fixes + Claude second-pass sign-off | ✅ |
+| `/spec:verify --diff [range]` | diff mode (§ Diff mode) — forced even when a change exists | ❌ |
+| `--view` (combinable) | after the run, `/spec:view verify` renders the ledger page (diff mode: the record dir) | ❌ |
 
 `--fix` MUST be paired with `--codex` — standalone `--fix` outputs exactly `--fix requires --codex; run /spec:verify --codex --fix` and stops. Default (no flags) performs the independent review only, maintaining a read-only reporter stance. **Any other token in the arguments matches no flag and is flagged to the user as a possible typo** (same contract as /spec:apply's parsing) — nothing is silently ignored.
 <!-- /host -->
 <!-- host:codex -->
 > Heterogeneous peer review (`--codex`) is not available in this port — Codex cannot be its own heterogeneous reviewer.
 
-This command takes no flags on this host. **Any token in the arguments is flagged to the user as a possible typo** — nothing is silently ignored.
+Flags on this host: `--diff [range]` (diff mode, § Diff mode — forced even when a change exists) and `--view` (after the run, `/spec:view verify` renders the ledger page; diff mode: the record dir). **Any other token in the arguments is flagged to the user as a possible typo** — nothing is silently ignored.
 <!-- /host -->
 
 ## Independent verifier (why verify dispatches an agent instead of reviewing inline)
+
+This section is change mode. Diff mode picks its executor by SKILL § Independent audit and briefs the verifier with the claim list and scope (§ Diff mode step 4).
 
 <!-- host:claude -->
 The conversation that just ran `/spec:apply` cannot audit its own output — same context, same blind spots, and "be objective" instructions have near-zero measured effect on self-preference. `/spec:verify` therefore **dispatches the `spec-verifier` agent** (fresh context: it reads only proposal + design + charter + the diff) and keeps the bookkeeping for itself. The same rule binds `/spec:apply`'s closing verification: the review is ALWAYS performed by a dispatched spec-verifier, whoever initiates it — the implementing conversation only ever does bookkeeping:
@@ -46,10 +50,10 @@ The conversation that just ran `/spec:apply` cannot audit its own output — sam
 4. The user overrules a finding as a false positive → distill the generalized lesson (what pattern + why it's acceptable here) into the knowledge base as a `[ruling]` — a fact line in the rulings subdoc under `spec/knowledge/` with its index line maintained (format → references/knowledge-spec.md; never a flat line into the index) — so later rounds and later changes stop repeating it
 
 <!-- host:claude -->
-## Four-dimension verification framework (executed by the dispatched spec-verifier; runs in all modes)
+## Four-dimension verification framework (executed by the verifier — the dispatched spec-verifier, or in diff mode the executor SKILL § Independent audit picks; runs in all modes)
 <!-- /host -->
 <!-- host:codex -->
-## Four-dimension verification framework (executed by the spawned spec-verifier; runs in all modes)
+## Four-dimension verification framework (executed by the verifier — the spawned spec-verifier, or in diff mode the executor SKILL § Independent audit picks; runs in all modes)
 <!-- /host -->
 
 ### 1. Completeness
@@ -183,9 +187,27 @@ Without flags, only the `[independent]` section (plus Evidence) is output. **Cor
 **Correctness may be marked pass only when at least one Evidence line supports it**; nothing runnable in this environment → write `Correctness: not verifiable - <why>`, never pass.
 <!-- /host -->
 
-## Verification ledger: `spec/changes/<name>/verify.md` (written every run)
+## Diff mode (no spec needed)
 
-A stateless verify can pass the same broken change twice. Every run therefore writes/updates a ledger in the change directory — findings carry stable IDs, and the next round must face every still-open one before it may conclude.
+**Trigger**: zero active changes → diff mode runs automatically; `--diff [range]` forces it even when a change exists; more than one active change and none selected → list them and ask which one to verify, offering diff mode as one option — never pick by guess, because a just-applied change silently skipped would lose its closing round.
+
+1. **Scope** — first detector that answers wins:
+   - `git rev-parse --show-toplevel` succeeds → git: changed set = `git diff --name-only --relative HEAD` plus untracked `git ls-files --others --exclude-standard` (plain diff misses new files; both list paths relative to the launch root, so the drop rule below and the batch comparison in step 7 compare like with like); hunks `git diff --relative HEAD -- <kept files>` (same base, flow paths stay out; an untracked kept file has no hunk — read it whole); changes outside the launch root are not in scope — the scope line counts them when `git diff --name-only HEAD` shows any; a given range is used as written (`A..B` compares the two trees, `A...B` diffs since the merge base)
+   - else `svn info --show-item=wc-root` prints a non-empty path (judge by stdout — the exit code outside a working copy is undocumented) → svn: changed set = `svn status` (`M A D R`, plus `?` unversioned — `svn diff` never shows those); hunks `svn diff` / `svn diff -r N:M`; `X` externals are listed as out of scope (`svn diff` does not descend into them)
+   - neither → the scope is the files this conversation edited; none → ask the user for paths. The scope line then says plainly that edits made outside this conversation are invisible
+   - **whichever detector answered, drop the flow's own paths** — `spec/changes/`, `spec/archive/`, `spec/knowledge/`, `spec/knowledge.md` under the launch root, and nothing else under `spec/` (RSpec and Jasmine keep real tests there): earlier records, fix ledgers and views are not the code under audit, and leaving them in makes step 7's batch comparison never match. The scope line names how many paths were dropped
+2. **Intent anchor** — first hit wins: the user's words (this conversation, the arguments) → the range's commit messages (`git log <range>` / `svn log -r N:M`) → none. None = diff-only: Completeness is not assessed and the record says so (SKILL § Independent audit)
+3. **Test points** — runner sanity first (a skipTests-style config makes every green run vacuous: name it if found); then changed file → related tests: jest `--findRelatedTests <files>`, vitest `related <files> --run`; elsewhere the naming conventions (pytest `test_<mod>.py` / `<mod>_test.py`, Maven surefire `*Test.java` with `-Dtest=`, Gradle `--tests`); then each touched stack's full suite once as the regression net (static selection misses dynamic imports and reflection) — cannot run it → `not run: full suite — <reason>`. Checks follow /spec:apply's three-tier order: tests → seam mocks → live items handed over, never waited on
+4. **Executor + audit contract** — SKILL § Independent audit; a dispatched spec-verifier gets the intent lines as its claim list and the scope from step 1
+5. **Screens** — a UI-touching diff gets its own record line regardless of Completeness: captures (spec-verifier's capture path) into the record's `screens/` + `screens.md`, or `screens: pending live check — <page list>` when the app is not running
+6. **Record** — `spec/archive/<YYYY-MM-DD>-verify-<slug>/verify.md` (+ `screens/`); an existing dir gets a counter suffix (`-2`, `-3`, …), never an overwrite. Never under `spec/changes/` — a dir there counts as an active change and trips the gates. Same ledger format below, with `mode: diff` in place of `change:` and two lines before `## Findings`: `scope: <git|svn|conversation> <range or working tree> — <files>` and `intent: <user words|commits|none> — <one line>`
+7. **Fix-batch overlap** — the changed files are exactly an open fix batch's entries → say so and recommend `/spec:ship` instead: one diff gets one audit
+
+Diff mode audits and records only — it never archives, ships, or edits a fix batch.
+
+## Verification ledger: `spec/changes/<name>/verify.md` (written every run; diff mode: the record's `verify.md`, § Diff mode step 6)
+
+A stateless verify can pass the same broken change twice. Every run therefore writes/updates a ledger in the change directory (diff mode: in its record dir) — findings carry stable IDs, and the next round must face every still-open one before it may conclude.
 
 The ledger has **two writers, one table**: `/spec:propose`'s critique panel opens it with round 0 (stage: propose, pre-code findings), and `/spec:verify` owns every round after — so the round narrative runs unbroken from before the gate to acceptance, and `/spec:status` derives the milestone view from it without any extra file.
 
@@ -269,10 +291,10 @@ When the review fails, **report the specific failure point**:
 
 - Does not proactively recommend "which command to run next" — that is `/spec:status`'s job; verify only reports
 <!-- host:claude -->
-- Does not modify project source when `--fix` is absent (the one file it always writes is the verification ledger `spec/changes/<name>/verify.md`; source modification is `/spec:apply`'s job)
+- Does not modify project source when `--fix` is absent (the one file it always writes is the verification ledger `spec/changes/<name>/verify.md` — diff mode: `spec/archive/<date>-verify-<slug>/verify.md`; source modification is `/spec:apply`'s job)
 <!-- /host -->
 <!-- host:codex -->
-- Does not modify project source (the one file it always writes is the verification ledger `spec/changes/<name>/verify.md`; source modification is `/spec:apply`'s job)
+- Does not modify project source (the one file it always writes is the verification ledger `spec/changes/<name>/verify.md` — diff mode: `spec/archive/<date>-verify-<slug>/verify.md`; source modification is `/spec:apply`'s job)
 <!-- /host -->
 - Does not modify proposal (`/spec:revise`'s job)
 - Does not archive (`/spec:archive`'s job)

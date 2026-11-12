@@ -114,6 +114,54 @@ P=$(mkproj tbd-prov); mkdir -p "$P/spec/changes/c"
 printf '# R\n\n## Practices\n- pattern X (drove [TBD-1])\n\n## Constraints\n- limit Y, see [TBD-2]\n\n## Open [TBD]\n(none)\n\n## Decided\n- [DEC-1] chosen | source [TBD-1] | reason\n' > "$P/spec/changes/c/research.md"
 run_case tbd-provenance-ref-allows check-tbd allow "$P" "$(json '/spec:propose')"
 
+# /spec:ask persists crafted questions as indented sub-lines under their [TBD-N]; sub-lines carry no
+# token, so a live entry still blocks once and leftover sub-lines alone never block
+P=$(mkproj tbd-sublines-only); mkdir -p "$P/spec/changes/c"
+printf '# R
+
+## Open [TBD]
+  - Q: stale scenario stem
+  - 1: fast / extra dependency
+
+## Decided
+- [DEC-1] chosen | source [TBD-1] | reason
+' > "$P/spec/changes/c/research.md"
+run_case tbd-open-only-sublines-allows check-tbd allow "$P" "$(json '/spec:propose')"
+
+P=$(mkproj tbd-live-sublines); mkdir -p "$P/spec/changes/c"
+printf '# R
+
+## Open [TBD]
+- [TBD-1] pick one | candidates: a / b | select: one
+  - Q: when a user saves twice, which copy wins?
+  - 1: simple / stale reads
+  - 2: consistent / extra hop
+
+## Decided
+(none)
+' > "$P/spec/changes/c/research.md"
+run_case tbd-live-with-sublines-blocks check-tbd block "$P" "$(json '/spec:propose')"
+
+# /spec:verify diff-mode records live under spec/archive/ — they must never count as an active change:
+# with one real active change present, check-tbd tells the placements apart (under archive → still a
+# single active change → allow; misplaced under spec/changes/ → two active, no pointer → block)
+P=$(mkproj verify-record-only); mkdir -p "$P/spec/archive/2026-11-05-verify-login-fix"
+mkdir -p "$P/spec/changes/c"; printf '# R
+
+## Open [TBD]
+(none)
+
+## Decided
+(none)
+' > "$P/spec/changes/c/research.md"
+printf -- '---
+mode: diff
+round: 1
+conclusion: pass
+---
+' > "$P/spec/archive/2026-11-05-verify-login-fix/verify.md"
+run_case verify-record-only-gates-unchanged check-tbd allow "$P" "$(json '/spec:propose')"
+
 # ---- check-archive ----
 P=$(mkproj arch-unapproved); mkdir -p "$P/spec/changes/c"
 printf '%s' "$FULL_PROPOSAL" > "$P/spec/changes/c/proposal.md"

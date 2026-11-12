@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--SDD:TIER-->
+<title>sdd view · proposal</title>
+<style>
+<!--SDD:SHARED:app.css-->
+</style>
+</head>
+<body>
+<div id="sdd-app"><noscript>此视图需要 JavaScript 才能显示；markdown 原文已嵌入本文件。 This view renders with JavaScript; the markdown sources are embedded in this file.</noscript></div>
+<!--SDD:SRC:proposal.md-->
+<!--SDD:OPT:gate.md-->
+<!--SDD:OPT:research.md-->
+<!--SDD:OPT:index.md-->
+<!--SDD:OPT:verify.md-->
+<!--SDD:OPT:tasks.md-->
+<script>
+<!--SDD:VENDOR:marked.umd.js-->
+</script>
+<script>
+<!--SDD:VENDOR:purify.min.js-->
+</script>
+<script>
+<!--SDD:SHARED:strings.js-->
+</script>
+<script>
+<!--SDD:SHARED:app.js-->
+</script>
+<!--SDD:ADVANCED-->
+<script>
+<!--SDD:SHARED:precheck.js-->
+</script>
+<script>
+<!--SDD:SHARED:advanced.js-->
+</script>
+<script>
+<!--SDD:SHARED:flow.js-->
+</script>
+<script>
+/* proposal layout, in reading order: hero with the authored key-flow diagram (first
+ * mermaid block of ## How) and computed tiles; escalated decisions (research.md DEC lines
+ * marked `escalated`) with keep / overturn and their if-wrong -> undo path; auto decisions;
+ * gate.md Changes as before -> after cards with adopt / refute; What items with R-N chips
+ * and a coverage row; the tasks.md dependency graph; the remaining proposal sections;
+ * the critique ledger. Reply lines: "DEC-13: overturn — <reason>" · "C2: refute — <reason>"
+ * · "C3: adopt"; untouched items emit nothing (silence = the item stands). */
+(function () {
+  'use strict';
+  var SDD = window.SDD, h = SDD.h;
+  var GATE_END = /^ *(Register test|Decided without asking|Unsourced additions|Uncovered requirements|Unresolved critique|<\/HARD-GATE>)/;
+  var decisions;
+  var reply;
+
+  function compute() {
+    var lines = [], pending = [];
+    decisions.forEach(function (d) {
+      var v = d.seg.value, reason = d.reason.value.trim();
+      d.reason.style.display = v && v !== d.plainValue ? '' : 'none';
+      d.warn.textContent = '';
+      d.reason.className = '';
+      if (!v) return;
+      if (v === d.plainValue) { lines.push(d.key + ': ' + v); return; }
+      if (reason === '') {
+        d.reason.className = 'invalid';
+        d.warn.textContent = SDD.t('prop.needReason');
+        pending.push(d.key);
+        return;
+      }
+      lines.push(d.key + ': ' + v + ' — ' + reason);
+    });
+    if (reply) reply.set(lines.join('\n'), lines.length);
+    return pending;
+  }
+
+  /* opts: { key, options: [{value,label,on}], plainValue: value that needs no reason,
+   *         silentValue: value that emits nothing } */
+  function decisionControls(card, opts) {
+    var d = { key: opts.key, plainValue: opts.plainValue };
+    var saved = SDD.answer('proposal:' + opts.key);
+    function apply(v) {
+      if (v === opts.silentValue) d.seg.value = null;
+      card.className = card.className.replace(/ picked-(ok|bad)/g, '') +
+        (v && v !== opts.silentValue ? (v === opts.plainValue ? ' picked-ok' : ' picked-bad') : '');
+    }
+    d.seg = SDD.seg(opts.options, function (v) {
+      saved.pressed = v;
+      apply(v);
+      compute();
+    }, saved.pressed);
+    apply(d.seg.pressed);
+    d.reason = h('input', {
+      type: 'text',
+      placeholder: SDD.t('prop.reason'),
+      oninput: function () { saved.reason = d.reason.value; compute(); }
+    });
+    d.reason.value = saved.reason || '';
+    d.reason.style.display = 'none';
+    d.warn = h('div', { class: 'warn-line' });
+    card.appendChild(h('div', { class: 'decide' }, [d.seg.el, d.reason]));
+    card.appendChild(d.warn);
+    decisions.push(d);
+  }
+
+  function decItems(text) {
+    var doc = sddDoc(text), dec = sddSection(doc, 'Decided');
+    if (!dec) return [];
+    return SDD.items(dec.body, /^- *\[DEC-[0-9]+\]/).filter(function (b) { return b.kind === 'item'; }).map(function (b) {
+      var line = SDD.itemLine(b, /^- */);
+      var id = /^\[DEC-([0-9]+)\]/.exec(line)[1];
+      return { id: id, f: SDD.parseFields(line.replace(/^\[DEC-[0-9]+\] */, '')) };
+    });
+  }
+
+  /* if wrong -> undo, from the `if wrong:` field (its `undo = …` / `undo: …` tail) or the
+   * `reversibility:` field. */
+  function wrongPath(f) {
+    var wrong = null, undo = null;
+    f.fields.forEach(function (x) {
+      var k = x.key.toLowerCase();
+      if (k === 'if wrong') wrong = x.value;
+      if (k === 'reversibility') undo = undo || x.value;
+    });
+    if (wrong === null) return null;
+    var m = /^([\s\S]*?);?\s*\bundo\s*[=:]\s*([\s\S]+)$/i.exec(wrong);
+    if (m) { wrong = m[1]; undo = m[2]; }
+    return h('div', { class: 'wrong-path' }, [
+      h('span', { class: 'step' }, [h('span', { class: 'step-label', text: SDD.t('path.ifWrong') }), h('span', { html: SDD.mdInline(wrong) })]),
+      undo ? SDD.icon('arrow-right') : null,
+      undo ? h('span', { class: 'step' }, [h('span', { class: 'step-label' }, [SDD.icon('undo'), ' ' + SDD.t('path.undo')]), h('span', { html: SDD.mdInline(undo) })]) : null
+    ]);
+  }
+
+  function escalatedSection(decs) {
+    var esc = decs.filter(function (d) { return d.f.flags.indexOf('escalated') >= 0; });
+    var body = SDD.section(SDD.t('sec.escalated'), { src: 'research.md', count: esc.length });
+    body.appendChild(h('p', { class: 'hint', text: SDD.t('prop.escalatedHint') }));
+    if (!esc.length) { body.appendChild(h('div', { class: 'empty', text: SDD.t('prop.noneEscalated') })); return; }
+    esc.forEach(function (d) {
+      var path = wrongPath(d.f);
+      var card = SDD.fieldCard('DEC-' + d.id, d.f, {
+        cls: 'escalated',
+        titleHtml: SDD.mdInline(d.f.main),
+        body: path,
+        skip: path ? ['if wrong', 'reversibility'] : null
+      });
+      decisionControls(card, {
+        key: 'DEC-' + d.id,
+        options: [{ value: 'keep', label: SDD.t('prop.keep'), on: 'on-neutral' }, { value: 'overturn', label: SDD.t('prop.overturn'), on: 'on-bad', icon: 'undo' }],
+        plainValue: null,
+        silentValue: 'keep'
+      });
+      body.appendChild(card);
+    });
+  }
+
+  function autoSection(decs) {
+    var auto = decs.filter(function (d) { return d.f.flags.indexOf('auto') >= 0; });
+    var body = SDD.section(SDD.t('sec.auto'), { src: 'research.md', count: auto.length });
+    if (!auto.length) { body.appendChild(h('div', { class: 'empty', text: SDD.t('prop.noAuto') })); return; }
+    var rows = auto.map(function (d) {
+      return {
+        left: [h('span', { class: 'id-chip', text: 'DEC-' + d.id }), h('div', { html: SDD.mdInline(d.f.main) })],
+        right: h('div', { class: 'stack-sm' }, SDD.fieldMeta(d.f))
+      };
+    });
+    body.appendChild(SDD.rowList(rows.slice(0, 4)));
+    if (rows.length > 4) body.appendChild(SDD.more(SDD.t('more.items', rows.length - 4), SDD.rowList(rows.slice(4))));
+  }
+
+  function gateChanges(text) {
+    var lines = sddLines(text), start = -1, blocks = [], cur = null, field = null;
+    for (var i = 0; i < lines.length; i++) {
+      if (/^ *Changes([^A-Za-z]|$)/.test(lines[i])) { start = i; break; }
+    }
+    for (var j = start + 1; j < lines.length; j++) {
+      var l = lines[j];
+      if (GATE_END.test(l)) break;
+      var m = /^ *([0-9]+)\. (.*)$/.exec(l);
+      if (m) { cur = { n: m[1], title: m[2].trim(), fields: [] }; blocks.push(cur); field = null; continue; }
+      if (!cur || l.trim() === '') continue;
+      var f = /^ *(Problem|After|Cost): *(.*)$/.exec(l);
+      if (f) { field = { name: f[1], text: f[2] }; cur.fields.push(field); }
+      else if (field) field.text += ' ' + l.trim();
+      else cur.title += ' ' + l.trim();
+    }
+    return blocks;
+  }
+
+  function changesSection() {
+    var text = SDD.src['gate.md'];
+    var fb = SDD.fallbackFor('Changes (gate.md)');
+    if (fb) {
+      var fbody = SDD.section(SDD.t('sec.changes'), { src: 'gate.md', extra: SDD.tagNode() });
+      fbody.appendChild(h('div', { class: 'fallback-why' }, [SDD.icon('alert'), h('span', { text: fb.reason })]));
+      fbody.appendChild(h('div', { class: 'card' }, h('pre', { class: 'gate-text', text: text })));
+      return;
+    }
+    var blocks = gateChanges(text);
+    var body = SDD.section(SDD.t('sec.changes'), { src: 'gate.md', count: blocks.length });
+    body.appendChild(h('p', { class: 'hint', text: SDD.t('prop.changesHint') }));
+    blocks.forEach(function (c) {
+      var by = {};
+      c.fields.forEach(function (f) { by[f.name] = f.text.trim(); });
+      var card = SDD.card({
+        id: 'C' + c.n,
+        titleHtml: SDD.mdInline(c.title),
+        body: h('div', { class: 'before-after' }, [
+          h('div', { class: 'ba-panel ba-before' }, [h('div', { class: 'ba-label', text: SDD.t('ba.before') }), h('div', { html: SDD.mdInline(by.Problem || '') })]),
+          h('div', { class: 'ba-arrow' }, [SDD.icon('arrow-right'), by.Cost ? h('span', { class: 'chip chip-warning', html: SDD.t('field.cost') + ' · ' + SDD.mdInline(by.Cost) }) : null]),
+          h('div', { class: 'ba-panel ba-after' }, [h('div', { class: 'ba-label' }, [SDD.icon('check'), ' ' + SDD.t('ba.after')]), h('div', { html: SDD.mdInline(by.After || '') })])
+        ])
+      });
+      decisionControls(card, {
+        key: 'C' + c.n,
+        options: [{ value: 'adopt', label: SDD.t('prop.adopt'), on: 'on-ok', icon: 'check' }, { value: 'refute', label: SDD.t('prop.refute'), on: 'on-bad' }],
+        plainValue: 'adopt',
+        silentValue: null
+      });
+      body.appendChild(card);
+    });
+    body.appendChild(SDD.more(SDD.t('prop.fullGate'), h('pre', { class: 'gate-text', text: text })));
+  }
+
+  function requirements() {
+    var reqs = [];
+    if (!('index.md' in SDD.src)) return reqs;
+    sddLines(SDD.src['index.md']).forEach(function (l) {
+      var m = /^- *(R-[0-9]+): *(.*)$/.exec(l);
+      if (m) reqs.push({ id: m[1], quote: m[2].split(' | ')[0] });
+    });
+    return reqs;
+  }
+
+  /* What items: `N. <item>` or `- <item>` (proposal-spec's form); a bullet is numbered by
+   * its position among the items. */
+  function whatItems(block) {
+    var pos = 0;
+    return SDD.items(block.body, /^([0-9]+\. |- )/).map(function (b) {
+      if (b.kind === 'text') return b;
+      pos += 1;
+      var num = /^([0-9]+)\. /.exec(b.first);
+      var n = num ? num[1] : String(pos);
+      var f = SDD.parseFields(SDD.itemLine(b, /^([0-9]+\. |- )/));
+      var refs = [], verify = null;
+      f.fields.forEach(function (x) {
+        var k = x.key.toLowerCase();
+        if (k === 'refs') refs = refs.concat(x.value.match(/R-[0-9]+/g) || []);
+        if (k === 'verify') verify = x.value;
+      });
+      return { kind: 'item', n: n, f: f, refs: refs, verify: verify };
+    });
+  }
+
+  function whatSection(block, reqs) {
+    var fb = SDD.fallbackFor('What');
+    if (fb) { SDD.fallbackSection(block.name, 'proposal.md', fb, block.body.join('\n')); return; }
+    var its = whatItems(block);
+    var items = its.filter(function (x) { return x.kind === 'item'; });
+    var body = SDD.section(block.name, { src: 'proposal.md', count: items.length });
+    if (reqs.length) {
+      var carried = {};
+      items.forEach(function (it) { it.refs.forEach(function (r) { carried[r] = true; }); });
+      var miss = reqs.filter(function (r) { return !carried[r.id]; });
+      body.appendChild(h('div', { class: 'chips' }, [
+        SDD.chip(SDD.t('prop.coverageChip', reqs.length - miss.length, reqs.length), miss.length ? 'warning' : 'success', miss.length ? 'alert' : 'check')
+      ].concat(miss.map(function (r) { return SDD.chip(SDD.t('prop.uncarried', r.id), 'warning', null, { title: r.quote }); }))));
+    }
+    var stack = h('div', { class: 'stack' });
+    its.forEach(function (it) {
+      if (it.kind === 'text') { stack.appendChild(SDD.mdBlock(it.lines.join('\n'))); return; }
+      var foot = SDD.fieldMeta(it.f, ['refs', 'verify']);
+      /* the verify clause sits under the title: two lines, the rest on click */
+      var verifyLine = it.verify === null ? null : h('div', {
+        class: 'verify-line', title: SDD.t('reply.expandLine'),
+        onclick: function () { verifyLine.classList.toggle('open'); }
+      }, [SDD.icon('flask'), h('span', { class: 'meta-key', text: SDD.t('field.verify') }), h('span', { class: 'verify-text', html: SDD.mdInline(it.verify) })]);
+      stack.appendChild(SDD.card({
+        id: it.n,
+        titleHtml: SDD.mdInline(it.f.main),
+        chips: it.f.flags.map(SDD.flagChip).concat(it.refs.map(function (r) { return SDD.chip(r, 'accent'); })),
+        body: verifyLine,
+        foot: foot
+      }));
+    });
+    body.appendChild(stack);
+  }
+
+  /* tasks.md -> dependency graph: leaves are nodes, items with sub-items are groups;
+   * `deps: a, b` edges, an item without deps follows the previous item; a dependency on a
+   * group starts from its last item. */
+  function tasksSection() {
+    var lines = sddLines(SDD.src['tasks.md']);
+    var tasks = [];
+    lines.forEach(function (l) {
+      var m = /^([ \t]*)- \[( |x|X)\] ([0-9]+(?:\.[0-9]+)*)\.?\s+(.*)$/.exec(l);
+      if (!m) return;
+      var rest = m[4], deps = [];
+      var dm = /\bdeps:\s*([0-9., ]+)/.exec(rest);
+      if (dm) deps = dm[1].split(/[, ]+/).map(function (s) { return s.replace(/\.$/, ''); }).filter(Boolean);
+      var title = rest.replace(/\s{2,}(owner|deps):[\s\S]*$/, '').replace(/\s+(owner|deps):[\s\S]*$/, '').trim();
+      tasks.push({ id: m[3], depth: m[1].length, done: m[2] !== ' ', title: title, deps: deps, explicit: !!dm });
+    });
+    var body;
+    if (!tasks.length) {
+      body = SDD.section(SDD.t('sec.tasks'), { src: 'tasks.md' });
+      body.appendChild(SDD.proseCard(SDD.src['tasks.md']));
+      return;
+    }
+    var parentOf = {}, hasChild = {};
+    tasks.forEach(function (t, i) {
+      for (var j = i - 1; j >= 0; j--) {
+        if (tasks[j].depth < t.depth) { parentOf[t.id] = tasks[j].id; hasChild[tasks[j].id] = true; break; }
+      }
+    });
+    var leaves = tasks.filter(function (t) { return !hasChild[t.id]; });
+    var g = { dir: 'TD', nodes: {}, order: [], edges: [], groups: [] };
+    tasks.forEach(function (t) {
+      if (hasChild[t.id]) g.groups.push({ id: 'g' + t.id, title: t.id + ' ' + t.title, members: [], parent: parentOf[t.id] ? 'g' + parentOf[t.id] : null, seq: tasks.indexOf(t) });
+    });
+    leaves.forEach(function (t) {
+      var label = (t.done ? '✓ ' : '') + t.id + '\n' + (t.title.length > 60 ? t.title.slice(0, 59) + '…' : t.title);
+      g.nodes[t.id] = { id: t.id, label: label, shape: 'rect', group: parentOf[t.id] ? 'g' + parentOf[t.id] : null, seq: tasks.indexOf(t), isNew: false, tone: t.done ? 'success' : null, tip: t.id + ' ' + t.title };
+      g.order.push(t.id);
+    });
+    function lastLeaf(id) {
+      if (g.nodes[id]) return id;
+      var inside = leaves.filter(function (t) { return t.id.indexOf(id + '.') === 0; });
+      return inside.length ? inside[inside.length - 1].id : null;
+    }
+    leaves.forEach(function (t, i) {
+      var srcs = t.explicit ? t.deps.map(lastLeaf).filter(Boolean) : (i ? [leaves[i - 1].id] : []);
+      srcs.forEach(function (s) { if (s !== t.id) g.edges.push({ from: s, to: t.id, label: '', style: 'solid', arrow: true, arrowStart: false }); });
+    });
+    var done = tasks.filter(function (t) { return t.done; }).length;
+    body = SDD.section(SDD.t('sec.tasks'), { src: 'tasks.md', count: done + '/' + tasks.length });
+    var fig = h('figure', { class: 'diagram card' }, h('div', { class: 'svg-wrap' }, SDD.flow.svg(g, { label: SDD.t('sec.tasks') })));
+    body.appendChild(fig);
+    body.appendChild(SDD.more(SDD.t('diagram.source'), SDD.proseCard(SDD.src['tasks.md'])));
+  }
+
+  SDD.layout = function (stage) {
+    decisions = [];
+    reply = null;
+    var ptext = SDD.src['proposal.md'];
+    var pdoc = sddDoc(ptext);
+    var hasResearch = 'research.md' in SDD.src;
+    var decs = hasResearch ? decItems(SDD.src['research.md']) : [];
+    var nEsc = decs.filter(function (d) { return d.f.flags.indexOf('escalated') >= 0; }).length;
+    var reqs = requirements();
+    var whatBlock = sddSection(pdoc, 'What');
+    var items = whatBlock ? whatItems(whatBlock).filter(function (x) { return x.kind === 'item'; }) : [];
+    var carried = {};
+    items.forEach(function (it) { it.refs.forEach(function (r) { carried[r] = true; }); });
+    var nCarried = reqs.filter(function (r) { return carried[r.id]; }).length;
+
+    var title = SDD.docTitle() || SDD.t('view.fallbackTitle', SDD.t('stage.' + stage));
+    var approved = /\x3c!-- *APPROVED: *(.*?) *--\x3e/.exec(ptext);
+    var chips = SDD.baseChips(title);
+    chips.push(nEsc ? SDD.chip(SDD.t('prop.statusEscalated', nEsc), 'warning', 'alert') : SDD.chip(SDD.t('prop.statusNone'), 'neutral'));
+    chips.push(approved ? SDD.chip(SDD.t('prop.approved', approved[1]), 'success', 'check') : SDD.chip(SDD.t('prop.notApproved'), 'neutral'));
+
+    SDD.fallbacks = sddPrecheck(stage, SDD.src);
+    var howBlock = sddSection(pdoc, 'How');
+    var keyflow = howBlock && !SDD.fallbackFor('How') && !SDD.fallbackFor('proposal.md') ? SDD.firstMermaid(howBlock.body) : null;
+    SDD.hero({
+      chips: chips,
+      title: title,
+      subtitle: SDD.r1Quote(),
+      visual: keyflow !== null ? SDD.diagramFigure(keyflow, { title: SDD.t('prop.keyflow'), src: 'proposal.md', cls: 'keyflow', id: 'sdd-keyflow' }) : null,
+      tiles: [
+        { label: SDD.t('tile.what'), value: items.length },
+        'gate.md' in SDD.src && !SDD.fallbackFor('Changes (gate.md)') ? { label: SDD.t('tile.changes'), value: gateChanges(SDD.src['gate.md']).length } : null,
+        { label: SDD.t('tile.escalated'), value: nEsc, tone: nEsc ? 'warning' : null },
+        { label: SDD.t('tile.coverage'), value: reqs.length ? Math.round(100 * nCarried / reqs.length) + '%' : '—', tone: reqs.length && nCarried < reqs.length ? 'warning' : null }
+      ]
+    });
+    SDD.runPrecheck(stage);
+
+    if (hasResearch) {
+      var fbDec = SDD.fallbackFor('Decided (research.md)');
+      if (fbDec) SDD.fallbackSection(SDD.t('sec.escalated'), 'research.md', fbDec, null);
+      else { escalatedSection(decs); autoSection(decs); }
+    } else {
+      SDD.section(SDD.t('sec.decisions'), { src: 'research.md' }).appendChild(h('div', { class: 'empty', text: SDD.t('prop.noResearch') }));
+    }
+    if ('gate.md' in SDD.src) changesSection();
+    else SDD.section(SDD.t('sec.changes'), { src: 'gate.md' }).appendChild(h('div', { class: 'empty', text: SDD.t('prop.noGate') }));
+
+    var fbProp = SDD.fallbackFor('proposal.md');
+    if (fbProp) {
+      SDD.fallbackSection(SDD.t('sec.proposal'), 'proposal.md', fbProp, ptext);
+    } else {
+      whatSection(whatBlock, reqs);
+      if ('tasks.md' in SDD.src) tasksSection();
+      var fbHow = SDD.fallbackFor('How');
+      SDD.renderDoc(pdoc, 'proposal.md', {
+        What: function () { /* rendered above, ahead of the tasks graph */ },
+        How: function (b) {
+          if (fbHow) { SDD.fallbackSection(b.name, 'proposal.md', fbHow, b.body.join('\n')); return; }
+          var hb = SDD.section(b.name, { src: 'proposal.md' });
+          SDD.richBlocks(b.body.join('\n'), function (src, i) {
+            return i === 0 && keyflow !== null ? h('a', { class: 'see-flow', href: '#sdd-keyflow', text: SDD.t('prop.seeFlow') }) : null;
+          }).forEach(function (n) { hb.appendChild(n); });
+        }
+      });
+    }
+    if ('tasks.md' in SDD.src && fbProp) tasksSection();
+    if ('verify.md' in SDD.src) {
+      var vbody = SDD.section(SDD.t('sec.ledger'), { src: 'verify.md' });
+      vbody.appendChild(SDD.more(SDD.t('prop.showLedger'), h('div', { class: 'card prose-card' }, SDD.sourceBlock('verify.md', SDD.src['verify.md']))));
+    }
+    SDD.loadPendingDiagrams();
+
+    if (!decisions.length) return;
+    reply = SDD.replyBox({
+      title: SDD.t('prop.replyTitle'),
+      placeholder: SDD.t('prop.replyPlaceholder'),
+      hint: SDD.t('prop.replyHint')
+    });
+    compute();
+  };
+})();
+</script>
+<!--/SDD:ADVANCED-->
+<script>
+SDD.boot('proposal');
+</script>
+</body>
+</html>

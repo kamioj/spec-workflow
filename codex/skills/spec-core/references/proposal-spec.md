@@ -32,9 +32,39 @@ Key technical decisions (distilled from research.md `## Decided`, **not copied v
 - Rollback plan: how to back it out
 ```
 
+## Key flow diagram (in `## How`)
+
+Every proposal's `## How` carries ONE mermaid flowchart of the key flow **after** this change — the picture a reader understands at a glance, which no amount of prose replaces. It is drawn by the design-spec.md § Drawing the Architecture iron rules, applied to a flow:
+
+- **Domains are layers**: one `subgraph` per domain / stage, top to bottom in the order the flow passes through them (the view renders each as a full-width band) — as many as the flow really has
+- **Name + one line per box**, never fields: `A["title<br/>one-line role"]`
+- **Every arrow says what it does** (`-->|run $spec-verify|`), one direction per arrow — a request and its answer are two arrows, each with its own label (`A -->|asks| B` and `B -->|answers| A`), so the reader sees both what is sent and what comes back
+- **Draw the closed loop**: the flow ends by delivering back to whoever started it
+- **Mark what this change adds** with `:::new` (the view highlights it and adds the legend); unmarked boxes are the existing flow, kept so the reader sees where the new part plugs in
+- **≤ 12 boxes, ≤ 4 per layer**; a layer that needs more is really two stages (split it), and a bigger flow belongs in design.md, split by the iron rules
+
+Skeleton:
+
+```mermaid
+flowchart TD
+  subgraph You
+    A["start"]
+    Z["receive result"]
+  end
+  subgraph Stage one
+    B["existing step"]
+    C["new step<br/>what it does"]:::new
+  end
+  A -->|action| B
+  B -->|condition| C
+  C -->|deliver| Z
+```
+
+Write the labels in the conversation language. The diagram does not count toward the section budget; it never replaces the How bullets (apply reads those), it shows how they fit together. A block the view cannot draw (not a `flowchart` / `graph`) is shown as source and the render prints `fallback: How — key-flow diagram not parsed` — fix the diagram, never delete it.
+
 ## Section constraints
 
-- Each section **≤ 5 lines** (What: ≤5 items; the `| refs:` / `| verify:` clauses on an item and the closing **Not in this change** block don't count toward the limit)
+- Each section **≤ 5 lines** (What: ≤5 items; the `| refs:` / `| verify:` clauses on an item, the closing **Not in this change** block and the How key-flow diagram don't count toward the limit)
 - Content over the limit → move it to `design.md`, **don't stuff it into the proposal**
 - `## How` distills `research.md ## Decided`, doesn't copy it verbatim
 - **What / How must pass question ④ (cut it)**: before committing a non-trivial What item / How decision, ask "what happens if I remove it" and don't write what makes no difference removed (SKILL § Claim Self-Review) — this is the precondition for the HARD GATE change points to let the user judge "approve or not" at a glance
@@ -43,7 +73,7 @@ Key technical decisions (distilled from research.md `## Decided`, **not copied v
 
 The gate block emitted by `$spec-propose` / `$spec-revise` (full template in propose.md, mirrored in SKILL § HARD GATE flow — keep the two verbatim-identical) presents, in this order:
 
-1. `Escalated decisions` — **always first when present** (irreversible-class provisional calls; they stand by default, silence + `$spec-apply` = consent, one reply line overturns; `$spec-apply` echoes them again at its first line)
+1. `Escalated decisions` — **always first when present**, each line carrying its `(DEC-N)` from research.md `## Decided` (the stable ID the proposal view and pasted replies use; E-numbers shift between emissions) (irreversible-class provisional calls; they stand by default, silence + `$spec-apply` = consent, one reply line overturns; `$spec-apply` echoes them again at its first line)
 2. `Changes` — 3–6 key decisions, each a **same-scenario before/after mirror**: Problem / After / Cost, Problem and After ≤2 lines each; register test: a non-developer can tell what problem each point solves
 3. `Decided without asking` — factual + `auto` triage decisions, one line each + reversibility (mandatory line, "none" allowed)
 4. `Unsourced additions` — behavioral items with no valid R-N citation against the change's index.md, AND new carriers (fields / params / methods / endpoints / validations / defaults) with no C-N backing; declared C-N minting rows surface here for approval (mandatory line; "none" when all cite and every carrier reconciles, "legacy change (no index)" when the change predates the format)
@@ -52,6 +82,8 @@ The gate block emitted by `$spec-propose` / `$spec-revise` (full template in pro
 7. `Not in this change` — the approval boundary
 
 The user's reply is an evaluation: per-item adopt / refute (with reason) / partial, one response round, user final; insisted items are applied and ledger-marked `user-override`.
+
+**Persisted copy**: propose writes the complete block verbatim to `spec/changes/<name>/gate.md` (overwrite) BEFORE emitting it — nothing may follow the gate in the message — and `$spec-revise` replaces only the numbered Changes item it rewrites (keeping its number; a new decision takes the next number), keeping every other item. gate.md is what the proposal view renders the Changes layer from; escalated and auto decisions are rendered from their research.md DEC lines, so their DEC-N stays the stable ID across emissions.
 
 ## HARD GATE approval marker
 

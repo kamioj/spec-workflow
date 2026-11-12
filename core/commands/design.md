@@ -1,11 +1,13 @@
 ---
 description: Technical design elaboration. Trigger on demand — use when the architecture is complex, there are more than 3 interfaces, sequence/data-flow diagrams are needed, or a decision requires more than 300 words of deep argumentation. Produces design.md.
-allowed-tools: Read, Write, Edit, Glob
+allowed-tools: Read, Write, Edit, Glob, Bash(sh:*)
 ---
 
 # /spec:design
 
 Focus: $ARGUMENTS
+
+**View shorthand**: a leading `view` or `--view` token is stripped from the arguments (the rest stays free text) and, after this command's own work is done, `/spec:view design` renders the HTML view. Echo the split on the first output line — `view: on · focus: <rest>` — so a direction that merely starts with the English word "view" is caught at a glance (quote it and re-run).
 
 ## When to use
 

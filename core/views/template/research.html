@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--SDD:TIER-->
+<title>sdd view · research</title>
+<style>
+<!--SDD:SHARED:app.css-->
+</style>
+</head>
+<body>
+<div id="sdd-app"><noscript>此视图需要 JavaScript 才能显示；markdown 原文已嵌入本文件。 This view renders with JavaScript; the markdown sources are embedded in this file.</noscript></div>
+<!--SDD:SRC:research.md-->
+<!--SDD:OPT:index.md-->
+<script>
+<!--SDD:VENDOR:marked.umd.js-->
+</script>
+<script>
+<!--SDD:VENDOR:purify.min.js-->
+</script>
+<script>
+<!--SDD:SHARED:strings.js-->
+</script>
+<script>
+<!--SDD:SHARED:app.js-->
+</script>
+<!--SDD:ADVANCED-->
+<script>
+<!--SDD:SHARED:precheck.js-->
+</script>
+<script>
+<!--SDD:SHARED:advanced.js-->
+</script>
+<script>
+/* research layout: hero with computed counts; Practices options as a card grid (references
+ * collapsed); Constraints as a constraint -> consequence row list; Open [TBD] and Decided
+ * as cards (escalated first); index.md as requirement quotes + asset / exemplar / carrier
+ * rows. Field grammar `main | key: value | flag` via SDD.parseFields. */
+(function () {
+  'use strict';
+  var SDD = window.SDD, h = SDD.h;
+  var TBD_RE = /^- *\[TBD-[0-9]+\]/;
+  var DEC_RE = /^- *\[DEC-[0-9]+\]/;
+
+  function iconFor(text) {
+    var t = text.toLowerCase();
+    if (/(\bgit\b|\bsvn\b|branch|commit|\bdiff\b)/.test(t)) return 'git-branch';
+    if (/(\btest|jest|vitest|pytest|junit|surefire|\be2e\b)/.test(t)) return 'flask';
+    if (/(\bdb\b|\bsql|database|cache|redis|schema|storage|cksum|stamp)/.test(t)) return 'database';
+    if (/(search|grep|lookup|scan)/.test(t)) return 'search';
+    if (/(file|markdown|\bmd\b|template|html)/.test(t)) return 'file';
+    return 'list';
+  }
+
+  function nameSplit(s) {
+    var dash = s.indexOf(' — '), colon = s.indexOf(': ');
+    if (dash >= 0 && (colon < 0 || dash < colon)) return { name: s.slice(0, dash), rest: s.slice(dash + 3) };
+    if (colon >= 0) return { name: s.slice(0, colon), rest: s.slice(colon + 2) };
+    return { name: '', rest: s };
+  }
+
+  function practiceCard(item) {
+    var ns = nameSplit(SDD.itemLine(item, /^- /));
+    var f = SDD.parseFields(ns.rest);
+    return SDD.fieldCard(null, f, {
+      icon: iconFor(ns.name + ' ' + f.main),
+      titleHtml: ns.name ? SDD.mdInline(ns.name) : undefined,
+      body: ns.name ? h('div', { class: 'card-body', html: SDD.mdInline(f.main) }) : null
+    });
+  }
+
+  function references(line) {
+    var URL_RE = /https?:\/\/[^\s·,;)]+/g;
+    var urls = line.match(URL_RE) || [];
+    var rest = line.replace(/^Key references:\s*/i, '').replace(URL_RE, '').replace(/[\s·,;|]/g, '');
+    var hosts = [];
+    urls.forEach(function (u) {
+      var host = u.replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, '');
+      if (hosts.indexOf(host) < 0) hosts.push(host);
+    });
+    var summary = SDD.t('more.refs', urls.length, hosts.slice(0, 3).join(', ') + (hosts.length > 3 ? ' …' : ''));
+    var content = rest === '' ? h('ul', { class: 'ref-list prose' }, urls.map(function (u) {
+      return h('li', null, h('a', { href: u, target: '_blank', rel: 'noopener', text: u }));
+    })) : SDD.mdBlock(line);
+    return SDD.more(summary, content);
+  }
+
+  /* Text lines of a section: `Key references:` lines collapse, the rest is prose. */
+  function textBlock(lines, into) {
+    var buf = [];
+    function flush() {
+      if (buf.join('').trim() !== '') into.appendChild(SDD.mdBlock(buf.join('\n')));
+      buf = [];
+    }
+    lines.forEach(function (l) {
+      if (/^Key references:/i.test(l)) { flush(); into.appendChild(references(l)); }
+      else buf.push(l);
+    });
+    flush();
+  }
+
+  function practices(block) {
+    var fb = SDD.fallbackFor('Practices');
+    if (fb) { SDD.fallbackSection(block.name, 'research.md', fb, block.body.join('\n')); return; }
+    var its = SDD.items(block.body, /^- /);
+    var body = SDD.section(block.name, { src: 'research.md', count: its.filter(function (b) { return b.kind === 'item'; }).length });
+    var grid = null;
+    its.forEach(function (b) {
+      if (b.kind === 'text') { grid = null; textBlock(b.lines, body); return; }
+      if (!grid) { grid = h('div', { class: 'grid' }); body.appendChild(grid); }
+      grid.appendChild(practiceCard(b));
+    });
+  }
+
+  function constraints(block) {
+    var its = SDD.items(block.body, /^- /);
+    var rows = [];
+    var body = SDD.section(block.name, { src: 'research.md', count: its.filter(function (b) { return b.kind === 'item'; }).length });
+    function flushRows() {
+      if (!rows.length) return;
+      var head = [SDD.t('cons.colConstraint'), SDD.t('cons.colConsequence')];
+      body.appendChild(SDD.rowList(rows.slice(0, 3), head));
+      if (rows.length > 3) body.appendChild(SDD.more(SDD.t('more.constraints', rows.length - 3), SDD.rowList(rows.slice(3))));
+      rows = [];
+    }
+    its.forEach(function (b) {
+      if (b.kind === 'text') { flushRows(); body.appendChild(SDD.mdBlock(b.lines.join('\n'))); return; }
+      var parts = SDD.splitTop(SDD.itemLine(b, /^- /), ' | ');
+      var right = parts.slice(1).join(' | ').trim();
+      rows.push({
+        left: h('div', { html: SDD.mdInline(parts[0]) }),
+        right: right ? [SDD.icon('arrow-right'), h('div', { html: SDD.mdInline(right) })] : []
+      });
+    });
+    flushRows();
+  }
+
+  function tbdCard(item) {
+    var first = item.first.replace(/^- */, '');
+    var id = /^\[TBD-([0-9]+)\]/.exec(first)[1];
+    var rest = first.replace(/^\[TBD-[0-9]+\] */, '');
+    var m = /\| *candidates: (.*?) *\| *select: *(one|several)/.exec(rest);
+    var f = m ? SDD.parseFields(rest.slice(0, rest.search(/\| *candidates:/)).trim() + rest.slice(rest.search(/\| *candidates:/) + m[0].length)) : SDD.parseFields(rest);
+    var kids = [];
+    var stem = null, pc = {}, notes = [];
+    item.cont.forEach(function (l) {
+      var q = /^[ \t]+- Q: (.*)$/.exec(l), p = /^[ \t]+- ([0-9]+): (.*)$/.exec(l);
+      if (q) stem = q[1];
+      else if (p) pc[Number(p[1])] = p[2];
+      else if (l.trim() !== '') notes.push(l);
+    });
+    if (stem) kids.push(h('p', { class: 'card-body q-stem-sm', html: SDD.mdInline(stem) }));
+    if (m) {
+      var cands = SDD.splitTop(m[1], ' / ');
+      kids.push(h('div', { class: 'opts compact' }, cands.map(function (c, i) {
+        return h('div', { class: 'cand' }, [
+          h('span', { class: 'letter', text: String.fromCharCode(65 + i) + '.' }),
+          h('span', { html: SDD.mdInline(c.trim()) }),
+          pc[i + 1] ? h('span', { class: 'cand-pc', html: SDD.mdInline(pc[i + 1]) }) : null
+        ]);
+      })));
+    }
+    if (notes.length) kids.push(SDD.mdBlock(SDD.dedent(notes).join('\n')));
+    return SDD.card({
+      id: 'TBD-' + id,
+      titleHtml: SDD.mdInline(f.main),
+      chips: m ? [SDD.chip(SDD.t(m[2] === 'one' ? 'ask.pickOne' : 'ask.pickSeveral'), 'neutral')] : null,
+      body: kids,
+      foot: SDD.fieldMeta(f)
+    });
+  }
+
+  function openSection(block) {
+    var fb = SDD.fallbackFor('Open [TBD]');
+    if (fb) { SDD.fallbackSection(block.name, 'research.md', fb, block.body.join('\n')); return; }
+    var its = SDD.items(block.body, TBD_RE);
+    var n = its.filter(function (b) { return b.kind === 'item'; }).length;
+    var body = SDD.section(block.name, { src: 'research.md', count: n });
+    if (!n && !its.length) { body.appendChild(h('div', { class: 'empty', text: SDD.t('empty.open') })); return; }
+    var stack = h('div', { class: 'stack' });
+    its.forEach(function (b) { stack.appendChild(b.kind === 'item' ? tbdCard(b) : SDD.mdBlock(b.lines.join('\n'))); });
+    body.appendChild(stack);
+  }
+
+  function decParse(item) {
+    var line = SDD.itemLine(item, /^- */);
+    var id = /^\[DEC-([0-9]+)\]/.exec(line)[1];
+    return { id: id, f: SDD.parseFields(line.replace(/^\[DEC-[0-9]+\] */, '')) };
+  }
+
+  function decidedSection(block) {
+    var fb = SDD.fallbackFor('Decided');
+    if (fb) { SDD.fallbackSection(block.name, 'research.md', fb, block.body.join('\n')); return; }
+    var its = SDD.items(block.body, DEC_RE);
+    var decs = its.filter(function (b) { return b.kind === 'item'; }).map(decParse);
+    var body = SDD.section(block.name, { src: 'research.md', count: decs.length });
+    its.forEach(function (b) { if (b.kind === 'text') body.appendChild(SDD.mdBlock(b.lines.join('\n'))); });
+    if (!decs.length) { body.appendChild(h('div', { class: 'empty', text: SDD.t('empty.decided') })); return; }
+    var esc = decs.filter(function (d) { return d.f.flags.indexOf('escalated') >= 0; });
+    var rest = decs.filter(function (d) { return d.f.flags.indexOf('escalated') < 0; });
+    var cards = esc.concat(rest).map(function (d) {
+      return SDD.fieldCard('DEC-' + d.id, d.f, { cls: d.f.flags.indexOf('escalated') >= 0 ? 'escalated' : '' });
+    });
+    body.appendChild(SDD.collapse(cards, 3, function (n) { return SDD.t('more.decisions', n); }));
+  }
+
+  function indexSection() {
+    var doc = sddDoc(SDD.src['index.md']);
+    var rCount = SDD.countLines(sddSection(doc, 'Requirements'), /^- *R-[0-9]+:/);
+    var body = SDD.section(SDD.t('sec.index'), { src: 'index.md', count: rCount });
+    doc.forEach(function (b) {
+      var text = b.body.join('\n');
+      if (b.kind !== 'sec') {
+        if (text.trim() !== '') body.appendChild(h('div', { class: 'hint-block' }, SDD.mdBlock(text)));
+        return;
+      }
+      var isReq = b.name.indexOf('Requirements') === 0;
+      var idRe = isReq ? /^- *R-[0-9]+:/ : /^- *[A-Z]-[0-9]+:/;
+      var its = SDD.items(b.body, idRe);
+      var nodes = [], rows = [];
+      its.forEach(function (it) {
+        if (it.kind === 'text') { nodes.push(SDD.mdBlock(it.lines.join('\n'))); return; }
+        var line = SDD.itemLine(it, /^- */);
+        var m = /^([A-Z]-[0-9]+):\s*([\s\S]*)$/.exec(line);
+        var f = SDD.parseFields(m[2]);
+        if (isReq) { nodes.push(SDD.quoteCard(m[1], f.main, SDD.fieldMeta(f))); return; }
+        var use = null;
+        f.fields.forEach(function (x) { if (x.key.toLowerCase() === 'use') use = x.value; });
+        var useWord = use ? /^[A-Za-z-]+/.exec(use.trim()) : null;
+        rows.push({
+          left: [h('span', { class: 'id-chip', text: m[1] }), h('div', { html: SDD.mdInline(f.main) })],
+          right: h('div', { class: 'stack-sm' }, [
+            useWord ? SDD.chip(useWord[0], useWord[0] === 'rejected' ? 'warning' : (useWord[0] === 'reuse' ? 'success' : 'accent')) : null,
+            SDD.fieldMeta(f)
+          ])
+        });
+      });
+      if (rows.length) nodes.unshift(SDD.rowList(rows));
+      var det = h('details', { class: 'idx' + (isReq ? '' : ''), open: isReq ? true : null }, [
+        h('summary', null, [SDD.icon('chevron', 'chev'), h('span', { class: 'idx-title', text: SDD.headingLabel(b.name) }), h('span', { class: 'toc-count', text: String(its.filter(function (x) { return x.kind === 'item'; }).length) })]),
+        h('div', { class: 'stack' }, nodes)
+      ]);
+      body.appendChild(det);
+    });
+  }
+
+  SDD.layout = function (stage) {
+    var doc = sddDoc(SDD.src['research.md']);
+    var prac = sddSection(doc, 'Practices'), cons = sddSection(doc, 'Constraints');
+    var open = sddSection(doc, 'Open'), dec = sddSection(doc, 'Decided');
+    var nTbd = SDD.countLines(open, TBD_RE);
+    var nEsc = dec ? sddOutside(dec.body).filter(function (l) {
+      return DEC_RE.test(l) && SDD.parseFields(l).flags.indexOf('escalated') >= 0;
+    }).length : 0;
+    var title = SDD.docTitle() || SDD.t('view.fallbackTitle', SDD.t('stage.' + stage));
+    var chips = SDD.baseChips(title);
+    if (open) chips.push(nTbd ? SDD.chip(SDD.t('research.statusOpen', nTbd), 'warning', 'alert') : SDD.chip(SDD.t('research.statusClear'), 'success', 'check'));
+    SDD.hero({
+      chips: chips,
+      title: title,
+      subtitle: SDD.r1Quote(),
+      tiles: [
+        { label: SDD.t('tile.practices'), value: SDD.countLines(prac, /^- /) },
+        { label: SDD.t('tile.constraints'), value: SDD.countLines(cons, /^- /) },
+        { label: SDD.t('tile.decided'), value: SDD.countLines(dec, DEC_RE) },
+        { label: SDD.t('tile.needYou'), value: nTbd + nEsc, tone: nTbd + nEsc ? 'warning' : null }
+      ]
+    });
+    SDD.runPrecheck(stage);
+    SDD.renderDoc(doc, 'research.md', { Practices: practices, Constraints: constraints, Open: openSection, Decided: decidedSection });
+    if ('index.md' in SDD.src) indexSection();
+  };
+})();
+</script>
+<!--/SDD:ADVANCED-->
+<script>
+SDD.boot('research');
+</script>
+</body>
+</html>

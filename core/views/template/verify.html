@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--SDD:TIER-->
+<title>sdd view · verify</title>
+<style>
+<!--SDD:SHARED:app.css-->
+</style>
+</head>
+<body>
+<div id="sdd-app"><noscript>此视图需要 JavaScript 才能显示；markdown 原文已嵌入本文件。 This view renders with JavaScript; the markdown sources are embedded in this file.</noscript></div>
+<!--SDD:SRC:verify.md-->
+<script>
+<!--SDD:VENDOR:marked.umd.js-->
+</script>
+<script>
+<!--SDD:VENDOR:purify.min.js-->
+</script>
+<script>
+<!--SDD:SHARED:strings.js-->
+</script>
+<script>
+<!--SDD:SHARED:app.js-->
+</script>
+<!--SDD:ADVANCED-->
+<script>
+<!--SDD:SHARED:precheck.js-->
+</script>
+<script>
+<!--SDD:SHARED:advanced.js-->
+</script>
+<script>
+/* verify layout: hero with the frontmatter conclusion (change ledger, or a diff-mode
+ * record: `mode: diff`, no `change:`) and severity / open counts computed from the
+ * findings; findings as a filterable row list (severity / status chips); Evidence
+ * sections collapsed, the latest round open. */
+(function () {
+  'use strict';
+  var SDD = window.SDD, h = SDD.h;
+  var SEV_ORDER = ['critical', 'major', 'minor'];
+  var SEV_TONE = { critical: 'danger', major: 'warning', minor: 'neutral' };
+  var ST_TONE = { fixed: 'success', open: 'warning', wontfix: 'neutral' };
+
+  function frontFields(yaml) {
+    var out = [];
+    yaml.split('\n').forEach(function (l) {
+      var m = /^([A-Za-z_][\w-]*): *(.*)$/.exec(l);
+      if (m) out.push({ key: m[1], value: m[2].replace(/ +#.*$/, ''), line: l });
+    });
+    return out;
+  }
+
+  function cells(row) {
+    var s = row.trim().replace(/^\|/, '').replace(/\|$/, '');
+    return SDD.splitTop(s, '|').map(function (c) { return c.trim(); });
+  }
+
+  function statusKey(s) {
+    var m = /^([A-Za-z-]+)/.exec(s.trim());
+    return m ? m[1].toLowerCase() : s.trim();
+  }
+
+  /* Findings table of a section body: header cells + rows, plus the lines around it. */
+  function table(block) {
+    var lines = sddOutside(block.body), hi = -1;
+    for (var i = 0; i < lines.length; i++) {
+      if (/^ *\|/.test(lines[i]) && /\| *Severity *\|/.test(lines[i]) && /\| *Status *\|/.test(lines[i])) { hi = i; break; }
+    }
+    if (hi < 0) return null;
+    var head = cells(lines[hi]), rows = [], after = [];
+    for (var j = hi + 1; j < lines.length; j++) {
+      if (!/^ *\|/.test(lines[j])) { after = lines.slice(j); break; }
+      if (/^ *\|[ :|-]*$/.test(lines[j])) continue;
+      rows.push(cells(lines[j]));
+    }
+    return { head: head, rows: rows, before: lines.slice(0, hi), after: after };
+  }
+
+  function col(head, name) { return head.indexOf(name); }
+
+  function findings(block, t) {
+    var fb = SDD.fallbackFor('Findings');
+    if (fb) { SDD.fallbackSection(block.name, 'verify.md', fb, block.body.join('\n')); return; }
+    var head = t.head;
+    var ci = { id: col(head, 'ID'), sev: col(head, 'Severity'), loc: col(head, 'Location'), text: col(head, 'Finding'), st: col(head, 'Status'), rounds: col(head, 'Rounds') };
+    var body = SDD.section(block.name, { src: 'verify.md', count: t.rows.length });
+    if (t.before.join('').trim() !== '') body.appendChild(SDD.mdBlock(t.before.join('\n')));
+    function cell(r, i) { return i >= 0 && r[i] !== undefined ? r[i] : ''; }
+    var sevs = [], sts = [];
+    var entries = t.rows.map(function (r) {
+      var sev = cell(r, ci.sev).toLowerCase(), st = statusKey(cell(r, ci.st));
+      if (sevs.indexOf(sev) < 0) sevs.push(sev);
+      if (sts.indexOf(st) < 0) sts.push(st);
+      var extra = head.map(function (name, i) {
+        if (i === ci.id || i === ci.sev || i === ci.loc || i === ci.text || i === ci.st || i === ci.rounds || cell(r, i) === '') return null;
+        return h('div', { class: 'meta-row' }, [h('span', { class: 'meta-key', text: name }), h('span', { class: 'meta-val', html: SDD.mdInline(cell(r, i)) })]);
+      }).filter(Boolean);
+      var row = h('div', { class: 'finding' }, [
+        h('div', { class: 'finding-left' }, [
+          h('span', { class: 'id-chip', text: cell(r, ci.id) }),
+          h('span', { class: 'chip chip-' + (SEV_TONE[sev] || 'neutral'), text: cell(r, ci.sev) })
+        ]),
+        h('div', { class: 'finding-text', html: SDD.mdInline(cell(r, ci.text)) }),
+        h('div', { class: 'finding-side' }, [
+          h('span', { class: 'chip chip-' + (ST_TONE[st] || 'neutral'), html: SDD.mdInline(cell(r, ci.st)) }),
+          cell(r, ci.rounds) ? h('span', { class: 'round', text: cell(r, ci.rounds) }) : null
+        ]),
+        h('div', { class: 'finding-loc', html: SDD.mdInline(cell(r, ci.loc)) }),
+        extra.length ? h('div', { class: 'meta finding-extra' }, extra) : null
+      ]);
+      return { el: row, sev: sev, st: st };
+    });
+    sevs.sort(function (a, b) {
+      var x = SEV_ORDER.indexOf(a), y = SEV_ORDER.indexOf(b);
+      return (x < 0 ? 99 : x) - (y < 0 ? 99 : y);
+    });
+    var active = { sev: {}, st: {} };
+    var count = h('span', { class: 'count' });
+    function apply() {
+      var anySev = Object.keys(active.sev).length > 0, anySt = Object.keys(active.st).length > 0, shown = 0;
+      entries.forEach(function (e) {
+        var ok = (!anySev || active.sev[e.sev]) && (!anySt || active.st[e.st]);
+        e.el.style.display = ok ? '' : 'none';
+        if (ok) shown += 1;
+      });
+      count.textContent = SDD.t('verify.count', shown, entries.length);
+    }
+    function chipRow(label, values, bucket) {
+      return h('span', { class: 'filter-group' }, [h('span', { text: label }), h('span', { class: 'chips' }, values.map(function (v) {
+        var n = entries.filter(function (e) { return e[bucket] === v; }).length;
+        var b = h('button', {
+          class: 'chip', type: 'button', 'aria-pressed': 'false',
+          text: (v === '' ? SDD.t('verify.empty') : v) + ' ' + n,
+          onclick: function () {
+            if (active[bucket][v]) delete active[bucket][v]; else active[bucket][v] = true;
+            b.className = 'chip' + (active[bucket][v] ? ' on' : '');
+            b.setAttribute('aria-pressed', active[bucket][v] ? 'true' : 'false');
+            apply();
+          }
+        });
+        return b;
+      }))]);
+    }
+    if (entries.length) {
+      body.appendChild(h('div', { class: 'filters' }, [chipRow(SDD.t('verify.severity'), sevs, 'sev'), chipRow(SDD.t('verify.status'), sts, 'st'), count]));
+      body.appendChild(h('div', { class: 'rows' }, entries.map(function (e) { return e.el; })));
+    } else {
+      body.appendChild(h('div', { class: 'empty', text: SDD.t('verify.none') }));
+    }
+    apply();
+    if (t.after.join('').trim() !== '') body.appendChild(SDD.mdBlock(t.after.join('\n')));
+  }
+
+  SDD.layout = function (stage) {
+    var text = SDD.src['verify.md'];
+    var fm = SDD.frontmatter(text);
+    var fields = fm ? frontFields(fm.yaml) : [];
+    var map = {};
+    fields.forEach(function (f) { map[f.key] = f.value.trim(); });
+    var bodyText = fm ? fm.body : text;
+    var doc = sddDoc(bodyText);
+    var fblock = sddSection(doc, 'Findings');
+    var t = fblock ? table(fblock) : null;
+    var counts = { critical: 0, major: 0, minor: 0, open: 0 };
+    if (t) {
+      var si = t.head.indexOf('Severity'), ti = t.head.indexOf('Status');
+      t.rows.forEach(function (r) {
+        var sev = (r[si] || '').toLowerCase();
+        if (sev in counts) counts[sev] += 1;
+        if (statusKey(r[ti] || '') === 'open') counts.open += 1;
+      });
+    }
+    var m = /^# +(.+)$/m.exec(bodyText);
+    var title = m ? m[1].trim() : SDD.t('view.fallbackTitle', SDD.t('stage.' + stage));
+    var verdict = map.conclusion;
+    var chips = [SDD.chip(SDD.t('stage.verify'), 'accent')];
+    if (map.change) chips.push(SDD.chip(map.change, 'neutral', 'git-branch'));
+    if (map.mode === 'diff') chips.push(SDD.chip(SDD.t('verify.diffRecord'), 'warning'));
+    if (verdict) chips.push(SDD.chip(verdict.toUpperCase(), verdict === 'pass' ? 'success' : (verdict === 'fail' ? 'danger' : 'neutral'), verdict === 'pass' ? 'check' : 'alert', { class: 'verdict-chip' }));
+    SDD.hero({
+      chips: chips,
+      title: title,
+      subtitle: fields.length ? fields.map(function (f) { return f.line.trim(); }).join(' · ') : null,
+      tiles: t ? [
+        { label: SDD.t('tile.critical'), value: counts.critical, tone: counts.critical ? 'danger' : null },
+        { label: SDD.t('tile.major'), value: counts.major, tone: counts.major ? 'warning' : null },
+        { label: SDD.t('tile.minor'), value: counts.minor },
+        { label: SDD.t('tile.open'), value: counts.open, tone: counts.open ? 'warning' : null }
+      ] : null
+    });
+    SDD.runPrecheck(stage);
+    var fbFront = SDD.fallbackFor('frontmatter');
+    if (fbFront) {
+      var b = SDD.section(SDD.t('sec.frontmatter'), { src: 'verify.md', extra: SDD.tagNode() });
+      b.appendChild(h('div', { class: 'fallback-why' }, [SDD.icon('alert'), h('span', { text: fbFront.reason })]));
+      if (fm) b.appendChild(h('pre', { class: 'frontmatter' }, h('code', { text: '---\n' + fm.yaml + '\n---' })));
+    }
+    var evidence = doc.filter(function (x) { return x.kind === 'sec' && x.name.indexOf('Evidence') === 0; });
+    function roundOf(x) { var r = /round\s+([0-9]+)/i.exec(x.name); return r ? Number(r[1]) : -1; }
+    var latest = evidence.reduce(function (best, x) { return !best || roundOf(x) >= roundOf(best) ? x : best; }, null);
+    SDD.renderDoc(doc, 'verify.md', {
+      Findings: function (bl) {
+        if (t) findings(bl, t);
+        else SDD.fallbackSection(bl.name, 'verify.md', SDD.fallbackFor('Findings'), bl.body.join('\n'));
+      },
+      'Evidence*': function (x) {
+        var eb = SDD.section(x.name, { src: 'verify.md' });
+        var det = SDD.more(SDD.headingLabel(x.name), SDD.proseCard(x.body.join('\n')));
+        if (x === latest) det.open = true;
+        eb.appendChild(det);
+      }
+    });
+  };
+})();
+</script>
+<!--/SDD:ADVANCED-->
+<script>
+SDD.boot('verify');
+</script>
+</body>
+</html>

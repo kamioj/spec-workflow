@@ -72,7 +72,7 @@ allowed-tools: Read, Glob, Grep, Write, Edit, Bash(mv:*, mkdir:*, git:*, ls:*), 
    - Extract from this change the durable facts future changes will need (plus step 3's `knowledge` candidates): topology / table ownership, verified mechanisms, hard-won gotchas; durable A-N assets and E-N exemplar designations from `index.md` sediment too (the next change's research reads them instead of re-surveying); a `/spec:loop` change's `loop.md ## Lessons` is a primary input — read it before the move. Change-specific R-N quotes stay in the archived change
    - **Route by kind into subdocs, never into the index**: each fact lands as a `- <fact> | evidence: <source> | <date> (<change>)` line in its domain file under `spec/knowledge/` (create on demand), or as a long-form experience doc (frontmatter `status: current`); then maintain the file's index line in knowledge.md (`- [kind/domain] file — hook`). A flat fact line written into the index re-flags it legacy — the one way to break the architecture
    - **Lazy migration**: knowledge.md still in legacy flat format (contains `^- ` lines with `| evidence:`) → restructure it in this same pass (facts into domain subdocs, index written, nothing dropped)
-   - **Consolidation pass** (when triggered: index > 40 lines / a domain file > 60 lines / writing next to a same-topic entry): merge duplicates, compress wording, newer evidence+date on the same topic overrides the stale fact, long-form docs get `status: superseded by <new>` (kept, never deleted)
+   - **Tidy pass** — right after sedimenting, run the knowledge-spec.md § Tidy pass over the whole base (audit → auto-apply → two question rounds — which candidates per action class, then new / merge / drop / keep per promote pick — delivered per /spec:ask's rules): this is the archive-time "audit, tidy, extract, then ask" — reversible tidying happens automatically, deletions / retirements / skill promotions only on the user's pick; nothing to decide → one line, no question. A lesson step 3 already applied to a skill or rules file this run is not offered again as a promote candidate, because the user just ruled on it there
    - **Correct, don't contradict**: a recorded fact this change proved wrong is replaced (correction noted), never left standing next to its refutation
    - Nothing durable to record → skip, never pad
 5. Compute the archive path: `spec/archive/<YYYY-MM-DD>-<name>/` (use today's date — it is already in context; no shell call needed)
@@ -86,6 +86,7 @@ allowed-tools: Read, Glob, Grep, Write, Edit, Bash(mv:*, mkdir:*, git:*, ls:*), 
    Retrospect: divergences <N / none> · evidence <attached / not verified> · deferred <M items / none>
    Lessons: <applied P-N → target, … / declined N / skipped: reason> · suggested: <"/spec:fix …" lines / none> · uncommitted: <edited skill/rules paths / none>
    Knowledge: <K facts sedimented/corrected (which subdocs) / nothing durable>
+   Tidy: <S> suspect · <M> merged · <D> deleted · <R> retired · <P> promoted (<paths>) / nothing to decide
    ```
 
 ## Multi-owner scenario

@@ -49,7 +49,7 @@ call, not the model's.
 
 1. **Locate & confirm before touching anything**: consult the knowledge base first — scan
    `spec/knowledge.md` (the index) and open relevant `[fact]` subdocs before hunting the
-   codebase (a recorded trap or call-chain fact beats a fresh scan; legacy flat file → read
+   codebase (a recorded trap or call-chain fact beats a fresh scan — a fact carrying `| suspect:` is re-checked before you rely on it — its evidence anchor is gone; legacy flat file → read
    whole, declare); then find the exact code lines, state the problem point and your
    root-cause reading. The user's ask is quoted **verbatim** into the entry (the mini
    anchor — interpretation happens against the quote, never a paraphrase).

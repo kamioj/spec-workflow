@@ -1,6 +1,6 @@
 ---
 description: Edit a single proposal.md section (why / what / how / risk). A full rewrite goes through /spec:propose. After editing, the HARD GATE must run again
-allowed-tools: Read, Edit
+allowed-tools: Read, Edit, Write
 ---
 <!-- GENERATED from core/commands/revise.md — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
 
@@ -27,17 +27,17 @@ Target section: $ARGUMENTS
 
 ## HARD GATE re-emission
 
-Any revision must pass through the HARD GATE again:
+Any revision must pass through the HARD GATE again. **Before emitting**, update `spec/changes/<name>/gate.md`: replace only the numbered Changes item this revision rewrites — keep its number N — with the block's numbered Changes text; a decision new to the gate takes the next free number (gate.md absent → create it with this block's `Changes —` section only: the APPROVED note and the Next menu are chat-only and would run into the last card), because the proposal view renders the Changes layer from that file and the other sections' items must survive the revision:
 
 ```
 <HARD-GATE>
 === Proposal revised (<section>) ===
 Path: spec/changes/<name>/proposal.md
 Changes — same explanation layer as propose's gate, scoped to the edit:
-  <the revised decision in one plain sentence>
-  Problem: <when who does what, because of what, what goes wrong — ≤2 lines>
-  After:   <same action, with this edit, what mechanism, outcome avoided — ≤2 lines>
-  Cost:    <the price>
+  <N>. <the revised decision in one plain sentence>   (N = the gate.md Changes number of the decision this edit revises; a new decision takes the next number)
+     Problem: <when who does what, because of what, what goes wrong — ≤2 lines>
+     After:   <same action, with this edit, what mechanism, outcome avoided — ≤2 lines>
+     Cost:    <the price>
   (never paste the proposal line verbatim; define domain terms at first use)
 (the old APPROVED marker has been removed)
 

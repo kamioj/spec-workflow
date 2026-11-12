@@ -8,7 +8,7 @@ description: Reports where the current SDD change stands, what artifacts exist, 
 
 ## Task
 
-Read the `spec/changes/` directory (excluding `archive/`) and output the current change status.
+Read the `spec/changes/` directory and output the current change status; `spec/archive/` is read only for step 7's diff-mode record line.
 
 ## Inspection process
 
@@ -22,6 +22,8 @@ Read the `spec/changes/` directory (excluding `archive/`) and output the current
 3. Read `research.md` to count `[TBD-N]` entries under `## Open [TBD]` and the number of `## Decided` entries — splitting Decided by mark: plain / `auto` / `escalated`; count discarded drafts under `research/` (if any)
 4. Read `proposal.md` to check whether the HARD GATE approval marker is present (`<!-- APPROVED: YYYY-MM-DD HH:mm -->`)
 5. Read `verify.md` (the verification ledger, if present): frontmatter `round` / `conclusion` + count of Status=open findings, split by origin (round 0 = critique panel / verifier rounds / `source: user`)
+6. **Views** (`<change>/view/` present): run the render script's check mode ($spec-view § Staleness check) — never recompute stamps yourself, the script twins are the only stamp authority; report each printed stale line.
+7. **Diff-mode records** (`spec/archive/` dirs whose verify.md frontmatter carries `mode: diff` — the frontmatter decides, never the dir name, because an archived change may itself be named `verify-…`): report their count and newest date in one line; their views are not staleness-checked
 
 ## Output format
 
@@ -30,6 +32,7 @@ No active change:
 ```
 No active SDD change.
 Start a new task: $spec-research "<direction>"
+(diff-mode records present → one more line: `Diff-mode verify records: <N>, newest <date> — spec/archive/<date>-verify-<slug>/`)
 ```
 
 Active change present:
@@ -45,6 +48,7 @@ Artifacts:
   proposal.md ✓ (HARD GATE: <pending approval / approved / rejected>)
   tasks.md    <✓/✗>
   verify.md   <✓/✗> (round <N>, <pass/fail>, <M> open — critique r0: <C> · verifier: <V> · user-sourced: <U>)
+  view/       <✓ fresh / <K> stale: <stage list> — $spec-view <stage> / ✗ none rendered>
 
 Milestone:
   Rounds so far: <e.g. "critique r0 (2 findings, 1 fixed) → verify r1 (pass) → user eval r2 (1 open)">
@@ -53,6 +57,8 @@ Milestone:
 Current stage: <determined by the state machine below>
 Recommended next step: <mapped from the state machine below — do not generate from memory>
 ```
+
+Diff-mode verify records (step 7) close either template with one line: `Diff-mode verify records: <N>, newest <date> — spec/archive/<date>-verify-<slug>/`.
 
 Paused changes are listed separately, never counted as active:
 

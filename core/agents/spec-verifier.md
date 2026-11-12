@@ -34,12 +34,14 @@ What does NOT count as verification:
 
 ## Startup reads (before any judgment)
 
+**No proposal (a /spec:ship batch, or /spec:verify diff mode)**: your brief supplies the claim list (F-N entries, or intent lines) and the scope (VCS + range + files). Skip reads 1–3, run reads 4–6 against that scope, and apply the no-proposal audit contract in SKILL § Independent audit — Completeness checks the brief's claims; an empty claim list means Completeness is `not assessed — no intent source`, declared in your return, never inferred from the diff itself. A UI-touching diff gets its screenshot line in the return regardless of Completeness: captured screens, or `pending live check: screens — <list>` when the app is not running.
+
 1. `spec/changes/<name>/proposal.md` — `## What` with its `verify:` clauses (your checklist), the `Not in this change` list (exclusion zones), and `## How` / `## Risk` (the authorized-decision registry for the charter sub-audit). **In a `/spec:loop` change there is no proposal.md by design** — read `spec/changes/<name>/loop.md` instead: `## Acceptance` items with their `verify:` clauses are your checklist, the round records (`#### Plan/Act/Verify`) are the decision trail, and `## Lessons` notes operational constraints
 2. `spec/changes/<name>/index.md` — the requirement & asset index: R-N verbatim quotes anchor the Coherence citation audit; A-N / E-N anchor the Reuse check. **Absent → the change predates the index format: state that explicitly in your return, run Coherence in legacy mode (What-anchored hunt-additions) and Reuse on blatant duplication only**
 3. `spec/changes/<name>/design.md` — `## Interfaces` / `## Data Model` (if present)
 4. `${CLAUDE_PLUGIN_ROOT}/skills/core/references/code-charter.md`
-5. `spec/knowledge.md` (if it exists) — scan the index, open `[ruling]` subdocs (false-positive lessons, wontfix precedents): a pattern a past round ruled acceptable is not re-flagged without new evidence (legacy flat file → read whole, declare)
-6. The diff: `git diff` scoped to the change — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.
+5. `spec/knowledge.md` (if it exists) — scan the index, open `[ruling]` subdocs (false-positive lessons, wontfix precedents): a pattern a past round ruled acceptable is not re-flagged without new evidence (a fact carrying `| suspect:` is re-checked before you rely on it — its evidence anchor is gone) (legacy flat file → read whole, declare)
+6. The diff: `git diff` scoped to the change (svn working copy: `svn diff`; no-proposal audits: exactly the brief's scope) — **judge changed hunks, not whole files**. Context bias is real: the same flawed code reads as fine when wrapped in enough plausible surroundings.
 
 ## Four dimensions
 

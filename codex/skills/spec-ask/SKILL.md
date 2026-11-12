@@ -6,12 +6,16 @@ description: Interrogates preference-driven decision points. Derives questions f
 
 # $spec-ask
 
+**View shorthand**: a leading `view` or `--view` token switches delivery to the interactive ask page — persist the crafted questions (stage 2), run `$spec-view ask`, and tell the user to paste the page's reply line back into `$spec-ask`; nothing is asked in chat that round.
+
+**Pasted reply line**: arguments shaped like the reply protocol (`1A 3C` · `2: A C` · `3: <text>` · `all recommended`) are answers, not a new question round, on BOTH hosts — map question numbers to the `## Open` `[TBD-N]` order the page showed, letters to each TBD's `candidates:` order, then book-keep (stage 4) with the usual echo.
+
 ## Process
 
 1. Read `spec/changes/<name>/research.md` and list every entry in `## Open [TBD]`
 2. **Classify — shared step 0 for BOTH modes** (interactive and workflow auto-triage run the same classification; only the delivery differs):
    - **Source-check FIRST — the requirement source outranks every other channel**: before a question is even drafted, re-read the requirement source (index.md R-N quotes, the prototype / PRD / user statement they cite). The source answers it → decide from the source, mark "decided from source: <where>", move to Decided, surface on the gate's `Decided without asking` line — asking the user something the source already settled sends them back to their product owner with a question the prototype answers, and that embarrassment lands on the user, not on the flow
-   - **Factual** (determinable by reading code / docs / the knowledge base (spec/knowledge.md index, then relevant subdocs)) → decide from evidence, mark "decided from status quo: X", move to Decided
+   - **Factual** (determinable by reading code / docs / the knowledge base (spec/knowledge.md index, then relevant subdocs; a fact carrying `| suspect:` is re-checked before you rely on it — its evidence anchor is gone)) → decide from evidence, mark "decided from status quo: X", move to Decided
    - **Preference-driven** → tag it **reversible** or **irreversible** (irreversible = any of: data migration / schema change / public API surface / new dependency / destructive operation / user-visible product semantics; **when unsure, it is irreversible**)
    - Unsure whether factual or preference → **treat as preference-driven** (never skip)
    - After classification the modes fork at delivery only: interactive asks (§ How to ask); workflow auto-triage marks (§ Auto triage)
@@ -51,6 +55,8 @@ description: Interrogates preference-driven decision points. Derives questions f
   > • Caffeine (Practices L14): fastest in-process, zero dependencies; cost = per-instance copies, **data inconsistent across machines**
   > • Skip for now: simplest; cost = high-frequency reads hit the DB directly, revisit when load demands it
 
+- **Persist the crafted question before delivering it** (every round, both hosts — it is what the ask page renders and what a later round re-reads): under its `[TBD-N]` line write indented sub-lines `  - Q: <scenario stem>` and, per candidate, `  - <n>: <benefit> / <cost>` keyed by the candidate's position in `candidates:` — never re-list the candidate labels, because a second copy of the option set drifts the moment research appends a candidate and the pasted letters would then map to the wrong pick.
+
 ### 3 · Deliver per host
 
 - **Tool always, when available**: with the experimental `default_mode_request_user_input` flag enabled, sessions carry a `request_user_input` tool — EVERY question goes through it; plain text is the no-tool fallback ONLY, never an escape from the tool's shape limits (single-select, max 3 options per call). Fit questions into the shape:
@@ -65,7 +71,7 @@ description: Interrogates preference-driven decision points. Derives questions f
 ### 4 · Book-keep
 
 - **Echo before write-back whenever any outcome was not an explicit pick** (omitted questions resolved to recommended, culled questions self-decided): list `Q1 → A · Q2 → B (default) · Q3 → self-decided (culled)` — a wrong default must be one line to overturn, never silently absorbed.
-- **Write back to research.md**: remove the entry from `## Open`, append to `## Decided`:
+- **Write back to research.md**: remove the entry from `## Open` **together with its indented sub-lines** (a leftover `Q:` line keeps `## Open` looking non-empty and status would keep routing to $spec-ask), append to `## Decided`:
   ```
   [DEC-N] <decision> | source [TBD-N] | rationale: <distilled from user's answer>
   ```

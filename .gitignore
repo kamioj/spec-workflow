@@ -21,3 +21,5 @@ serving-dev.zip
 
 # SDD dogfood artifacts (local iteration records, not part of the shipped plugin)
 spec/
+# view QA screenshots (local only, never shipped)
+tools/view-fixtures/_shots/

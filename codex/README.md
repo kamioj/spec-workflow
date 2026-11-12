@@ -75,7 +75,9 @@ slash commands):
 | `/spec:design` | `$spec-design` |
 | `/spec:propose` | `$spec-propose` |
 | `/spec:apply` | `$spec-apply` |
-| `/spec:verify` | `$spec-verify` |
+| `/spec:verify [--diff [range]] [--view]` | `$spec-verify [--diff [range]] [--view]` — no spec needed in diff mode |
+| `/spec:view [stage] [tier] [lang] [dir]` | `$spec-view [stage] [tier] [lang] [dir]` — HTML views (render.ps1 on Windows) |
+| `/spec:knowledge [focus]` | `$spec-knowledge [focus]` — tidy the knowledge base |
 | `/spec:archive` | `$spec-archive` |
 | `/spec:loop <goal>` | `$spec-loop <goal>` |
 | `/spec:status` / `chat` / `revise` / `workflow` | `$spec-status` / `$spec-chat` / `$spec-revise` / `$spec-workflow` |

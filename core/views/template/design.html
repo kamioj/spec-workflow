@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--SDD:TIER-->
+<title>sdd view · design</title>
+<style>
+<!--SDD:SHARED:app.css-->
+</style>
+</head>
+<body>
+<div id="sdd-app"><noscript>此视图需要 JavaScript 才能显示；markdown 原文已嵌入本文件。 This view renders with JavaScript; the markdown sources are embedded in this file.</noscript></div>
+<!--SDD:SRC:design.md-->
+<!--SDD:OPT:index.md-->
+<script>
+<!--SDD:VENDOR:marked.umd.js-->
+</script>
+<script>
+<!--SDD:VENDOR:purify.min.js-->
+</script>
+<script>
+<!--SDD:SHARED:strings.js-->
+</script>
+<script>
+<!--SDD:SHARED:app.js-->
+</script>
+<!--SDD:ADVANCED-->
+<script>
+<!--SDD:SHARED:precheck.js-->
+</script>
+<script>
+<!--SDD:SHARED:advanced.js-->
+</script>
+<script>
+<!--SDD:SHARED:flow.js-->
+</script>
+<script>
+/* design layout: mermaid flowcharts rendered offline as diagrams (flow.js; other types
+ * via the CDN, source shown offline); ## Interfaces as API cards (method / path chips
+ * when a bullet names an endpoint); ## Key Decisions as Problem -> Solution -> Cost rows;
+ * ## Migration bullets as labelled rows. */
+(function () {
+  'use strict';
+  var SDD = window.SDD, h = SDD.h;
+  var ENDPOINT = /\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\/[^\s`|,;)]*)/g;
+
+  function interfaceCard(item) {
+    var first = item.first.replace(/^- /, '');
+    var title = null, rest = first;
+    var bold = /^\*\*(.+?)\*\*:? *(.*)$/.exec(first);
+    var label = /^([^:`*]{1,48}): (.*)$/.exec(first);
+    if (bold) { title = bold[1]; rest = bold[2]; }
+    else if (label) { title = label[1]; rest = label[2]; }
+    var text = [rest].concat(SDD.dedent(item.cont)).join('\n');
+    var endpoints = [], m;
+    ENDPOINT.lastIndex = 0;
+    while ((m = ENDPOINT.exec(text))) endpoints.push({ method: m[1], path: m[2] });
+    return SDD.card({
+      icon: title ? (endpoints.length ? 'arrow-right' : 'file') : null,
+      titleHtml: title ? SDD.mdInline(title) : undefined,
+      body: [
+        endpoints.length ? h('div', { class: 'api-line' }, endpoints.map(function (e) {
+          return h('span', { class: 'chip chip-accent method' }, [h('span', { text: e.method }), h('span', { class: 'path', text: ' ' + e.path })]);
+        })) : null,
+        h('div', { class: 'card-body prose', html: SDD.md(text) })
+      ]
+    });
+  }
+
+  function interfaces(block) {
+    var fb = SDD.fallbackFor('Interfaces');
+    if (fb) { SDD.fallbackSection(block.name, 'design.md', fb, block.body.join('\n')); return; }
+    var its = SDD.items(block.body, /^- /);
+    var body = SDD.section(block.name, { src: 'design.md', count: its.filter(function (b) { return b.kind === 'item'; }).length });
+    var grid = null;
+    its.forEach(function (b) {
+      if (b.kind === 'text') {
+        grid = null;
+        var text = b.lines.join('\n');
+        var sub = /^### +(.+)$/m.exec(text);
+        if (sub && text.trim() === sub[0].trim()) { body.appendChild(h('h3', { class: 'sub-title', text: sub[1] })); return; }
+        SDD.richBlocks(text).forEach(function (n) { body.appendChild(n); });
+        return;
+      }
+      if (!grid) { grid = h('div', { class: 'grid-2' }); body.appendChild(grid); }
+      grid.appendChild(interfaceCard(b));
+    });
+  }
+
+  /* Key Decisions: `**title**` or `### title` opens a decision; `- Label: text` bullets
+   * are its fields (Problem / Solution / Cost drawn as a flow, the rest as meta). */
+  function keyDecisions(block) {
+    var groups = [], lead = [], cur = null;
+    block.body.forEach(function (l) {
+      var t = /^\*\*(.+?)\*\*\s*$/.exec(l) || /^### +(.+)$/.exec(l);
+      if (t) { cur = { title: t[1], lines: [] }; groups.push(cur); return; }
+      (cur ? cur.lines : lead).push(l);
+    });
+    var body = SDD.section(block.name, { src: 'design.md', count: groups.length });
+    if (lead.join('').trim() !== '') SDD.richBlocks(lead.join('\n')).forEach(function (n) { body.appendChild(n); });
+    groups.forEach(function (g) {
+      var fields = {}, order = [], rest = [];
+      SDD.items(g.lines, /^- /).forEach(function (b) {
+        if (b.kind === 'text') { rest = rest.concat(b.lines); return; }
+        var line = SDD.itemLine(b, /^- /);
+        var m = /^([A-Za-z][A-Za-z \/-]{0,40}):\s*([\s\S]*)$/.exec(line);
+        if (!m) { rest.push(b.first); rest = rest.concat(b.cont); return; }
+        var k = m[1].toLowerCase();
+        fields[k] = m[2]; order.push({ key: m[1], k: k });
+      });
+      function step(k, cls) {
+        return h('div', { class: 'kd-step ' + cls }, [h('div', { class: 'ba-label', text: SDD.fieldLabel(k) }), h('div', { html: SDD.mdInline(fields[k]) })]);
+      }
+      var flow = [];
+      ['problem', 'solution', 'cost'].forEach(function (k, i) {
+        if (fields[k] === undefined) return;
+        if (flow.length) flow.push(SDD.icon('arrow-right'));
+        flow.push(step(k, 'kd-' + k));
+      });
+      var meta = order.filter(function (o) { return ['problem', 'solution', 'cost'].indexOf(o.k) < 0; }).map(function (o) {
+        return h('div', { class: 'meta-row' }, [h('span', { class: 'meta-key', text: SDD.fieldLabel(o.key) }), h('span', { class: 'meta-val', html: SDD.mdInline(fields[o.k]) })]);
+      });
+      body.appendChild(SDD.card({
+        titleHtml: SDD.mdInline(g.title),
+        body: [
+          flow.length ? h('div', { class: 'kd-flow' + (flow.length < 5 ? ' kd-short' : '') }, flow) : null,
+          rest.join('').trim() !== '' ? SDD.mdBlock(rest.join('\n')) : null
+        ],
+        foot: meta.length ? [h('div', { class: 'meta' }, meta)] : null
+      }));
+    });
+  }
+
+  /* Migration / Compatibility: `- **Label**: text` bullets as labelled rows. */
+  function migration(block) {
+    var its = SDD.items(block.body, /^- /);
+    var body = SDD.section(block.name, { src: 'design.md', count: its.filter(function (b) { return b.kind === 'item'; }).length });
+    var rows = [];
+    function flush() {
+      if (rows.length) { var list = SDD.rowList(rows); list.className += ' kv'; body.appendChild(list); }
+      rows = [];
+    }
+    its.forEach(function (b) {
+      if (b.kind === 'text') { flush(); body.appendChild(SDD.mdBlock(b.lines.join('\n'))); return; }
+      var line = SDD.itemLine(b, /^- /);
+      var m = /^\*\*(.+?)\*\*:?\s*([\s\S]*)$/.exec(line);
+      rows.push(m ? { left: h('strong', { html: SDD.mdInline(m[1]) }), right: h('div', { html: SDD.mdInline(m[2]) }) }
+        : { cls: 'wide', left: h('div', { html: SDD.mdInline(line) }), right: [] });
+    });
+    flush();
+  }
+
+  SDD.layout = function (stage) {
+    var text = SDD.src['design.md'];
+    var doc = sddDoc(text);
+    var itf = sddSection(doc, 'Interfaces'), kd = sddSection(doc, 'Key Decisions');
+    var diagrams = (text.match(/^[ \t]*(`{3,}|~{3,})mermaid[ \t]*\r?$/mg) || []).length;
+    var kdCount = kd ? kd.body.filter(function (l) { return /^\*\*(.+?)\*\*\s*$/.test(l) || /^### +/.test(l); }).length : 0;
+    var title = SDD.docTitle() || SDD.t('view.fallbackTitle', SDD.t('stage.' + stage));
+    SDD.hero({
+      chips: SDD.baseChips(title),
+      title: title,
+      subtitle: SDD.r1Quote(),
+      tiles: [
+        { label: SDD.t('tile.interfaces'), value: SDD.countLines(itf, /^- /) },
+        { label: SDD.t('tile.diagrams'), value: diagrams },
+        { label: SDD.t('tile.keyDecisions'), value: kdCount }
+      ]
+    });
+    SDD.runPrecheck(stage);
+    SDD.renderDoc(doc, 'design.md', { Interfaces: interfaces, 'Key Decisions': keyDecisions, Migration: migration });
+  };
+})();
+</script>
+<!--/SDD:ADVANCED-->
+<script>
+SDD.boot('design');
+</script>
+</body>
+</html>

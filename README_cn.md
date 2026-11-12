@@ -24,7 +24,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 - **快流**：直接动手，hook 兜底（hookify / superpowers brainstorm 简版）
 - **重流**：先 spec 后做，但流程僵化（OpenSpec 4 命令、superpowers brainstorm 9 步）
 
-**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 16 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
+**spec-workflow 走第三路**：保留"先想清楚再动手"的价值，但把流程拆成 18 个独立 slash 命令——每阶段可重入、可中断、可单点重做。配 3 个硬门 hook 让"该停的地方真停下来"，1 个 Stop 提醒 hook 让"实施收尾必有验证"，外加 1 个 Stop 驱动器让 `/spec:loop` 的自主轮次成为硬机制。
 
 ### Comparison
 
@@ -32,7 +32,7 @@ AI 辅助的 spec-driven development 已有两种范式：
 |---|---|---|---|
 | 阶段控制 | 显式 HARD GATE + hook 拦截 | fluid 软警告 | 9 步硬流程 |
 | 待决点 `[TBD]` | 允许 + hook 强制清空 | Open Questions 可滞留 | 严禁，必须当场消解 |
-| 命令粒度 | 16 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
+| 命令粒度 | 18 个独立命令 | 4 命令一把梭 | skill-based 单流程 |
 | 中途重入 | 每阶段独立调用 | `/opsx:continue` 推进 | 重头来 |
 | 反作弊精神 | 命令 + agent 双层 + opt-in flag | 无 | 隐含 |
 
@@ -90,14 +90,16 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 
 ## Features
 
-### 16 个独立 slash 命令
+### 18 个独立 slash 命令
 
 | 类别 | 命令 | 做什么 |
 |---|---|---|
 | **入口** | `/spec:workflow <task>` | 全流程托管——待决点内部分诊，只停 HARD GATE + 验收两个点 |
 |  | `/spec:loop <goal>` | 目标驱动的**自主循环**：批准一次目标+验收清单+轮次预算，之后逐轮调研/实施/验证/复盘——钩子驱动、账本记忆——直到验收通过或触发保险丝 |
 |  | `/spec:fix <task>` | 修 bug/小改动的**流式轻量档**：先定位确认 → 直接修（没把握先调研备选）→ 追加 F-N 条目进当日批次 `fixes/<日期>/`；尺寸只提醒不拒收 |
-|  | `/spec:status` | 报告当前 change 在哪一步（含暂停变更与 fix 批次待审数） |
+|  | `/spec:status` | 报告当前 change 在哪一步（含暂停变更、fix 批次待审数与过期的 HTML 视图） |
+|  | `/spec:view [阶段] [档位] [语言] [目录]` | 把 research / ask / design / proposal / verify 渲染成自包含的 HTML 页面——标准档（忠实渲染）或进阶档（按阶段排版；ask 页和闸门页可以点选，生成一行回复贴回聊天）。排版由固定模板完成，弱模型也能得到同样的页面；页面正文按你的语言显示（派生译文，源文件变了才重译，md 原文保持不变）；这五个命令带 `view` / `--view` 即为简写 |
+|  | `/spec:knowledge [范围]` | 随时整理知识库——失效锚点标为 suspect、重复项自动合并，再分两轮提问：先选出要删除、退役或提炼的条目，再对每条要提炼的经验选择新建项目 skill、并入已有 skill、删除或保留；`/spec:archive` 归档时跑同一流程 |
 |  | `/spec:stash` | **停放**变更（`.paused`：日期+理由）——可选的记账动作；工件全部保温 |
 |  | `/spec:resume [名字]` | **切换器**：把 current 指针（`spec/changes/.current`）写为目标变更（暂停的顺带解冻）——多变更自由并存，闸门只认指针所指；不带名字 → 列出可切换项 |
 | **信息收集** | `/spec:research <方向>` | 调研业界做法，标 `[TBD]` |
@@ -107,7 +109,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 |  | `/spec:propose [--codex] [--skip <镜头>]` | 写 proposal + HARD GATE；`--codex` 让 codex 挑刺方案，手动挡以一道多选题圈定批判镜头名单——`--skip <镜头>` 可预先作答免弹题；最终名单在闸门上亮明 |
 |  | `/spec:revise [why\|what\|how\|risk]` | 局部改 proposal |
 | **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
-|  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
+|  | `/spec:verify [--codex] [--fix] [--diff [区间]] [--view]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改。**不需要 spec**：没有活跃 change（或带 `--diff`）时，按 git / svn / 本会话改动确定范围，推出测试点，跑前后端测试并收录截图 |
 | **收尾** | `/spec:ship` | 收口一个 fix 批次（点名日期或最老一批）：对该批 diff 做一次独立审计——本会话没写过其中条目时直接主对话审——通过后该批归档 |
 |  | `/spec:archive` | 归档当前 change：复盘、把教训提炼进项目 skill / 规则文件（由你勾选落地）、沉淀知识库 |
 
@@ -201,7 +203,7 @@ graph LR
 ├── core/                           # 两端全部 markdown 的单一事实源
 ├── tools/generate.mjs              # 从 core/ 生成 commands/ skills/ rules/ agents/ 与 codex/skills|agents；--check 防漂移
 ├── codex/                          # OpenAI Codex CLI 移植版（同流程同硬门；见 codex/README.md）
-├── commands/                       # 16 个 slash 命令——由 core/ 生成，勿手改
+├── commands/                       # 18 个 slash 命令——由 core/ 生成，勿手改
 ├── hooks/                          # 硬约束（POSIX sh,全平台）+ 夹具套件
 │   ├── hooks.json
 │   ├── check-tbd.sh
@@ -245,17 +247,20 @@ graph LR
 ```
 <your-project>/spec/
 ├── knowledge.md                    # 知识索引——一行一子文档（`- [种类/领域] 文件 — 钩子句`）
-├── knowledge/                      # 知识子文档：领域事实文件 + 成篇经验文档（两步读取：先索引，只翻相关篇）
+├── knowledge/                      # 知识子文档：领域事实文件 + 成篇经验文档（两步读取：先索引，只翻相关篇）；knowledge/archive/ = 经你选择后退役的文档
 ├── changes/.current                # current 变更指针——闸门只认它；/spec:resume <名字> 切换
 ├── changes/<change-name>/          # 活跃 change 工作区
 │   ├── research.md   必有          # 当前调研（Practices + Constraints + Open[TBD] + Decided，单文件）
 │   ├── research/     可选          # 调研方向废稿堆（被弃方向的 research.md 快照，无标记无链接，可复活）
 │   ├── design.md     可选          # 技术设计（架构 / 接口 / 数据模型）
 │   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
+│   ├── gate.md       提案时生成    # 最近一次 HARD GATE 块的原文副本（提案视图读取）
 │   ├── tasks.md      可选          # 多执行体协作清单
 │   ├── verify.md     验证时生成    # 验证账本：稳定发现编号 + 轮次对比 + 未修复升级
+│   ├── view/         视图时生成    # 派生的 HTML 视图（<阶段>.html），每次渲染覆盖；view/<语言>/ = 译文，让页面正文用你的语言显示
 │   └── retrospect.md 归档时生成    # /spec:archive 写入：偏差审查 + 验证证据 + 遗留事项 + 教训分流
-└── archive/<YYYY-MM-DD-name>/      # 已归档 change
+├── archive/<YYYY-MM-DD-name>/      # 已归档 change
+└── archive/<YYYY-MM-DD>-verify-<slug>/  # /spec:verify 无 spec 模式的记录：账本 + 截图
 ```
 
 ---

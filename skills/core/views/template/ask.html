@@ -1,0 +1,224 @@
+<!-- GENERATED from core/views/template/ask.html — edit the core file and run node tools/generate.mjs; hand edits will be overwritten -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--SDD:TIER-->
+<title>sdd view · ask</title>
+<style>
+<!--SDD:SHARED:app.css-->
+</style>
+</head>
+<body>
+<div id="sdd-app"><noscript>此视图需要 JavaScript 才能显示；markdown 原文已嵌入本文件。 This view renders with JavaScript; the markdown sources are embedded in this file.</noscript></div>
+<!--SDD:SRC:research.md-->
+<!--SDD:OPT:index.md-->
+<script>
+<!--SDD:VENDOR:marked.umd.js-->
+</script>
+<script>
+<!--SDD:VENDOR:purify.min.js-->
+</script>
+<script>
+<!--SDD:SHARED:strings.js-->
+</script>
+<script>
+<!--SDD:SHARED:app.js-->
+</script>
+<!--SDD:ADVANCED-->
+<script>
+<!--SDD:SHARED:precheck.js-->
+</script>
+<script>
+<!--SDD:SHARED:advanced.js-->
+</script>
+<script>
+/* ask layout: one card per [TBD-N] in ## Open [TBD]; the answers become one reply line
+ * in the /spec:ask protocol — "1A 3C" · "2: A C" (several) · "3: <text>" (free answer) ·
+ * "all recommended". Question numbers follow [TBD-N] order on this page; letters follow
+ * candidate order in `| candidates: a / b / c |`. */
+(function () {
+  'use strict';
+  var SDD = window.SDD, h = SDD.h;
+
+  function parseQuestion(item) {
+    var line = item.first.replace(/^- */, '');
+    var id = /^\[TBD-([0-9]+)\]/.exec(line)[1];
+    var rest = line.replace(/^\[TBD-[0-9]+\] */, '');
+    var m = /\| *candidates: (.*?) *\| *select: *(one|several)/.exec(rest);
+    var at = rest.search(/\| *candidates:/);
+    var q = { id: id, stem: null, notes: [], pc: {} };
+    q.f = SDD.parseFields(rest.slice(0, at).trim() + rest.slice(at + m[0].length));
+    q.candidates = SDD.splitTop(m[1], ' / ').map(function (c) { return c.trim(); });
+    q.select = m[2];
+    item.cont.forEach(function (l) {
+      var s = /^[ \t]+- Q: (.*)$/.exec(l), p = /^[ \t]+- ([0-9]+): (.*)$/.exec(l);
+      if (s) q.stem = s[1];
+      else if (p) q.pc[Number(p[1])] = SDD.splitTop(p[2], ' / ');
+      else if (l.trim() !== '') q.notes.push(l);
+    });
+    return q;
+  }
+
+  SDD.layout = function (stage) {
+    var doc = sddDoc(SDD.src['research.md']);
+    var open = sddSection(doc, 'Open');
+    var title = SDD.docTitle() || SDD.t('view.fallbackTitle', SDD.t('stage.' + stage));
+    var total = SDD.countLines(open, /^- *\[TBD-[0-9]+\]/);
+    var chips = SDD.baseChips(title);
+    if (open) chips.push(total ? SDD.chip(SDD.t('ask.statusOpen', total), 'warning', 'alert') : SDD.chip(SDD.t('ask.statusNone'), 'success', 'check'));
+    var hero = SDD.hero({
+      chips: chips,
+      title: title,
+      subtitle: SDD.r1Quote(),
+      tiles: [
+        { label: SDD.t('tile.questions'), value: total },
+        { label: SDD.t('tile.answered'), value: 0, key: 'answered' }
+      ]
+    });
+    SDD.runPrecheck(stage);
+    var fbOpen = SDD.fallbackFor('Open [TBD]');
+    if (fbOpen) {
+      SDD.fallbackSection(SDD.t('head.open-tbd'), 'research.md', fbOpen, SDD.src['research.md']);
+      return;
+    }
+
+    var body = SDD.section(SDD.t('sec.questions'), { src: 'research.md', count: total });
+    body.appendChild(h('p', { class: 'hint', text: SDD.t('ask.hint') }));
+
+    var questions = [];
+    var reply = null;
+    var page = SDD.answer('ask:page');
+    var allRecommended = page.allRecommended === true;
+
+    function compute() {
+      if (allRecommended) return 'all recommended';
+      var tokens = [];
+      questions.forEach(function (q) {
+        var free = q.freeInput.value.trim();
+        if (free !== '') { tokens.push(q.n + ': ' + free); return; }
+        if (!q.inputs) return;
+        var picked = q.inputs.filter(function (x) { return x.input.checked; }).map(function (x) { return x.letter; });
+        if (!picked.length) return;
+        tokens.push(q.select === 'one' ? q.n + picked[0] : q.n + ': ' + picked.join(' '));
+      });
+      return tokens.join(' ');
+    }
+    /* Saves every answer under its TBD id (see SDD.answers), then re-emits the reply. */
+    function update() {
+      var answered = 0;
+      questions.forEach(function (q) {
+        var saved = SDD.answer('ask:TBD-' + q.id);
+        saved.free = q.freeInput.value;
+        saved.picks = (q.inputs || []).filter(function (x) { return x.input.checked; }).map(function (x) { return x.letter; });
+        if (saved.free.trim() !== '' || saved.picks.length) answered += 1;
+        (q.inputs || []).forEach(function (x) { x.row.className = 'opt' + (x.input.checked ? ' sel' : ''); });
+      });
+      page.allRecommended = allRecommended;
+      hero.tile.answered.textContent = String(allRecommended ? questions.length : answered);
+      reply.set(compute(), allRecommended ? questions.length : answered);
+    }
+    function touched() { allRecommended = false; update(); }
+
+    var stack = h('div', { class: 'stack' });
+    body.appendChild(stack);
+    SDD.items(open.body, /^- *\[TBD-[0-9]+\]/).forEach(function (b) {
+      if (b.kind === 'text') { stack.appendChild(SDD.mdBlock(b.lines.join('\n'))); return; }
+      var n = questions.length + 1;
+      var id = /\[TBD-([0-9]+)\]/.exec(b.first)[1];
+      var fb = SDD.fallbackFor('[TBD-' + id + ']');
+      var head = h('div', { class: 'card-head' }, [
+        h('span', { class: 'q-num', text: 'Q' + n }),
+        h('span', { class: 'id-chip', text: 'TBD-' + id }),
+        h('span', { class: 'spacer' })
+      ]);
+      var card = h('article', { class: 'card q' }, head);
+      var qs = { n: n, id: id, select: null, inputs: null };
+      var saved = SDD.answer('ask:TBD-' + id);
+      if (fb) {
+        head.appendChild(SDD.tagNode());
+        card.appendChild(h('div', { class: 'fallback-why' }, [SDD.icon('alert'), h('span', { text: SDD.t('ask.fallbackWhy', fb.reason) })]));
+        card.appendChild(SDD.mdBlock([b.first].concat(b.cont).join('\n')));
+      } else {
+        var q = parseQuestion(b);
+        qs.select = q.select;
+        head.appendChild(SDD.chip(SDD.t(q.select === 'one' ? 'ask.pickOne' : 'ask.pickSeveral'), 'neutral'));
+        if (q.stem) card.appendChild(h('div', { class: 'q-stem', html: SDD.mdInline(q.stem) }));
+        card.appendChild(h('div', { class: q.stem ? 'q-title' : 'q-stem', html: SDD.mdInline(q.f.main) }));
+        var opts = h('div', { class: 'opts' });
+        qs.inputs = q.candidates.map(function (c, i) {
+          var letter = String.fromCharCode(65 + i);
+          var input = h('input', {
+            type: q.select === 'one' ? 'radio' : 'checkbox',
+            name: 'q' + n,
+            value: letter,
+            'aria-label': 'Q' + n + ' option ' + letter,
+            onchange: touched
+          });
+          input.checked = (saved.picks || []).indexOf(letter) >= 0;
+          var pc = q.pc[i + 1];
+          var row = h('label', { class: 'opt' }, [
+            input,
+            h('span', { class: 'letter', text: letter + '.' }),
+            h('span', { class: 'label', html: SDD.mdInline(c) }),
+            /recommended|推荐/i.test(c) ? SDD.chip(SDD.t('ask.recommended'), 'accent', 'check', { class: 'opt-chip' }) : null,
+            pc ? h('span', { class: 'pro', html: SDD.mdInline(pc[0].trim()) }) : null,
+            pc && pc.length > 1 ? h('span', { class: 'con', html: SDD.mdInline(pc.slice(1).join(' / ').trim()) }) : null
+          ]);
+          opts.appendChild(row);
+          return { letter: letter, input: input, row: row };
+        });
+        card.appendChild(opts);
+        var meta = SDD.fieldMeta(q.f);
+        if (meta.length) card.appendChild(h('div', { class: 'card-foot' }, meta));
+        if (q.notes.length) card.appendChild(SDD.mdBlock(SDD.dedent(q.notes).join('\n')));
+      }
+      qs.freeInput = h('input', { type: 'text', placeholder: SDD.t('ask.ownPlaceholder'), oninput: touched });
+      qs.freeInput.value = saved.free || '';
+      card.appendChild(h('div', { class: 'free' }, [
+        h('span', { text: SDD.t('ask.own') }),
+        qs.freeInput,
+        qs.inputs ? h('button', {
+          class: 'btn', type: 'button',
+          onclick: function () {
+            qs.inputs.forEach(function (x) { x.input.checked = false; });
+            qs.freeInput.value = '';
+            touched();
+          }
+        }, [SDD.icon('undo'), h('span', { text: SDD.t('ask.clear') })]) : null
+      ]));
+      stack.appendChild(card);
+      questions.push(qs);
+    });
+
+    if (!questions.length) {
+      body.appendChild(h('div', { class: 'empty', text: SDD.t('ask.none') }));
+      return;
+    }
+    reply = SDD.replyBox({
+      title: SDD.t('ask.replyTitle'),
+      placeholder: SDD.t('ask.replyPlaceholder'),
+      hint: SDD.t('ask.replyHint'),
+      buttons: [{
+        label: SDD.t('ask.allRecommended'),
+        onclick: function () {
+          questions.forEach(function (q) {
+            (q.inputs || []).forEach(function (x) { x.input.checked = false; });
+            q.freeInput.value = '';
+          });
+          allRecommended = true;
+          update();
+        }
+      }]
+    });
+    update();
+  };
+})();
+</script>
+<!--/SDD:ADVANCED-->
+<script>
+SDD.boot('ask');
+</script>
+</body>
+</html>
