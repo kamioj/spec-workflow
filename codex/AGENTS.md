@@ -20,6 +20,9 @@ Rules that bind you, the agent:
 - **Verification is independent**: `$spec-verify` spawns the spec-verifier agent
   (`~/.codex/agents/spec-verifier.toml`) with a fresh context. The conversation that
   implemented a change never audits itself.
+- **Lessons are mined at archive**: `$spec-archive` spawns the spec-reflector agent
+  (`~/.codex/agents/spec-reflector.toml`) to turn recurring problems into edits to project
+  skills / rules files; only the candidates the user selects are applied.
 - **Anti-Cheating**: nothing is "success" without having actually run; bypasses are
   declared as bypasses; another agent's self-reported success gets independently re-run.
 - **Stuck Protection**: 3 consecutive failed fixes in one direction → emit the Stuck

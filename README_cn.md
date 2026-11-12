@@ -6,7 +6,7 @@
 
 让大改动可控可回滚——调研、拷问、提案、HARD GATE、实施、验证、归档，每步可重入、可硬约束、可派单。
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -109,7 +109,7 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 | **执行 & 验证** | `/spec:apply [flags]` | 实施——单栈由主对话直接做（上下文缓存已是热的），跨栈并发双 agent |
 |  | `/spec:verify [--codex] [--fix]` | 独立验证代理审查（四维度——Coherence 含 charter 子审计，Reuse & Conformance 覆盖新建文件的本项目惯用法一致性）；`--codex` codex 异构他审，`--fix` codex 直接改 |
 | **收尾** | `/spec:ship` | 收口一个 fix 批次（点名日期或最老一批）：对该批 diff 做一次独立审计——本会话没写过其中条目时直接主对话审——通过后该批归档 |
-|  | `/spec:archive` | 归档当前 change |
+|  | `/spec:archive` | 归档当前 change：复盘、把教训提炼进项目 skill / 规则文件（由你勾选落地）、沉淀知识库 |
 
 ### 5 个 Hook——3 个硬门 + 1 个提醒 + 1 个循环驱动器
 
@@ -141,6 +141,10 @@ Claude Code 插件只分发文件（命令 / hook / agent / 规则），**从不
 `spec-verifier` 由 `/spec:verify` 派遣，**刻意给全新上下文**——写代码的对话不再自审。协议：无新鲜证据不得判 pass（dev agent 自报的成功要复跑，不采信）、证据先行（引用不出真实代码 = 不算发现，每维度上限 3 条）、反驳轮（辩护必须引用 gate 决策原文）、ast-grep 机器扫描自带 `rules/dirty-data/` 规则包（已实测：连"打了日志仍 return null"都能抓，正常 throw 零误报）。
 
 > **定位说明——符合性审计，不是缺陷猎杀。** verifier 对照*提案*审 diff（verify: 子句、R-N 引用、charter、复用）。要对同一份 diff 做开放式找 bug——边界条件、并发、空值、安全——用宿主自带的引擎搭配：Claude Code 内置 `/code-review`（分档、`--fix`、多代理 `ultra`），或本插件的 `--codex` 异构他审。两者都按需手动运行、与流程并行，流程不强制。
+
+### 1 个复盘 Agent（全新上下文，归档阶段）
+
+`spec-reflector` 由 `/spec:archive` 派遣，从刚完成的 change 里挖反复出现的问题：各轮验证发现、gate 和验收时用户的纠正、卡死自检、偏差审查、返工提交，以及尽力读取的会话记录。同类问题重复出现（同一个 change 内也算），或者用户亲自纠正过一次，才算一条教训。每条教训按能承载它的最高层级分流：机械检查（作为 `/spec:fix` 建议给出，归档不写项目源码）、改进项目已有的 skill 或 `CLAUDE.md` / `AGENTS.md`、新建项目 skill、写进知识库。落地哪几条由你勾选，没有预选；插件缓存和用户全局文件一律不碰。
 
 ### opt-in 增强 flag
 
@@ -207,7 +211,8 @@ graph LR
 │   └── loop-driver.sh              # /spec:loop 的 Stop 事件驱动器
 ├── agents/
 │   ├── spec-dev.md                 # 按 scope（frontend/backend）派遣；跨栈并发派两个
-│   └── spec-verifier.md            # /spec:verify 派遣的全新上下文验证者
+│   ├── spec-verifier.md            # /spec:verify 派遣的全新上下文验证者
+│   └── spec-reflector.md           # /spec:archive 派遣的全新上下文复盘者
 ├── rules/                          # ast-grep 规则包（charter 审计机器扫描）
 │   ├── sgconfig.yml
 │   └── dirty-data/                 # 吞异常 / catch 返默认值（java/js/ts）
@@ -249,7 +254,7 @@ graph LR
 │   ├── proposal.md   必有          # 方案终态（含 APPROVED 标记）
 │   ├── tasks.md      可选          # 多执行体协作清单
 │   ├── verify.md     验证时生成    # 验证账本：稳定发现编号 + 轮次对比 + 未修复升级
-│   └── retrospect.md 归档时生成    # /spec:archive 写入：偏差审查 + 验证证据 + 遗留事项
+│   └── retrospect.md 归档时生成    # /spec:archive 写入：偏差审查 + 验证证据 + 遗留事项 + 教训分流
 └── archive/<YYYY-MM-DD-name>/      # 已归档 change
 ```
 
@@ -317,6 +322,7 @@ claude --plugin-dir .
 
 ## Changelog
 
+- **0.10.0** — **教训落到下一个 agent 会读的地方**：`/spec:archive` 新增教训提炼步骤。全新上下文的 `spec-reflector` 从 change 的记录里（各轮验证发现、用户纠正、卡死自检、偏差审查、返工提交，会话记录尽力读取）找反复出现的问题类别，按能承载它的最高层级分流：机械检查（以 `/spec:fix` 条目建议给出）、改进项目已有的 skill 或规则文件、新建项目 skill、写进知识库；落地哪几条由你勾选，空选即不应用。loop 回注模板改由 fixture 强制同步：`hooks/run-fixtures.sh` 逐字比对三个驱动脚本的文案，并用关键条款锚点对照 `core/commands/loop.md`。生成器遇到与其他文字同行的 host 标记直接报错（以前会悄悄泄漏到两个宿主）
 - **0.9.0** — **评审与验收改版**：批判面板与验收标准一一对应——reuse（“项目里有没有现成的？”，带代码库读取权，推荐式输出）· fidelity（“和需求源对得上吗？”——对照原文引用双向查多做与少做，配 R-N 覆盖矩阵与可证伪预检两道机械关）· performance（“过度考量在拖慢什么？”，仅用户勾选）；名单空答=零面板，绝不静默回退。兼容退出面板：仅 `/spec:workflow` 托管时自动加跑，产出只能是落地步骤——需求是前提，不是被告。上游硬化：research 动存量必枚举受影响面、新造物必做全项目等价物搜索；问询先过需求源、每题必须指明源的空缺；提问场景化，每选项好处代价并陈。交付层：验证按测试类→接缝 mock→真机移交三级走，待真机项绝不卡归档；前端变更交截图证据地图（`screens/`，同名覆盖只更新不堆积），三查把关——对原型、压数据、文案人眼过。fix 改按天分批（`fixes/<日期>/`，钩子双布局兼容），一次收一批，本会话没写过条目时 ship 主对话直审免子代。表达宪章约束一切用户界面：推荐先行、大白话、每题有出路、发现默认判断题档；core 的禁令一律带理由与正面做法
 - **0.8.6** — **每个批判镜头钉死一句“它问的问题”作身份**：三镜头把提案风险切成三个大白话问题——该不该做（necessity）· 会不会弄坏旧的（regression-compat）· 会不会变慢（performance）——这句身份是镜头在一切用户界面（名单多选题、闸门披露、文档）上的名字；密度大的锁定立场文本明确标为批判者派遣材料，绝不作为选项描述示人
 - **0.8.5** — **手动挡的批判名单由用户圈定**：手动调用 `/spec:propose` 在派遣前先弹一道多选题——每个镜头一个选项，带立场与“跳过后失守什么”，necessity + regression 预推荐，performance 仅在有实测信号时推荐；选中即名单（全不选也合法），`--skip <镜头>` 可预答免弹，最终名单一律在闸门亮明；`/spec:workflow` 内保持全自动派遣（两触点教义）

@@ -43,7 +43,7 @@ awk -v s="${CLAUDE_CODE_SESSION_ID:-}" 'BEGIN{FS=OFS="="} $1=="session_id"{$2=s}
 
 ## Round protocol (every round, including Round 1)
 
-<!-- KEPT IN SYNC with the loop-driver reinject templates (hooks/loop-driver.sh + codex/hooks/loop-driver.{sh,ps1}) — change one, sweep all four. -->
+<!-- KEPT IN SYNC with the loop-driver reinject templates (hooks/loop-driver.sh + codex/hooks/loop-driver.{sh,ps1}) — change one, sweep all four; hooks/run-fixtures.sh (loop reinject-template sync) fails on drift. -->
 
 
 1. **Read the ledger first**: Acceptance state, the latest Retrospect's plan, ALL of `## Lessons`. Then **search the ledger and the codebase before assuming anything is unimplemented** — re-implementing existing work is the classic fresh-context failure.
@@ -64,7 +64,7 @@ Implications:
 
 ## Final acceptance (touchpoint 2 of 2)
 
-<!-- KEPT IN SYNC with the loop-driver final-acceptance reinject template (hooks/loop-driver.sh + codex twins). -->
+<!-- KEPT IN SYNC with the loop-driver final-acceptance reinject template (hooks/loop-driver.sh + codex twins); hooks/run-fixtures.sh (loop reinject-template sync) fails on drift. -->
 
 
 When every Acceptance item is checked, the driver injects the final-acceptance turn: dispatch a **fresh spec-verifier** to independently re-verify EVERY Acceptance item against its `verify:` clause — mid-loop checkmarks are claims; **this is the loop's ONLY independent audit, so it is exhaustive**. The audit is iterative by design: items that fail get **unchecked**, the findings recorded in the current round, and the loop continues fixing (the driver re-arms automatically; each audit pass counts toward the round cap). Only when every item holds: **report per-item results to the user** and set `status: done`. Then `/spec:archive` closes the change (loop.md travels with it, `.loop-state` is deleted, durable Lessons feed the knowledge base (subdocs + index, per knowledge-spec.md)).

@@ -6,7 +6,7 @@
 
 Large changes, kept controllable and reversible. The pipeline — research → clarify → propose → **HARD GATE** → implement → verify → archive — is re-entrant at every step, enforced by hooks, and runs its agents in parallel.
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/kamioj/spec-workflow)
+[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/kamioj/spec-workflow)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kamioj/spec-workflow)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v2.1+-purple.svg)](https://docs.claude.com/en/docs/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -111,7 +111,7 @@ Prefer to delegate the whole thing? `/spec:workflow <task>` runs end-to-end and 
 | **Execute & verify** | `/spec:apply [flags]` | implement — single-scope runs in the main conversation (its context is already cache-warm), cross-stack dispatches two agents in parallel |
 |  | `/spec:verify [--codex] [--fix]` | independent fresh-context verifier review (four dimensions — Coherence includes the charter sub-audit, Reuse & Conformance covers project-idiom fit of new files); `--codex` adds a second opinion from codex, `--fix` lets codex edit directly |
 | **Wrap up** | `/spec:ship` | close one fix batch (named date, or the oldest): one independent audit over its diff — run inline when this conversation wrote none of it — then archive that batch |
-|  | `/spec:archive` | archive the current change |
+|  | `/spec:archive` | archive the current change: retrospect, lesson mining into project skills / rules (you pick which land), knowledge sediment |
 
 ### 5 hooks — 3 hard gates + 1 reminder + 1 loop driver
 
@@ -143,6 +143,10 @@ On the `UserPromptSubmit` event, **shell scripts block** any command that breaks
 `spec-verifier` is dispatched by `/spec:verify` with a **deliberately fresh context** — the conversation that implemented the change never audits itself. Its protocol: no pass without fresh evidence (a dev agent's self-reported success gets re-run, not trusted), evidence-or-drop findings (no quotable code = no finding, ≤3 per dimension), a refutation phase where a defense must cite a gate decision, and an ast-grep machine pass over the shipped `rules/dirty-data/` pack (validated: catches "return default in catch" even behind a log line; never flags a proper throw).
 
 > **Scope note — conformance audit, not defect hunt.** The verifier audits the diff *against the proposal* (verify: clauses, R-N citations, charter, reuse). For an open-ended bug hunt over the same diff — edge cases, concurrency, null-safety, security — compose with what your host already ships: Claude Code's built-in `/code-review` (effort levels, `--fix`, multi-agent `ultra`), or this plugin's `--codex` heterogeneous review. Both run on demand alongside the flow; neither is required by it.
+
+### 1 reflection agent (fresh context, archive stage)
+
+`spec-reflector` is dispatched by `/spec:archive` to mine the finished change for recurring problems: every verify finding across rounds, user corrections at the gate and at acceptance, stuck self-checks, divergences, rework commits, and (best-effort) the session transcripts. A problem class qualifies when it repeats, inside one change counts, or when the user had to step in once. Each lesson goes to the highest level that can hold it: a mechanical check (returned as a `/spec:fix` suggestion, since archive writes no project source), an edit to an existing project skill or `CLAUDE.md` / `AGENTS.md`, a new project skill, or the knowledge base. You pick which ones land. Nothing is pre-ticked, and plugin-cache or user-global files are never touched.
 
 ### opt-in enhancement flags
 
@@ -209,7 +213,8 @@ Every stage stands alone. Jump wherever you need — `/spec:chat` to talk it ove
 │   └── loop-driver.sh              # Stop-event driver for /spec:loop
 ├── agents/
 │   ├── spec-dev.md                 # cross-stack implementer (two in parallel by scope); single-scope stays in the main conversation
-│   └── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify
+│   ├── spec-verifier.md            # fresh-context verifier dispatched by /spec:verify
+│   └── spec-reflector.md           # fresh-context lesson miner dispatched by /spec:archive
 ├── rules/                          # ast-grep rule packs (charter-audit machine pass)
 │   ├── sgconfig.yml
 │   └── dirty-data/                 # swallowed exceptions / default-return fallbacks (java/js/ts)
@@ -251,7 +256,7 @@ What the plugin writes into your project when you run it:
 │   ├── proposal.md   required      # the final solution (carries the APPROVED marker)
 │   ├── tasks.md      optional      # multi-executor task list
 │   ├── verify.md     at-verify     # verification ledger: stable finding IDs + round diffing + unfixed-escalation
-│   └── retrospect.md at-archive    # written by /spec:archive: divergence review + evidence + leftovers
+│   └── retrospect.md at-archive    # written by /spec:archive: divergence review + evidence + leftovers + lesson routing
 └── archive/<YYYY-MM-DD-name>/      # archived changes
 ```
 
@@ -319,6 +324,7 @@ Design calls I worried about, then confirmed safe after digging in (evidence cit
 
 ## Changelog
 
+- **0.10.0** — **lessons land where the next agent reads them**: `/spec:archive` gains a lesson-mining step. A fresh-context `spec-reflector` agent mines the change's record (verify findings across rounds, user corrections, stuck self-checks, divergences, rework commits, session transcripts best-effort) for recurring classes and routes each to the highest level that holds it: a mechanical check (suggested as a `/spec:fix` entry), an edit to an existing project skill or rules file, a new project skill, or the knowledge base. You select which land; an empty answer applies nothing. The loop reinject templates are fixture-enforced: `hooks/run-fixtures.sh` diffs the three drivers' literals verbatim and anchors key clauses against `core/commands/loop.md`. The generator fails on a host marker that shares its line with other text, which used to leak into both hosts silently
 - **0.9.0** — **the review & acceptance overhaul**: the critique panel maps one-to-one onto what an acceptance review actually checks — reuse ("does the project already have something for this?", with codebase read access and recommendation-toned output) · fidelity ("does the proposal match the source, both ways?" — over-building and under-building against verbatim source quotes, backed by a mechanical R-N coverage matrix and a falsifiability pre-check) · performance ("is over-thinking slowing it down?", strictly user-ticked); an empty roster answer means zero lenses, never a silent fallback. Compat leaves the panel: it runs only inside `/spec:workflow`, and its only legal output is landing steps — a requirement is the premise, never the defendant. Upstream hardening: research must enumerate the impact set of every touched surface and run a project-wide equivalent search for every planned new artifact; interrogation source-checks every question first and must name the source gap it fills; questions are scenario-shaped with per-option benefit and cost. Delivery: working checks run tests-first → seam-mocked → live checks handed over (never waited on), and pending live checks never block archiving; UI changes ship a screenshot evidence map (`screens/`, update-in-place) checked three ways — prototype conformance, layout under data pressure, human-readable copy. Fixes accumulate in daily batches (`fixes/<date>/`, hooks recognize both layouts) shipped one batch at a time, with the audit run inline whenever the shipping conversation wrote none of the entries. An expression charter binds every user-facing surface: recommendation first, plain language, forward exits, judgement-call findings; prohibitions in core carry their reason and positive target
 - **0.8.6** — **each critique lens carries a one-question identity**: the three lenses partition proposal risk as three plain questions — should this be built at all (necessity) · does this break what already works (regression-compat) · does this make it slow (performance) — and that identity line is the lens's name on every user-facing surface (the roster multi-select, the gate disclosure, the docs), while the dense locked-stance text is explicitly critic-facing dispatch material, never shown as a description
 - **0.8.5** — **the critique roster is the user's call in standalone runs**: `/spec:propose` invoked manually asks ONE multi-select before dispatching — each lens an option carrying its stance and what skipping it leaves unguarded, necessity + regression pre-recommended, performance recommended only on a recorded measured signal; the selection is the roster (none is legal), `--skip <lens>` pre-answers the question, and the gate always discloses the final roster; inside `/spec:workflow` dispatch stays fully automatic (two-touchpoint doctrine)

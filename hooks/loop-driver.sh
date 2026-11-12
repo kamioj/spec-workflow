@@ -40,7 +40,8 @@
 # dynamic insertions are driver-computed integers. Never interpolate ledger or filesystem
 # strings into the JSON (no jq — there is no reliable escaping in POSIX sh).
 # KEEP THE REINJECT TEMPLATES IN SYNC with core/commands/loop.md §Round protocol and
-# §Final acceptance (and the codex twins) — this pair is a registered manual sync set.
+# §Final acceptance (and the codex twins) — enforced by run-fixtures.sh § loop reinject-
+# template sync (literals verbatim across the three drivers; key-clause anchors vs core).
 #
 # Fail direction: any internal doubt -> allow the stop (a driver bug must never trap the
 # user in a loop; the loop dying is always the safe direction).

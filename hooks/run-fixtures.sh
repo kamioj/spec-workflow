@@ -741,6 +741,88 @@ if [ -f "$CODEX_RUNNER" ]; then
     done
 fi
 
+# ---- loop reinject-template sync (repo checkout only) ----
+# The driver's runtime prompts live in four places: hooks/loop-driver.sh, its codex twins
+# (loop-driver.sh + loop-driver.ps1), and core/commands/loop.md §Round protocol / §Final
+# acceptance. Part 1: the three drivers carry the same literals verbatim -- every
+# reinject/allow_notice argument, in call order, after normalizing the host differences
+# (sigil, ps1 variable names). Part 2: core paraphrases the drivers, so it can't be
+# diffed; each load-bearing clause in the anchor lists below must appear in both the core
+# section and the driver literals. Rewording a clause in one place fails here until every
+# place (and this list) is swept. Not caught: a NEW obligation added to one place only.
+CORE_LOOP="$HOOKS_DIR/../core/commands/loop.md"
+CODEX_DRIVER_SH="$HOOKS_DIR/../codex/hooks/loop-driver.sh"
+CODEX_DRIVER_PS1="$HOOKS_DIR/../codex/hooks/loop-driver.ps1"
+
+loop_literals() { # $1=driver file -> normalized literals, one per line, in call order
+    tr -d '\r' < "$1" \
+      | grep -E '^[[:space:]]*(reinject|allow_notice|Reinject|AllowNotice)[[:space:]]' \
+      | grep -oE "'[^']*'|\"[^\"]*\"" \
+      | sed -e 's/^.//' -e 's/.$//' \
+            -e 's/\$spec-\([a-z]*\)/\/spec:\1/g' \
+            -e 's/\$maxRounds/$MAX_ROUNDS/g' \
+            -e 's/\$next\([^A-Za-z]\)/$NEXT\1/g' -e 's/\$next$/$NEXT/'
+}
+core_section() { # $1=heading prefix -> that ## section of core loop.md, heading excluded
+    tr -d '\r' < "$CORE_LOOP" | awk -v h="$1" 'index($0, h) == 1 {f=1; next} /^## /{f=0} f'
+}
+# Case-sensitive on purpose: Git for Windows' grep aborts (SIGABRT) on -iF, which would read
+# as "anchor missing" -- so anchors are chosen with identical case in core and drivers.
+check_anchors() { # $1=label $2=core section file; anchors on stdin, one per line
+    while IFS= read -r a; do
+        a=$(printf '%s' "$a" | tr -d '\r')   # a CRLF checkout puts \r on every heredoc line
+        [ -n "$a" ] || continue
+        miss=""
+        grep -qF -- "$a" "$2" || miss="$miss core/commands/loop.md"
+        grep -qF -- "$a" "$LIT_CLAUDE" || miss="$miss loop-drivers"
+        if [ -z "$miss" ]; then
+            PASS=$((PASS+1)); echo "PASS  loop-sync-anchor:$1: $a"
+        else
+            FAIL=$((FAIL+1)); echo "FAIL  loop-sync-anchor:$1: \"$a\" missing from:$miss"
+        fi
+    done
+}
+
+if [ -f "$CORE_LOOP" ] && [ -f "$CODEX_DRIVER_SH" ] && [ -f "$CODEX_DRIVER_PS1" ]; then
+    LIT_CLAUDE="$TMP_ROOT/lit.claude"
+    loop_literals "$HOOKS_DIR/loop-driver.sh" > "$LIT_CLAUDE"
+    loop_literals "$CODEX_DRIVER_SH" > "$TMP_ROOT/lit.codex-sh"
+    loop_literals "$CODEX_DRIVER_PS1" > "$TMP_ROOT/lit.codex-ps1"
+    if [ -s "$LIT_CLAUDE" ]; then
+        PASS=$((PASS+1)); echo "PASS  loop-sync-extract ($(wc -l < "$LIT_CLAUDE" | tr -d ' ') literals)"
+    else
+        FAIL=$((FAIL+1)); echo "FAIL  loop-sync-extract  no reinject/allow_notice literals found in hooks/loop-driver.sh"
+    fi
+    for twin in codex-sh codex-ps1; do
+        if diff "$LIT_CLAUDE" "$TMP_ROOT/lit.$twin" > "$TMP_ROOT/lit.diff"; then
+            PASS=$((PASS+1)); echo "PASS  loop-sync-verbatim:$twin"
+        else
+            FAIL=$((FAIL+1)); echo "FAIL  loop-sync-verbatim:$twin  driver literals differ from hooks/loop-driver.sh (< claude, > $twin)"
+            sed 's/^/      /' "$TMP_ROOT/lit.diff" | cut -c1-200 | head -6
+        fi
+    done
+    core_section '## Round protocol' > "$TMP_ROOT/core.round"
+    core_section '## Final acceptance' > "$TMP_ROOT/core.final"
+    check_anchors round "$TMP_ROOT/core.round" <<'EOF'
+ONE coherent increment
+the ledger and the codebase before assuming anything is unimplemented
+compile / tests / minimal repro
+subagent dispatch during rounds
+#### Retrospect
+status: paused
+EOF
+    check_anchors final "$TMP_ROOT/core.final" <<'EOF'
+spec-verifier
+re-verify EVERY Acceptance item against its
+ONLY independent audit
+so it is exhaustive
+uncheck
+status: done
+EOF
+else
+    echo "WARN: core/ or codex driver twins not found -- loop reinject-template sync skipped (repo checkout only)"
+fi
+
 echo "----"
 echo "pass=$PASS fail=$FAIL"
 [ $FAIL -eq 0 ] || exit 1

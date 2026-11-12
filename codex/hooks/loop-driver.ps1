@@ -10,7 +10,8 @@
 # session_id line). Frontmatter values tolerate a trailing "# comment"; section headings
 # must be exact (first ## Acceptance section only). Output discipline: fixed literals +
 # driver-computed integers only. KEEP THE REINJECT TEMPLATES IN SYNC with
-# core/commands/loop.md (Round protocol / Final acceptance) and both twins.
+# core/commands/loop.md (Round protocol / Final acceptance) and both twins -- enforced
+# by hooks/run-fixtures.sh (loop reinject-template sync).
 # Fail direction: any doubt -> exit 0, loop ends.
 
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8

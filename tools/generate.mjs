@@ -75,6 +75,11 @@ function selectHost(raw, host, sourcePath) {
       active = null;
       continue;
     }
+    // A marker sharing its line with other text is not recognized above, so it would leak
+    // verbatim into BOTH hosts. Fail loudly instead; put each marker on its own line.
+    if (/<!-- (host:|\/host)/.test(line)) {
+      fail(`${sourcePath}:${i + 1}: host marker must sit alone on its line (inline markers leak into both hosts)`);
+    }
     if (!active || active === host) {
       kept.push(line);
     }

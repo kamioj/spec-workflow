@@ -37,7 +37,7 @@ spec/knowledge/
 
 ## Lifecycle
 
-- **Writers** (archive step 3 primary; ship step 5; verify rule 4): write the fact into the matching subdoc (create the domain file if new) AND maintain its index line. **Never write a flat fact line into the index** — one flat line re-flags the whole file as legacy and downgrades every reader to full reads.
+- **Writers** (archive step 4 primary — it also takes the lesson-mining step's `knowledge` candidates; ship step 5; verify rule 4): write the fact into the matching subdoc (create the domain file if new) AND maintain its index line. **Never write a flat fact line into the index** — one flat line re-flags the whole file as legacy and downgrades every reader to full reads.
 - **Lazy migration**: at sediment time, a legacy flat knowledge.md is restructured in the same pass — facts sorted into domain subdocs, index written, nothing dropped.
 - **Consolidation pass** (self-maintenance; runs during sedimentation when triggered): triggers = index > 40 lines, OR a domain file > 60 lines, OR writing next to an existing same-topic entry. Actions = merge duplicates, compress wording, **newer evidence+date on the same topic overrides the stale fact** (the correct-not-contradict rule executed automatically), long-form docs get `status: superseded by <new>` — superseded docs are kept, never deleted.
 - **Corrections outside consolidation**: single-line facts are corrected in place; long docs are superseded, not rewritten.
