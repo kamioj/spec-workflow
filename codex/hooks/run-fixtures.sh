@@ -722,6 +722,28 @@ if [ -f "$HOOKS_DIR/hooks.json.template" ]; then
     fi
 fi
 
+# ---- CRLF artifacts (core.autocrlf checkouts on Windows): both twins must read them like LF ----
+crlf() { awk '{ printf "%s\r\n", $0 }'; }
+P=$(mkproj crlf-gate); mkdir -p "$P/spec/changes/my-change"
+printf '%s' "$FULL_PROPOSAL" | crlf > "$P/spec/changes/my-change/proposal.md"
+run_case crlf-gate-happy-path      check-gate allow "$(json "$P" '$spec-apply')"
+P=$(mkproj crlf-tbd); mkdir -p "$P/spec/changes/c"
+printf '# R\n\n## Open [TBD]\n- [TBD-1] pick one\n\n## Decided\n(none)\n' | crlf > "$P/spec/changes/c/research.md"
+run_case crlf-tbd-open-blocks      check-tbd block "$(json "$P" '$spec-propose')"
+P=$(mkproj crlf-arch-loop); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: done/' \
+    -e 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' | crlf > "$P/spec/changes/g/loop.md"
+run_case crlf-archive-loop-done-allows check-archive allow "$(json "$P" '$spec-archive')"
+P=$(mkproj crlf-arch-quick); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" | crlf > "$P/spec/changes/h/quick.md"
+run_case crlf-archive-quick-done-allows check-archive allow "$(json "$P" '$spec-archive')"
+P=$(mkproj crlf-arch-fix); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_SHIPPED" | crlf > "$P/spec/changes/fixes/fix.md"
+run_case crlf-archive-fix-shipped-allows check-archive allow "$(json "$P" '$spec-archive')"
+P=$(mkproj crlf-loop); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | crlf > "$P/spec/changes/g/loop.md"
+run_driver_case crlf-loop-continue-reinjects reinject "$P" - "$(json_stop "$P" false)"
+
 echo "----"
 echo "pass=$PASS fail=$FAIL"
 [ $FAIL -eq 0 ] || exit 1

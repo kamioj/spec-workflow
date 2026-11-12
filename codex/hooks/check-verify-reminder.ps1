@@ -72,7 +72,7 @@ try {
     $proposalPath = Join-Path $change.FullName 'proposal.md'
     if (-not (Test-Path $proposalPath)) { exit 0 }
 
-    $content = Get-Content $proposalPath -Raw -Encoding UTF8
+    $content = (Get-Content $proposalPath -Raw -Encoding UTF8) -replace "`r", ""
     # Same marker contract as check-gate: implementation window = APPROVED present
     if ($content -notmatch '(?i)<!--\s*APPROVED\s*[:>]') { exit 0 }
 
@@ -82,7 +82,7 @@ try {
     # premature turn-endings mid-apply pass silently.
     $ledgerPath = Join-Path $change.FullName 'verify.md'
     if (Test-Path $ledgerPath) {
-        $ledger = Get-Content $ledgerPath -Raw -Encoding UTF8
+        $ledger = (Get-Content $ledgerPath -Raw -Encoding UTF8) -replace "`r", ""
         if ($ledger -match '(?m)^round:\s*[1-9]') { exit 0 }
     }
 

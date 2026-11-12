@@ -66,7 +66,7 @@ try {
         }
         $entriesSeen = $false
         foreach ($fm in $batchFiles) {
-            $fixContent = Get-Content $fm -Raw -Encoding UTF8
+            $fixContent = (Get-Content $fm -Raw -Encoding UTF8) -replace "`r", ""
             if ([regex]::Matches($fixContent, '(?m)^## F-\d+').Count -gt 0) { $entriesSeen = $true; break }
         }
         if (-not $entriesSeen) {
@@ -125,7 +125,7 @@ try {
     # of flow-moment anchor as the APPROVED marker.
     $loopPath = Join-Path $change.FullName 'loop.md'
     if (Test-Path $loopPath) {
-        $loop = Get-Content $loopPath -Raw -Encoding UTF8
+        $loop = (Get-Content $loopPath -Raw -Encoding UTF8) -replace "`r", ""
         $lstatus = if ($loop -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
         $lacc = [regex]::Match($loop, '(?ms)^## Acceptance\s*?$(.*?)(?=^## |\z)').Groups[1].Value
         $lunchecked = [regex]::Matches($lacc, '(?m)^- \[ \]').Count
@@ -146,7 +146,7 @@ try {
     $quickPath = Join-Path $change.FullName 'quick.md'
     $proposalProbe = Join-Path $change.FullName 'proposal.md'
     if ((Test-Path $quickPath) -and -not (Test-Path $proposalProbe)) {
-        $quick = Get-Content $quickPath -Raw -Encoding UTF8
+        $quick = (Get-Content $quickPath -Raw -Encoding UTF8) -replace "`r", ""
         $qstatus = if ($quick -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
         $qev = [regex]::Match($quick, '(?ms)^## Evidence\s*?$(.*?)(?=^## |\z)').Groups[1].Value
         if ($qstatus -eq 'done' -and $qev.Trim().Length -gt 0) { exit 0 }
@@ -171,7 +171,7 @@ try {
     if (($batchFixFiles.Count -gt 0) -and -not (Test-Path $proposalProbe2)) {
         $allShipped = $true
         foreach ($fm in $batchFixFiles) {
-            $fix = Get-Content $fm -Raw -Encoding UTF8
+            $fix = (Get-Content $fm -Raw -Encoding UTF8) -replace "`r", ""
             $fstatus = if ($fix -match "(?m)^status:\s*([^`r`n]*)$") { ($Matches[1] -replace '#.*$', '').Trim() } else { '' }
             $fau = [regex]::Match($fix, '(?ms)^## Audit\s*?$(.*?)(?=^## |\z)').Groups[1].Value
             if (-not ($fstatus -eq 'shipped' -and $fau.Trim().Length -gt 0)) { $allShipped = $false }
@@ -189,7 +189,7 @@ try {
 
     $proposalPath = Join-Path $change.FullName 'proposal.md'
     if (Test-Path $proposalPath) {
-        $content = Get-Content $proposalPath -Raw -Encoding UTF8
+        $content = (Get-Content $proposalPath -Raw -Encoding UTF8) -replace "`r", ""
         # Same marker contract as the Claude-side hooks: only the <!-- APPROVED: --> comment form counts
         if ($content -notmatch '(?i)<!--\s*APPROVED\s*[:>]') {
             $findings += 'proposal.md has no APPROVED marker -- the HARD GATE was bypassed (code written without $spec-apply?)'
@@ -200,7 +200,7 @@ try {
 
     $tasksPath = Join-Path $change.FullName 'tasks.md'
     if (Test-Path $tasksPath) {
-        $tasksContent = Get-Content $tasksPath -Raw -Encoding UTF8
+        $tasksContent = (Get-Content $tasksPath -Raw -Encoding UTF8) -replace "`r", ""
         $unchecked = [regex]::Matches($tasksContent, '(?m)^\s*- \[ \]').Count
         if ($unchecked -gt 0) {
             $findings += "tasks.md has $unchecked unchecked item(s) -- archiving unfinished work"

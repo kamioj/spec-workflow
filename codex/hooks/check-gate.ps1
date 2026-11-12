@@ -85,7 +85,7 @@ try {
                    "(gate inspected $changesDir; '$($change.Name)' holds: $found. Not the change you meant? Yours likely sits in a DIFFERENT spec tree -- another worktree / the main repo / a subproject: hooks only see the session cwd; move it here, or relaunch the session where it lives)")
         }
 
-        $content = Get-Content $proposalPath -Raw -Encoding UTF8
+        $content = (Get-Content $proposalPath -Raw -Encoding UTF8) -replace "`r", ""
 
         # A proposal that went through $spec-propose carries all four sections
         $missing = @()

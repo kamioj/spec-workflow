@@ -77,7 +77,7 @@ try {
                    "(gate inspected $changesDir; '$($change.Name)' holds: $found. Not the change you just researched? Yours likely sits in a DIFFERENT spec tree -- another worktree / the main repo / a subproject: hooks only see the session cwd; move it here, or relaunch the session where it lives)")
         }
 
-        $content = Get-Content $researchPath -Raw -Encoding UTF8
+        $content = (Get-Content $researchPath -Raw -Encoding UTF8) -replace "`r", ""
 
         # Scan ONLY the ## Open [TBD] section: [TBD-N] tokens elsewhere (Practices/Constraints/
         # Decided) are provenance citations of a decision point, not open items. List the

@@ -758,6 +758,28 @@ else
     FAIL=$((FAIL+1)); echo "FAIL  wrong-contract-canary  a codex-contract gate was not distinguishable (out='$out' code=$code)"
 fi
 
+# ---- CRLF artifacts (core.autocrlf checkouts on Windows): gates must read them like LF ----
+crlf() { awk '{ printf "%s\r\n", $0 }'; }
+P=$(mkproj crlf-gate); mkdir -p "$P/spec/changes/my-change"
+printf '%s' "$FULL_PROPOSAL" | crlf > "$P/spec/changes/my-change/proposal.md"
+run_case crlf-gate-happy-path      check-gate allow "$P" "$(json '/spec:apply')"
+P=$(mkproj crlf-tbd); mkdir -p "$P/spec/changes/c"
+printf '# R\n\n## Open [TBD]\n- [TBD-1] pick one\n\n## Decided\n(none)\n' | crlf > "$P/spec/changes/c/research.md"
+run_case crlf-tbd-open-blocks      check-tbd block "$P" "$(json '/spec:propose')"
+P=$(mkproj crlf-arch-loop); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | sed -e 's/^status: running$/status: done/' \
+    -e 's/^- \[ \] A-1 thing (verify: x)$/- [x] A-1 thing (verify: x)/' | crlf > "$P/spec/changes/g/loop.md"
+run_case crlf-archive-loop-done-allows check-archive allow "$P" "$(json '/spec:archive')"
+P=$(mkproj crlf-arch-quick); mkdir -p "$P/spec/changes/h"
+printf '%s' "$QUICK_DONE" | crlf > "$P/spec/changes/h/quick.md"
+run_case crlf-archive-quick-done-allows check-archive allow "$P" "$(json '/spec:archive')"
+P=$(mkproj crlf-arch-fix); mkdir -p "$P/spec/changes/fixes"
+printf '%s' "$FIX_SHIPPED" | crlf > "$P/spec/changes/fixes/fix.md"
+run_case crlf-archive-fix-shipped-allows check-archive allow "$P" "$(json '/spec:archive')"
+P=$(mkproj crlf-loop); mkdir -p "$P/spec/changes/g"
+printf '%s' "$LOOP_RUNNING" | crlf > "$P/spec/changes/g/loop.md"
+run_driver_case crlf-loop-continue-reinjects reinject "$P" - "$(json_stop false)"
+
 # ---- scenario-name sync against the codex fixture set (V-3/V-6 drift guard) ----
 CODEX_RUNNER="$HOOKS_DIR/../codex/hooks/run-fixtures.sh"
 if [ -f "$CODEX_RUNNER" ]; then
